@@ -40,6 +40,8 @@ public interface IObjectStorage {
 	
 	<T> boolean  save(String table,T val,Class<T> cls,boolean async,boolean toDocument);
 	
+	<T> boolean  saveSync(String table,T val,Class<T> cls);
+	
 	<T> boolean  save(String table,List<T> val,Class<T> cls,boolean async,boolean toDocument);
 	
 	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async,boolean toDocument);
@@ -48,7 +50,7 @@ public interface IObjectStorage {
 	
 	<T> boolean updateOrSaveById(String table, T val,Class<T> cls,String tidName,boolean async);
 	
-	<T> boolean update(String table, Object filter, Object updater, Class<T> cls);
+	<T> int update(String table, Object filter, Object updater, Class<T> cls);
 	
 	boolean deleteById(String table,Object id,String idName);
 	

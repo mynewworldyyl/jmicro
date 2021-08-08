@@ -132,6 +132,28 @@ public class TypeCoderFactory {
 
 		});
 		registClass(String.class,tcp.getTypeCode(String.class.getName()));
+		
+		registCoder(new AbstractFinalTypeCoder<java.math.BigDecimal>(tcp.getTypeCode(java.math.BigDecimal.class.getName()), java.math.BigDecimal.class) {
+			@Override
+			public java.math.BigDecimal decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
+				try {
+					String str = buffer.readUTF();
+					return new java.math.BigDecimal(str);
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
+			}
+
+			@Override
+			public void encodeData(DataOutput buffer, java.math.BigDecimal val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				String str = val == null ? "0" : val.toPlainString();
+				buffer.writeUTF(str);
+			}
+		});
+		registClass(java.math.BigDecimal.class,tcp.getTypeCode(java.math.BigDecimal.class.getName()));
+		
 
 		// registCoder(new VoidTypeCoder<Void>(type--,Void.TYPE));
 

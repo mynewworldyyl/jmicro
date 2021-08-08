@@ -15,7 +15,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.service.ServiceManager;
@@ -165,7 +165,7 @@ public class PermissionManager {
 		return Collections.unmodifiableMap(pers);
 	}
 	
-	public ServerError permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
+	public ServerErrorJRso permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
 		if(isCurAdmin(sm.getForType()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
 			return null;
 		}
@@ -176,7 +176,7 @@ public class PermissionManager {
 		if(sm.isNeedLogin() && (ai == null && sai == null ||
 				ai == null && Constants.FOR_TYPE_USER == sm.getForType()
 				|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) ) {
-			ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,
+			ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,
 					 "Have to login for invoking to " + sm.getKey().methodID());
 			LG.log(MC.LOG_ERROR, TAG,se.toString());
 			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
@@ -190,7 +190,7 @@ public class PermissionManager {
 		
 		if(sm.isPerType() && (ai == null || ai.getPers() == null 
 				|| !ai.getPers().contains(sm.getKey().getSnvHash()))) {
-			ServerError se = new ServerError(MC.MT_ACT_PERMISSION_REJECT,
+			ServerErrorJRso se = new ServerErrorJRso(MC.MT_ACT_PERMISSION_REJECT,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
 			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().fullStringKey());
 			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);

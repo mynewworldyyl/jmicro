@@ -17,12 +17,18 @@
 package cn.jmicro.common.util;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 
 /**
@@ -33,6 +39,14 @@ import com.google.gson.reflect.TypeToken;
 public class JsonUtils {
 
 	private static JsonUtils instance = new JsonUtils();
+	
+	 //序列化
+    final static JsonSerializer<LocalDateTime> jsonSerializerDateTime = (localDateTime, type, jsonSerializationContext) -> new JsonPrimitive(localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    final static JsonSerializer<LocalDate> jsonSerializerDate = (localDate, type, jsonSerializationContext) -> new JsonPrimitive(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+    //反序列化
+    final static JsonDeserializer<LocalDateTime> jsonDeserializerDateTime = (jsonElement, type, jsonDeserializationContext) -> LocalDateTime.parse(jsonElement.getAsJsonPrimitive().getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    final static JsonDeserializer<LocalDate> jsonDeserializerDate = (jsonElement, type, jsonDeserializationContext) -> LocalDate.parse(jsonElement.getAsJsonPrimitive().getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
+
 	
 	private JsonUtils() {}
 	
@@ -46,11 +60,18 @@ public class JsonUtils {
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
 		//builder.registerTypeAdapter(MsgHeader.class, new MessageHeaderAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
+		
+	
+		
 		return builder;
 	}
 	
 	private GsonBuilder b() {
-		return new GsonBuilder().enableComplexMapKeySerialization().serializeNulls();
+		return new GsonBuilder().registerTypeAdapter(LocalDateTime.class, jsonSerializerDateTime)
+        .registerTypeAdapter(LocalDate.class, jsonSerializerDate)
+        .registerTypeAdapter(LocalDateTime.class, jsonDeserializerDateTime)
+        .registerTypeAdapter(LocalDate.class, jsonDeserializerDate)
+		.enableComplexMapKeySerialization().serializeNulls();
 	}
 	
 	

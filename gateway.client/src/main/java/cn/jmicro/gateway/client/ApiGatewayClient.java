@@ -45,7 +45,7 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.api.security.ActInfoJRso;
@@ -410,8 +410,8 @@ public class ApiGatewayClient {
 			
 			if(respMsg.isError()) {
 				//错误下行消息全用JSON，返回数据为ServerError实例
-				ServerError se = JsonUtils.getIns().fromJson(json, ServerError.class);
-				p.setFail(se.getErrorCode(),se.getMsg());
+				ServerErrorJRso se = JsonUtils.getIns().fromJson(json, ServerErrorJRso.class);
+				p.setFail(se.getCode(),se.getMsg());
 				p.done();
 				return null;
 			}
@@ -440,9 +440,9 @@ public class ApiGatewayClient {
 					 }
 				} else {
 					 String js = JsonUtils.getIns().toJson(apiResp.getResult());
-					 ServerError se = JsonUtils.getIns().fromJson(js, ServerError.class);
+					 ServerErrorJRso se = JsonUtils.getIns().fromJson(js, ServerErrorJRso.class);
 					 if(se != null) {
-						 p.setFail(se.getErrorCode(), se.getMsg());
+						 p.setFail(se.getCode(), se.getMsg());
 					 }else {
 						 p.setFail(RespJRso.CODE_FAIL, js);
 					 }

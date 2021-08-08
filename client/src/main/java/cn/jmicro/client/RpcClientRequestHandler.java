@@ -52,7 +52,7 @@ import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
@@ -552,12 +552,12 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				}
 				p.setResult(resp.getResult());
 			} else {
-				if(resp.getResult() instanceof ServerError) {
-					ServerError se = (ServerError)resp.getResult();
-					if(se.getErrorCode() == MC.MT_AES_DECRYPT_ERROR) {
+				if(resp.getResult() instanceof ServerErrorJRso) {
+					ServerErrorJRso se = (ServerErrorJRso)resp.getResult();
+					if(se.getCode() == MC.MT_AES_DECRYPT_ERROR) {
 						this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
 					}
-					p.setFail(se.getErrorCode(), se.getMsg());
+					p.setFail(se.getCode(), se.getMsg());
 				} else {
 					p.setFail(MC.LOG_ERROR, "Server return error!");
 				}
@@ -571,7 +571,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		/*RpcResponse resp = new RpcResponse();
     		resp.setSuccess(false);
     		resp.setResult();*/
-    		Object errO = new ServerError(10,e.getMessage());
+    		Object errO = new ServerErrorJRso(10,e.getMessage());
     		p.setResult(errO);
     		return false;
 		} finally {

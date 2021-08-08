@@ -15,12 +15,18 @@
  * limitations under the License.
  */
 package cn.jmicro.api.net;
+
+import cn.jmicro.api.annotation.SO;
+import lombok.Data;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:35
  */
-public final class ServerError {
+@Data
+@SO
+public final class ServerErrorJRso {
 	
 	public static final int SE_LIMITER = 0x00000001;
 	
@@ -44,36 +50,14 @@ public final class ServerError {
 	
 	public static final int SE_INVALID_SUB_ID = 0x0000000B;
 	
-	private int errorCode;
+	private int code;
 	private String msg;
 	
-	public ServerError(){}
+	public ServerErrorJRso(){}
 	
-	public ServerError(int errorCode,String msg) {
-		this.errorCode = errorCode;
+	public ServerErrorJRso(int errorCode,String msg) {
+		this.code = errorCode;
 		this.msg = msg;
 	}
-
-	public int getErrorCode() {
-		return errorCode;
-	}
-
-	public void setErrorCode(int errorCode) {
-		this.errorCode = errorCode;
-	}
-
-	public String getMsg() {
-		return msg;
-	}
-
-	public void setMsg(String msg) {
-		this.msg = msg;
-	}
-
-	@Override
-	public String toString() {
-		return "ServerError [errorCode=" + errorCode + ", msg=" + msg + "]";
-	}
-	
 	
 }

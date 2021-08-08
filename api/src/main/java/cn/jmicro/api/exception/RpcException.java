@@ -19,7 +19,7 @@ package cn.jmicro.api.exception;
 import cn.jmicro.api.async.AsyncFailResult;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.common.CommonException;
 /**
  * 
@@ -45,8 +45,8 @@ public final class RpcException extends CommonException {
 		this.resp = resp;
 	}
 	
-	public RpcException(IRequest req,ServerError se){
-		this(req,se.getMsg(),se.getErrorCode());
+	public RpcException(IRequest req,ServerErrorJRso se){
+		this(req,se.getMsg(),se.getCode());
 	}
 	
 	public RpcException(IRequest req,Throwable exp,int code){

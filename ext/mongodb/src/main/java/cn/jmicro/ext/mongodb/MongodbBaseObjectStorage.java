@@ -182,7 +182,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		update.put("$set",  d);
 		
 		UpdateResult ur = coll.updateOne(filter,update,new UpdateOptions().upsert(false));
-		return ur.getModifiedCount() != 0;
+		return ur.getModifiedCount() > 0;
 	}
 
 	private <T> void doSave(String table, List<T> batchAdds, Class<T> targetClass) {
@@ -268,6 +268,11 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			d.put(CREATED_TIME, TimeUtils.getCurTime());
 		}
 		return d;
+	}
+	
+	@Override
+	public <T> boolean saveSync(String table, T val,Class<T> cls) {
+		return this.save(table, val, cls,false,false);
 	}
 
 	@Override
@@ -465,7 +470,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 
 	@Override
-	public <T>  boolean update(String table, Object filter, Object updater,Class<T> targetClass) {
+	public <T>  int update(String table, Object filter, Object updater,Class<T> targetClass) {
 		
 		Document up = null;
 		if(updater instanceof Document) {
@@ -500,7 +505,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	
 		MongoCollection<Document> coll = mdb.getCollection(table);
 		UpdateResult ur = coll.updateOne(fi,up,new UpdateOptions().upsert(false));
-		return ur.getModifiedCount() != 0;
+		return (int)ur.getModifiedCount();
 	}
 
 	@Override

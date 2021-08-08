@@ -41,7 +41,7 @@ import cn.jmicro.api.net.InterceptorManager;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequestJRso;
 import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
@@ -115,7 +115,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		RpcRequestJRso req = null;
 		RpcResponseJRso resp =  new RpcResponseJRso();
 		boolean finish[] = new boolean[] {false};
-		
+		ServiceMethodJRso sm0 = null;
 	    try {
 	    	
 	    	//req1为内部类访问
@@ -126,7 +126,8 @@ public class JRPCReqRespHandler implements IMessageHandler{
 	    	
 	    	req1.setSm(JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null));
 	    	
-	    	ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+	    	final ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+	    	sm0 = sm;
 	    	
 	    	config(req1,resp,msg.getLinkId(),sm);
 	    	
@@ -171,7 +172,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(StringUtils.isNotEmpty(lk)) {
 					ai = this.accountManager.getAccount(lk);
 					if(ai == null && sm.isNeedLogin()) {
-						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
+						ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
 						resp.setResult(se);
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -186,7 +187,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			if(sm.getMaxPacketSize() > 0 && req.getPacketSize() > sm.getMaxPacketSize()) {
-	    		ServerError se = new ServerError(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId()+","+sm.getKey().getMethod());
+	    		ServerErrorJRso se = new ServerErrorJRso(MC.MT_PACKET_TOO_MAX,"Packet too max "+req.getPacketSize()+ " limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId()+","+sm.getKey().getMethod());
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -201,7 +202,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(StringUtils.isNotEmpty(slk)) {
 					sai = this.accountManager.getAccount(slk);
 					if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
-						ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk+",insId: " + msg.getInsId());
+						ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk+",insId: " + msg.getInsId());
 						resp.setResult(se);
 						resp.setSuccess(false);
 						LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -216,7 +217,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			}
 			
 			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
-				ServerError se = new ServerError(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().fullStringKey()+",insId: " + msg.getInsId());
+				ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"Need system login: " + sm.getKey().fullStringKey()+",insId: " + msg.getInsId());
 				resp.setResult(se);
 				resp.setSuccess(false);
 				LG.log(MC.LOG_ERROR, TAG,se.toString());
@@ -227,7 +228,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 			
 			ServiceItemJRso si = JMicroContext.get().getParam(Constants.SERVICE_ITEM_KEY, null);
 			
-			ServerError se = pm.permissionCheck(sm,si.getClientId());
+			ServerErrorJRso se = pm.permissionCheck(sm,si.getClientId());
 			
 			if(se != null) {
 				resp.setResult(se);
@@ -282,7 +283,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 					if(finish[0]) {
 						return;
 					}
-					ServerError se0 = new ServerError(code,errorMsg);
+					ServerErrorJRso se0 = new ServerErrorJRso(code,errorMsg);
 					r.setSuccess(false);
 					r.setResult(se0);
 					msg.setError(true);
@@ -293,7 +294,7 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				if(finish[0]) {
 					return true;
 				}
-				ServerError se0 = new ServerError(MC.MT_SERVER_ERROR,"Got null result!"+",insId: " + msg.getInsId());
+				ServerErrorJRso se0 = new ServerErrorJRso(MC.MT_SERVER_ERROR,"Got null result!"+",insId: " + msg.getInsId());
 				r.setSuccess(false);
 				r.setResult(se0);
 				msg.setError(true);
@@ -301,9 +302,14 @@ public class JRPCReqRespHandler implements IMessageHandler{
 				finish[0]=true;
 			}
 		} catch (Throwable e) {
+			if(sm0 != null) {
+				logger.error(sm0.getKey().toString(),e);
+			}
 			if(!finish[0]) {
 				finish[0]=true;
 				doException(req,resp,s,msg,e);
+			}else {
+				
 			}
 		}
 	    return true;
@@ -320,12 +326,12 @@ public class JRPCReqRespHandler implements IMessageHandler{
 		
 		if(msg.isNeedResponse()) {
 			//返回错误
-			ServerError error = null;
+			ServerErrorJRso error = null;
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				error = new ServerError(ce.getKey(),e.getMessage());
+				error = new ServerErrorJRso(ce.getKey(),e.getMessage());
 			}else {
-				error = new ServerError(0,e.getMessage());
+				error = new ServerErrorJRso(0,e.getMessage());
 			}
 			
 			//错误下行数据全用JSON

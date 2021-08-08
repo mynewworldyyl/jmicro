@@ -51,7 +51,7 @@ import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequestJRso;
 import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.SecretManager;
@@ -344,9 +344,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			String errMsg = e == null?"from insId: " + msg.getInsId():e.getMessage()+",from insId: " + msg.getInsId();
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponseJRso(msg.getMsgId(),new ServerError(ce.getKey(),errMsg));
+				resp = new RpcResponseJRso(msg.getMsgId(),new ServerErrorJRso(ce.getKey(),errMsg));
 			} else {
-				resp = new RpcResponseJRso(msg.getMsgId(),new ServerError(RespJRso.CODE_FAIL,errMsg));
+				resp = new RpcResponseJRso(msg.getMsgId(),new ServerErrorJRso(RespJRso.CODE_FAIL,errMsg));
 			}
 			resp.setSuccess(false);
 			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));

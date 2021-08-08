@@ -11,7 +11,7 @@ import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.ServerError;
+import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -41,9 +41,9 @@ public class PromiseUtils {
 					p.setResult((R)resp.getResult());
 				} else {
 					AsyncFailResult f = new AsyncFailResult();
-					if(resp.getResult() instanceof ServerError) {
-						ServerError se = (ServerError)resp.getResult();
-						f.setCode(se.getErrorCode());
+					if(resp.getResult() instanceof ServerErrorJRso) {
+						ServerErrorJRso se = (ServerErrorJRso)resp.getResult();
+						f.setCode(se.getCode());
 						f.setMsg(se.getMsg());
 					} else {
 						f.setCode(1);

@@ -90,7 +90,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 				Thread.currentThread().setContextClassLoader(cl);
 				return (R)prefixCoder.decode(data);
 			}catch (Throwable e) {
-				logger.error(e.getMessage() + ": " + clazz.getName());
+				logger.error("",e);
 				throw e;
 			} finally {
 				Thread.currentThread().setContextClassLoader(c);
