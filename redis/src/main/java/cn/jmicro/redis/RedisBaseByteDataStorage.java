@@ -44,7 +44,7 @@ public class RedisBaseByteDataStorage implements IByteDataStorage {
 	
 	private String prefix;
 	
-	public void ready() {
+	public void jready() {
 		prefix = "/"+Config.getClientId()+"/";
 	}
 	

@@ -96,8 +96,8 @@ public class DiskResource extends AbstractResource  implements IResource {
 		return list;
 	}
 
-	public void ready() {
-		super.ready0();
+	public void jready() {
+		super.jready0();
 		
 		this.getData().setResName(RES_NAME);
 		Set<CfgMetadataJRso> metadatas = new HashSet<>();

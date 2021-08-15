@@ -42,7 +42,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	@Inject
 	private ICommonManagerJMSrv commonManager;
 	
-	public void ready() {
+	public void jready() {
 		mtm.enable();
 	}
 	

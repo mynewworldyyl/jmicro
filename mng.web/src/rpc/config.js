@@ -11,8 +11,13 @@ export default {
     useWs : process.env.useWs,
     sslEnable:process.env.sslEnable,*/
 
-    ip:'192.168.56.1',
-    port:'9090',
+    wsProtocol:'wss',
+    protocol:'https',
+    //ip:'192.168.56.1',
+    //ip:'apigate.jmicro.cn',
+    ip:'jmicro.cn',
+    //port:'9090',
+    port:'443',
     //port:'80',
     txtContext : '_txt_',
     binContext : '_bin_',

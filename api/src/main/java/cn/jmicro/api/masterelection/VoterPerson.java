@@ -53,8 +53,8 @@ public class VoterPerson {
 	
 	private Set<IMasterChangeListener> listeners = new HashSet<>();
 	
-	public VoterPerson(IObjectFactory of, String tag) {
-		if(of == null) {
+	public VoterPerson(IDataOperator op, String tag) {
+		if(op == null) {
 			throw new CommonException("Data operator cannot be NULL");
 		}
 		
@@ -76,7 +76,7 @@ public class VoterPerson {
 		}
 		*/
 		
-		this.op = of.get(IDataOperator.class,false);
+		this.op = op;//of.get(IDataOperator.class,false);
 		//this.cfg = of.get(Config.class);
 		//this.idServer = of.get(ComponentIdServer.class);
 		//this.listener = listener;

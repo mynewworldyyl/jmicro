@@ -290,8 +290,7 @@ public class LogMonitorServerImpl implements ILogMonitorServerJMSrv {
 		return lw;
 	}
 	
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		
 		logDir = System.getProperty("user.dir")+"/logs/molog/";
 		File d = new File(logDir);

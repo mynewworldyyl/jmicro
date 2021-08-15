@@ -66,7 +66,7 @@ public class TransactionResourceServiceIml implements ITransactionResourceJMSrv,
 	
 	private Map<Long,TxEntry> txEntries = new HashMap<>();
 	
-	public void ready() {
+	public void jready() {
 		new Thread(this::check).start();
 	}
 	

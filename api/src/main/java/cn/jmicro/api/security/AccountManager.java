@@ -46,7 +46,7 @@ public class AccountManager {
 	@Inject
 	private ComponentIdServer idGenerator;
 	
-	public void ready() {
+	public void jready() {
 		/*Set<String> acts = op.getChildren(AccountManager.ActDir, false);
 		if(acts == null || acts.isEmpty()) {
 			String p = AccountManager.ActDir +"/"+ jmicro.getActName();

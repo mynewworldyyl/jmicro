@@ -21,7 +21,7 @@ export default {
 
     ,init(onopen) {
         //isInit = true;
-        let url = 'ws://' + config.ip + ':' + config.port +'/'+ config.binContext;
+        let url = config.wsProtocol + '://' + config.ip + ':' + config.port +'/'+ config.binContext;
         if(window.WebSocket){
             wsk = new WebSocket(url);  //获得WebSocket对象
 

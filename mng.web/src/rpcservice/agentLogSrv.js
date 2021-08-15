@@ -2,9 +2,9 @@ import rpc from "@/rpc/rpcbase";
 import ps from "@/rpc/pubsub";
 import cons from "@/rpc/constants";
 
-const sn = 'cn.jmicro.mng.api.II8NServiceJMSrv'
+/*const sn = 'cn.jmicro.mng.api.II8NServiceJMSrv'
 const ns = cons.NS_MNG
-const v = '0.0.1'
+const v = '0.0.1'*/
 
 
 

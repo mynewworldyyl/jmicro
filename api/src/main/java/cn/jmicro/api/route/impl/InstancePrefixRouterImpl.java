@@ -33,7 +33,7 @@ public class InstancePrefixRouterImpl extends AbstractRouter implements IRouter 
 		super(RouteRuleJRso.TYPE_FROM_INSTANCE_PREFIX_ROUTER);
 	}
 	
-	public void ready() {}
+	public void jready() {}
 	
 	@Override
 	protected boolean accept(RouteRuleJRso r) {

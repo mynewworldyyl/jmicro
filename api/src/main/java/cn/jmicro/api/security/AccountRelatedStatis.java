@@ -20,7 +20,7 @@ public class AccountRelatedStatis {
 	
 	private Map<String,ServiceCounter> limiterData = new ConcurrentHashMap<>();
 	
-	public void ready(){
+	public void jready(){
 		TimerTicker.doInBaseTicker(60, "DefaultSpeedLimiter-Checker", null,
 		(key,att)->{
 			doCheck();

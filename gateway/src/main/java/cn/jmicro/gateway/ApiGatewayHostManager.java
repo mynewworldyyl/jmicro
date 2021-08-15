@@ -53,7 +53,7 @@ public class ApiGatewayHostManager {
 		}
 	};
 	
-	public void ready() {
+	public void jready() {
 		op.addChildrenListener(HostDir, childrenListener);
 		regist(Config.getExportHttpHost(),port+"",Constants.TRANSPORT_NETTY_HTTP);
 		regist(Config.getExportSocketHost(),nettyPort+"",Constants.TRANSPORT_NETTY);

@@ -53,7 +53,7 @@ public class BbsServiceImpl implements IBbsServiceJMSrv {
 	private AccountManager am;
 	
 	
-	public void ready() {
+	public void jready() {
 	}
 	
 	@Override

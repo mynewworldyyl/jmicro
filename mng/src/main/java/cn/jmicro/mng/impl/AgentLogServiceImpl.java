@@ -36,7 +36,7 @@ public class AgentLogServiceImpl implements IAgentLogServiceJMSrv {
 	
 	private Map<String,IAgentProcessServiceJMSrv$JMAsyncClient> id2Aps = new HashMap<>();
 	
-	public void ready() {
+	public void jready() {
 		if(!agentServices.isEmpty()) {
 			for(IAgentProcessServiceJMSrv po : agentServices) {
 				changeListener((AbstractClientServiceProxyHolder)po,IServiceListener.ADD);

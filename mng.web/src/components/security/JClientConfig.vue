@@ -90,7 +90,6 @@
 
 <script>
 
-    import {Constants} from "@/rpc/message"
     import rpc from "@/rpc/rpcbase"
 /*    import comm from "@/rpcservice/comm"
     import utils from "@/rpc/utils"*/
@@ -107,6 +106,7 @@
     STATUS[STATUS_NORMAL] = 'Normal'
     STATUS[STATUS_FREEZE] = 'Freeze'
     STATUS[STATUS_DELETE] = 'Delete'
+    STATUS[STATUS_REJECT] = 'Reject'
 
     const cid = 'clientConfig';
 
@@ -122,7 +122,7 @@
         data() {
             return {
                 msg:'',
-                STATUS:STATUS,
+                STATUS : STATUS,
 
                 actInfo:null,
 
@@ -225,7 +225,7 @@
             },
 
             doResendToken(clientId) {
-                this.callRemote('resendToken',[clientId,this.vcode],(resp)=>{
+                this.callRemote('resendToken',[clientId,this.vcode],()=>{
                     this.hideResend = false
                     this.doVcode = false
                     this.vcode = null;
@@ -321,7 +321,7 @@
             },
 
             callRemote(method,args,sucCb,failCb) {
-                let self = this;
+               // let self = this;
                 rpc.callRpcWithParams(sn, ns, v, method, args)
                     .then((resp) => {
                     if (resp.code == 0 ) {

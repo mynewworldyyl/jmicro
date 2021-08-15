@@ -21,8 +21,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.codec.DecoderConstant;
+import cn.jmicro.api.codec.ISerializeObject;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.codec.TypeCoderFactory;
@@ -746,6 +746,100 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	    }
 	}
 
+	public static void encodeListElement(DataOutput buffer, Object val) throws IOException {
+		//val impossible to be null
+		Class valCls = val.getClass();
+
+		if(valCls == byte.class || valCls == Byte.TYPE || valCls == Byte.class ) {
+			buffer.writeByte((byte)val);
+			return;
+		}else if(valCls == short.class || valCls == Short.TYPE || valCls == Short.class ) {
+			buffer.writeShort((short)val);
+			return;
+		}else if(valCls == int.class || valCls == Integer.TYPE || valCls == Integer.class ) {
+			buffer.writeInt((int)val);
+			return;
+		}else if(valCls == long.class || valCls == Long.TYPE || valCls == Long.class ) {
+			buffer.writeLong((long)val);
+			return;
+		}else if(valCls == float.class || valCls == Float.TYPE || valCls == Float.class ) {
+			buffer.writeFloat((float)val);
+			return;
+		}else if(valCls == double.class || valCls == Double.TYPE || valCls == Double.class ) {
+			//buffer.write(Decoder.PREFIX_TYPE_DOUBLE);
+			buffer.writeDouble((double)val);
+			return;
+		}else if(valCls == boolean.class || valCls == Boolean.TYPE || valCls == Boolean.class ) {
+			buffer.writeBoolean((boolean)val);
+			return;
+		}else if(valCls == char.class || valCls == Character.TYPE || valCls == Character.class ) {
+			buffer.writeChar((char)val);
+			return;
+		}else if(valCls == String.class ) {
+			buffer.writeUTF((String)val);
+			return;
+		}else if(valCls == Date.class ) {
+			buffer.writeLong(((Date)val).getTime());
+			return;
+		}
+		
+		if(val != null && val instanceof ISerializeObject) {
+			//System.out.println("Use Instance "+valCls.getName());
+			/*buffer.write(Decoder.PREFIX_TYPE_PROXY);
+			short code = TypeCoderFactory.getIns().getCodeByClass(valCls);
+			buffer.writeShort(code);*/
+			((ISerializeObject)val).encode(buffer);
+			return;
+		} else {
+			TypeCoderFactory.getIns().getDefaultCoder().encode(buffer, val, null, null);
+		}
+	
+	}
+	
+	public static Object decodeListElement(DataInput buffer, Class valCls) throws IOException {
+		//val impossible to be null
+
+		if(valCls == byte.class || valCls == Byte.TYPE || valCls == Byte.class ) {
+			return buffer.readByte();
+		}else if(valCls == short.class || valCls == Short.TYPE || valCls == Short.class ) {
+			return buffer.readShort();
+		}else if(valCls == int.class || valCls == Integer.TYPE || valCls == Integer.class ) {
+			return buffer.readInt();
+		}else if(valCls == long.class || valCls == Long.TYPE || valCls == Long.class ) {
+			return buffer.readLong();
+		}else if(valCls == float.class || valCls == Float.TYPE || valCls == Float.class ) {
+			return buffer.readFloat();
+		}else if(valCls == double.class || valCls == Double.TYPE || valCls == Double.class ) {
+			return buffer.readDouble();
+		}else if(valCls == boolean.class || valCls == Boolean.TYPE || valCls == Boolean.class ) {
+			return buffer.readBoolean();
+		}else if(valCls == char.class || valCls == Character.TYPE || valCls == Character.class ) {
+			return buffer.readChar();
+		}else if(valCls == String.class ) {
+			return buffer.readUTF();
+		}else if(valCls == Date.class ) {
+			return buffer.readLong();
+		}
+		
+		if(ISerializeObject.class.isAssignableFrom(valCls)) {
+			//System.out.println("Use Instance "+valCls.getName());
+			/*buffer.write(Decoder.PREFIX_TYPE_PROXY);
+			short code = TypeCoderFactory.getIns().getCodeByClass(valCls);
+			buffer.writeShort(code);*/
+			Object val;
+			try {
+				val = valCls.newInstance();
+				((ISerializeObject)val).decode(buffer);
+				return val;
+			} catch (InstantiationException | IllegalAccessException e) {
+				e.printStackTrace();
+				return null;
+			}
+		} else {
+			return TypeCoderFactory.getIns().getDefaultCoder().decode(buffer, valCls, null);
+		}
+	
+	}
 	
 	/*******************************STATIC METHOD END****************************/
 	

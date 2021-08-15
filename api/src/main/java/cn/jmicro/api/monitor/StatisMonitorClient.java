@@ -116,8 +116,7 @@ public class StatisMonitorClient {
 		
 	}
 
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		
 		logger.info("Init object :" +this.hashCode());
 		

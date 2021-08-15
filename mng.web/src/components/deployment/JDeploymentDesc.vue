@@ -330,7 +330,7 @@
 
             getJarFiles() {
                 let self = this;
-                rpc.callRpcWithParams(rpc.sn, rpc.ns, rpc.v, 'getResourceListForDeployment', [{}]))
+                rpc.callRpcWithParams(rpc.sn, rpc.ns, rpc.v, 'getResourceListForDeployment', [{}])
                     .then((resp)=>{
                         if(resp.code == 0){
                             self.jarFiles = resp.data;

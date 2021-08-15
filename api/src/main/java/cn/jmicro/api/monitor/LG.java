@@ -284,7 +284,7 @@ public class LG {
 		
 		m = of.get(LogMonitorClient.class);
 		
-		JMicroContext.ready0(of.get(LogMonitorClient.class), of.get(StatisMonitorClient.class));
+		JMicroContext.jready0(of.get(LogMonitorClient.class), of.get(StatisMonitorClient.class));
 		
 		//isMs = m != null;
 		pi = of.get(ProcessInfoJRso.class);

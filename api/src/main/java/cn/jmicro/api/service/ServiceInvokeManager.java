@@ -339,7 +339,7 @@ public class ServiceInvokeManager {
 		return null;
 	}
 	
-	public void ready() {
+	public void jready() {
 		this.srvManager.addListener((type,siKey,item)->{
 			if(type == IListener.REMOVE || type == IListener.DATA_CHANGE) {
 				String snv = item.toSnv();

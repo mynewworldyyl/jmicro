@@ -89,7 +89,7 @@ public class JMicroConfiguration implements ApplicationContextAware{
 			
 			private Map<String,Object> c2nsSrvs = new HashMap<>();
 			
-			@SuppressWarnings({ "unchecked", "rawtypes" })
+			@SuppressWarnings({ "unchecked"})
 			@Override
 			public <T> T getRemoteServie(String srvName, String namespace, String version, AsyncConfigJRso[] acs) {
 				String key = srvName+"#"+namespace+"#"+version;

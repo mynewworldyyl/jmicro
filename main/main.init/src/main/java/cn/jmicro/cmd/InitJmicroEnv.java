@@ -45,7 +45,7 @@ public class InitJmicroEnv {
 		}
 	}
 	
-	public void ready() {
+	public void jready() {
 		
 		String initDepTypeStr = this.cfg.getString("initDepTypes",null);
 		if(StringUtils.isEmpty(initDepTypeStr)) {

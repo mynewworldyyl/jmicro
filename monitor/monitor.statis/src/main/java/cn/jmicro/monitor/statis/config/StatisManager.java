@@ -192,7 +192,7 @@ public class StatisManager {
 		}
 	}
 	
-	public void ready() {
+	public void jready() {
 		//mscm.addStatisConfigListener(lis);
 		//每秒钟一个检测
 		TimerTicker.doInBaseTicker(1, "statisManager", null, this::act0);

@@ -41,7 +41,7 @@ public class SpringObjectSource2Jmicto implements IObjectSource{
 				return c;
 			}
 		} catch (NoSuchBeanDefinitionException | ClassNotFoundException e) {
-			logger.info("get: "+e.getMessage());
+			logger.debug("get: "+e.getMessage());
 			return null;
 		}
 		return null;
@@ -57,7 +57,7 @@ public class SpringObjectSource2Jmicto implements IObjectSource{
 			springObjects.put(name, c);
 			return c;
 		} catch (NoSuchBeanDefinitionException e) {
-			logger.info("getByName: "+e.getMessage());
+			logger.debug("getByName: "+e.getMessage());
 			return null;
 		}
 	}
@@ -77,7 +77,7 @@ public class SpringObjectSource2Jmicto implements IObjectSource{
 			springObjectParent.put(type, set);
 			return set;
 		} catch (NoSuchBeanDefinitionException | ClassNotFoundException e) {
-			logger.info("getByParent: "+e.getMessage());
+			logger.debug("getByParent: "+e.getMessage());
 			return null;
 		}
 	}

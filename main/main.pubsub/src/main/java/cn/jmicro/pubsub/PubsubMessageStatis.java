@@ -63,7 +63,7 @@ public class PubsubMessageStatis {
 	@Inject
 	private IObjectStorage os;
 	
-	public void ready() {
+	public void jready() {
 		for(int i = 0; i < TYPES.length; i++) {
 			typeLabels[i] = MC.MONITOR_VAL_2_KEY.get(TYPES[i]);
 		}

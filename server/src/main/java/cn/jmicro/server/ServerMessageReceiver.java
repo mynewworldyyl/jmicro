@@ -112,7 +112,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	@Inject
 	private ServiceMethodTaskQueueManager taskWorker;
 	
-	public void ready() {
+	public void jready() {
 	
 		/*ExecutorConfig gateWayCfg = new ExecutorConfig();
 		gateWayCfg.setMsCoreSize(5);

@@ -78,8 +78,7 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	@Inject
 	private IDataOperator op;
 	
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		String skey = this.skey("printLogMonitor", "0.0.1");
 		registType(op,skey, MC.MT_TYPES_ARR);
 		new Thread(this::doLog).start();

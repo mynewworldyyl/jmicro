@@ -68,7 +68,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	
 	private AtomicInteger updateCnt = new AtomicInteger(0);
 	
-	public void ready() {
+	public void jready() {
 		new Thread(this::doWork).start();
 	}
 	
@@ -504,7 +504,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		}
 	
 		MongoCollection<Document> coll = mdb.getCollection(table);
-		UpdateResult ur = coll.updateOne(fi,up,new UpdateOptions().upsert(false));
+		UpdateResult ur = coll.updateMany(fi,up,new UpdateOptions().upsert(false));
 		return (int)ur.getModifiedCount();
 	}
 

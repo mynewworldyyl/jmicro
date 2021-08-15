@@ -24,7 +24,7 @@ public class DictManager {
 	@Inject
 	private ProcessInstanceManager insManager;
 	
-	public void ready() {
+	public void jready() {
 		this.mergeDict("logKey2Val", MC.LogKey2Val);
 		this.mergeDict("mtKey2Val", MC.MT_Key2Val);
 		Map<String,String> map = new HashMap<>();

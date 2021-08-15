@@ -187,7 +187,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 		
 	}
 	
-	public void ready() {
+	public void jready() {
 		
 		Thread checkThread = new Thread(this::doCheck,"JMicro-"+Config.getInstanceName()+"-PubSubServer");
 		checkThread.setDaemon(true);

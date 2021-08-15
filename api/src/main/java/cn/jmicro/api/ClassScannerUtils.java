@@ -333,7 +333,7 @@ public class ClassScannerUtils {
 		  
         Set<Class<?>> classes = new LinkedHashSet<Class<?>>();  
         boolean recursive = true;  
-        String packageName = pack;  
+        String packageName = pack;
         String packageDirName = packageName.replace('.', '/');  
         Enumeration<URL> dirs;  
         try {
@@ -341,13 +341,14 @@ public class ClassScannerUtils {
         	if(cl == null) {
         		cl = this.getClass().getClassLoader();
         	}
-        	logger.info("Use class loader: " + cl.getClass().getName());
+        	//logger.info("Use class loader: " + cl.getClass().getName());
         	
             dirs = cl.getResources(packageDirName);  
             while (dirs.hasMoreElements()) {  
                 URL url = dirs.nextElement();  
                 String f = url.getFile();
                 String protocol = url.getProtocol();  
+                //logger.info("Package entry: " + url.toString());
                 if("file".equals(protocol)) {
                     String filePath = URLDecoder.decode(url.getFile(), "UTF-8");  
                     findAndAddClassesInPackageByFile(pack, filePath,recursive, classes);  
@@ -375,20 +376,21 @@ public class ClassScannerUtils {
                                                 packageName.length() + 1, name  
                                                         .length() - 6);  
                                         try {  
-                                        	
-                                        	Class<?> c = cl.loadClass(packageName + '.'  + className);
+                                        	String cn = packageName + '.'  + className;
+                                        	//logger.info("ClassName: " + packageName + '.'  + className);
+                                        	Class<?> c = cl.loadClass(cn);
                                         	if(c != null) {
-                                        		 //logger.info(cl.getClass().getSimpleName()+" : "+c.getSimpleName());
+                                        		 logger.info(cl.getClass().getSimpleName()+" : "+cn);
                                         		 classes.add(c);
                                         		 if(c.isAnnotationPresent(SO.class) || c.isAnnotationPresent(Service.class)) {
                                         			 try(InputStream is = jar.getInputStream(entry)){
                                       					byte[] data = new byte[(int)entry.getSize()];
                                       					is.read(data, 0, data.length);
-                                      					this.remoteClassData.put(c.getName(), data);
+                                      					remoteClassData.put(c.getName(), data);
                                       				}
                                         		 }
                                         	} else {
-                                        		logger.error("Class not found: " + packageName + '.'  + className);
+                                        		logger.error("Class not found: " +cn);
                                         	}
                                         } catch (ClassNotFoundException e) {  
                                         	logger.error("",e);

@@ -85,7 +85,7 @@ public class SqlSessionTemplate implements SqlSession {
 
   private  SqlSession sqlSessionProxy;
 
-  public void ready() {
+  public void jready() {
 	  this.executorType = sqlSessionFactory.getConfiguration().getDefaultExecutorType();
 	  this.sqlSessionProxy = (SqlSession) newProxyInstance(
 	        SqlSessionFactory.class.getClassLoader(),

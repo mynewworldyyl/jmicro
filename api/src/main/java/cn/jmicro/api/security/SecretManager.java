@@ -472,7 +472,7 @@ public class SecretManager {
 		return null;
 	}
 
-	public void ready() {
+	public void jready() {
 		String priFile = Config.getCommandParam("priKey");
 		String priStr = EncryptUtils.loadKeyContent(priFile,
 				PUBKEYS_PREFIX + "jmicro_" + getInsPrefix(Config.getInstanceName()) + "_pri.key");

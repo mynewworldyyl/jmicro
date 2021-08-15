@@ -36,8 +36,7 @@ export default {
 ,
 
   deleteResource: function (name) {
-      return rpc.callRpc(this.__actreq( 'addResource', [name, size]))
-    return rpc.callRpcWithParams(this.sn, this.ns, this.v, 'deleteResource', [name]);
+      return rpc.callRpc(this.__actreq( 'deleteResource', [name]))
   }
 ,
 

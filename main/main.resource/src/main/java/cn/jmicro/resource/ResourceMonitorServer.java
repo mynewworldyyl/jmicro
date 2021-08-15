@@ -118,7 +118,7 @@ public class ResourceMonitorServer{
 	@Inject
 	private PubSubManager pubsubMng;
 	
-	public void ready() {
+	public void jready() {
 		
 		logDir = System.getProperty("user.dir")+"/logs/resLog/";
 		File d = new File(logDir);

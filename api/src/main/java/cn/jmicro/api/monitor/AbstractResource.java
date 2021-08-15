@@ -23,7 +23,7 @@ public abstract class AbstractResource implements IResource {
 	//@Cfg(value="/enable")
 	private boolean enable = true;
 	
-	public void ready0() {
+	public void jready0() {
 		data.setBelongInsId(pi.getId());
 		data.setBelongInsName(pi.getInstanceName());
 		data.setResName(this.getResourceName());

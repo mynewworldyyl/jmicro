@@ -373,8 +373,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		}
 	};
 	
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		TimerTicker timer = TimerTicker.getDefault(30*1000L);
 		timer.addListener(TIMER_KEY, null, tickerAct);
 		//-2120102654

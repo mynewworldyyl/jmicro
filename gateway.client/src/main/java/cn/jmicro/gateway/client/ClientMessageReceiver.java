@@ -23,9 +23,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.NamedThreadFactory;
 import cn.jmicro.api.net.IMessageHandler;
@@ -50,10 +47,10 @@ public class ClientMessageReceiver implements IMessageReceiver{
 	public ClientMessageReceiver() {}
 	
 	public ClientMessageReceiver(boolean client) {
-		ready();
+		jready();
 	}
 	
-	public void ready(){
+	public void jready(){
 		ExecutorConfigJRso cfg = new ExecutorConfigJRso();
 		cfg.setMsCoreSize(3);
 		cfg.setMsMaxSize(10);

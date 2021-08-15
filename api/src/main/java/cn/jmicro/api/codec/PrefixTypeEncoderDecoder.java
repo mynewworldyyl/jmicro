@@ -42,7 +42,7 @@ public class PrefixTypeEncoderDecoder{
 	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
 	private int encodeBufferSize = 4092;
 	
-	public void ready() {
+	public void jready() {
 		dc = TypeCoderFactory.getIns().getDefaultCoder();
 	}
 	

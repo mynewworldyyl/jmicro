@@ -127,7 +127,7 @@ public class JMicroHttpServer implements IServer{
         }
     };
 	    
-	public void ready() {
+	public void jready() {
 		if(!enable) {
 			return;
 		}

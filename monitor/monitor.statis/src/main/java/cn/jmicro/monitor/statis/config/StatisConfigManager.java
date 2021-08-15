@@ -109,7 +109,7 @@ public class StatisConfigManager {
 		}
 	};
 	
-	public void ready() {
+	public void jready() {
 		logDir = System.getProperty("user.dir")+"/logs/most/";
 		File d = new File(logDir);
 		if(!d.exists()) {

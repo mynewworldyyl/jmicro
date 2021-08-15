@@ -582,7 +582,7 @@ class ClientServiceProxyManager {
 		
 		Class<?> cls = this.loadClass(instanceName, clientProxyClsName, cl);
 		if(cls == null) {
-			throw new CommonException(MC.MT_SERVICE_ITEM_NOT_FOUND,"Client holder class not found: "+clientProxyClsName);
+			throw new CommonException(MC.MT_SERVICE_ITEM_NOT_FOUND,"Remote class not found: "+clientProxyClsName+" ,InsName: "+instanceName);
 		}
 		//logger.info(ServiceItemJRso.class.getClassLoader().getClass().getName());
 		

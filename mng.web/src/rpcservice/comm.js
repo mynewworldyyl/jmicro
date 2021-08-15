@@ -18,7 +18,7 @@ export default  {
   },
 
   getDicts: function (keys,qry,forceReflesh){
-    let self = this;
+    //let self = this;
     return new Promise(function(reso,reje){
       let ds = {};
       let nokeys = [];

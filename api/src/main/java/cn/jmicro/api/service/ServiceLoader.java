@@ -124,7 +124,7 @@ public class ServiceLoader{
 	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
 	
-	public void ready0(){
+	public void jready0(){
 		
 		if(Config.isClientOnly() || !enable){
 			//纯客户端不需要导出服务,RPC端口没开放

@@ -76,7 +76,7 @@ public class ServiceReqMonitor  extends AbstractMonitorDataSubscriber implements
 	
 	private Map<String,ServiceCounter> counters =  new ConcurrentHashMap<>();
 	
-	public void ready() {
+	public void jready() {
 		String skey = this.skey("rpcStatisMonitor", "0.0.1");
 		registType(op,skey, MC.MT_TYPES_ARR);
 	}

@@ -54,7 +54,7 @@ public class ExecutorFactory {
     
 	public ExecutorFactory() {}
 	
-	public void ready() {
+	public void jready() {
 		if(!Config.isClientOnly()) {
 			TimerTicker.doInBaseTicker(10, "ExecutorInfoChecker", null, this::doCheck);
 		}

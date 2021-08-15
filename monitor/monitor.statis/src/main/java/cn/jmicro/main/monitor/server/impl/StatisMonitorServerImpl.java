@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.basket.BasketFactory;
@@ -80,8 +79,7 @@ public class StatisMonitorServerImpl implements IStatisMonitorServerJMSrv {
 	//@Cfg(value="/MonitorServerImpl/openDebug")
 	private boolean openDebug = false;
 	
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		
 		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsMaxSize(60);

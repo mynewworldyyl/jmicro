@@ -42,7 +42,7 @@
 <script>
 
     import rpc from "@/rpc/rpcbase"
-    import {Constants} from "@/rpc/message"
+    //import {Constants} from "@/rpc/message"
     import cons from "@/rpc/constants"
 
     import st from "../c"

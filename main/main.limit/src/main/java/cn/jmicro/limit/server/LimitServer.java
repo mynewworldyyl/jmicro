@@ -65,7 +65,7 @@ public class LimitServer implements IStatisDataSubscribeJMSrv {
 	
 	private StatisIndexJRso[] qpsStatisIndex = new StatisIndexJRso[1];
 	
-	public void ready() {
+	public void jready() {
 		qpsStatisIndex[0] = new StatisIndexJRso();
 		qpsStatisIndex[0].setName("qps");
 		qpsStatisIndex[0].setNums(new Short[]{MC.MT_SERVER_LIMIT_MESSAGE_PUSH});

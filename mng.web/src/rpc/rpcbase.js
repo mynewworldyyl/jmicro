@@ -9,7 +9,7 @@ import {Message,Constants} from "@/rpc/message"
 
 import transport from "@/rpc/transport"
 
-import socket from "@/rpc/socket";
+//import socket from "@/rpc/socket";
 
 //let idCache = {};
 let actListeners = {};
@@ -201,10 +201,11 @@ export default {
         req.method = 'bestHost';
         req.args = ["nettyhttp"];
 
-        this.callRpc(req)
+        /*this.callRpc(req)
             .then((data)=>{
                 if(data && data.length > 0) {
                     //let jo = jm.utils.parseJson(data);
+                    console.log("Server IP List: "+data)
                     let arr = data.split('#');
                     if(arr[0] && arr[1] && ( arr[0] != config.ip ||  arr[1] != config.port )) {
                         config.ip = arr[0];
@@ -216,7 +217,7 @@ export default {
                 }
             }).catch((err)=>{
             throw err;
-        })
+        })*/
     },
 
     createMsg:function(type,respType) {

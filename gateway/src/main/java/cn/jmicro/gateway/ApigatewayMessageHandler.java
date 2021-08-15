@@ -87,7 +87,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 	@Cfg(GatewayConstant.API_MODEL)
 	private boolean isPre = GatewayConstant.API_MODEL_PRE;
 	
-	public void ready() {}
+	public void jready() {}
 	
 	@Override
 	public Byte type() {

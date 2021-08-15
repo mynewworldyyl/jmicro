@@ -84,7 +84,7 @@ public class NettySocketServer implements IServer {
 	private Set<IServerListener> serverListener = new HashSet<>();
 	
 	//@Override
-	public void ready() {
+	public void jready() {
 		if(Config.isClientOnly() || !this.enable) {
 			logger.info("NettySocketServer is disable");
 			return;

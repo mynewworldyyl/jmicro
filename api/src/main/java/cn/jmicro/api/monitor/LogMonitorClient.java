@@ -125,8 +125,7 @@ public class LogMonitorClient {
 		
 	}
 
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		
 		logger.info("Init object :" +this.hashCode());
 		

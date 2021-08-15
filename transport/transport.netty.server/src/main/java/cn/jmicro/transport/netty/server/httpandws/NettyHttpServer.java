@@ -29,7 +29,6 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Server;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.common.CommonException;
@@ -73,6 +72,9 @@ public class NettyHttpServer implements IServer{
 	@Cfg(value="/nettyHttpPort",required=false,defGlobal=false)
 	private String port="9090";
 	
+	@Cfg(value = "/httpsEnable")
+	private boolean httpsEnable = false;
+	
 	//@Cfg(value = "/"+Constants.ExportHttpIP,required=false,defGlobal=false)
 	private String listenHttpIP = null;
 	
@@ -85,7 +87,7 @@ public class NettyHttpServer implements IServer{
 	@Inject
 	private IObjectFactory of;
 	
-	public void ready() {
+	public void jready() {
 		if(Config.isClientOnly() || !this.startHttp) {
 			LOG.info("NettyHttpServer is disable");
 			return;
@@ -131,8 +133,17 @@ public class NettyHttpServer implements IServer{
             .handler(new LoggingHandler(LogLevel.INFO))
             .childHandler(initializer);
              
-             ChannelFuture channelFuture = server.bind(address).sync();
-             //channelFuture.channel().closeFuture().sync();
+        	ChannelFuture channelFuture =  null;
+        	 if(httpsEnable) {
+        		 channelFuture = server.bind(address);
+        		 if(p != 80) {//同时开启80端口，后面将80端口请求转发到https
+        			 server.bind(new InetSocketAddress(listenHttpIP,80)).sync();
+        		 }
+        	 }else {
+        		channelFuture = server.bind(address);
+                 //channelFuture.channel().closeFuture().sync();
+        	 }
+        	 channelFuture.sync();
              address = (InetSocketAddress)channelFuture.channel().localAddress();
 		} catch (InterruptedException e) {
 			LOG.error("",e);
@@ -177,4 +188,7 @@ public class NettyHttpServer implements IServer{
 		this.port = port;
 	}
 
+	
+
+	    
 }

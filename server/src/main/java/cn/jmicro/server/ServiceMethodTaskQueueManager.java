@@ -60,7 +60,7 @@ public class ServiceMethodTaskQueueManager implements ILimitDataJMSrv{
 	@Inject
 	private ServiceManager srvManager;
 	
-	public void ready() {
+	public void jready() {
 		/*
 		 srvManager.addListener((type,item)->{
 			if(type == IListener.ADD) {

@@ -35,7 +35,7 @@ public class ProcessInstanceManager {
 	@Inject
 	private ProcessInfoJRso pi;
 	
-	public void ready() {
+	public void jready() {
 		instanceListener = new RaftNodeDataListener<>(op,ChoyConstants.INS_ROOT,ProcessInfoJRso.class,true);
 		instanceListener.addListener((type,node,pi)->{
 			notifyListener(type,pi);

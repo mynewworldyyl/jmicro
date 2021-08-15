@@ -69,7 +69,7 @@ public class LinkMng implements IMessageHandler {
     	private int extrFlag;
     }
     
-    public void ready() {
+    public void jready() {
     	TimerTicker.doInBaseTicker(5, "", "", (key,att)->{
     		doCheck();
     	});

@@ -1,20 +1,19 @@
 package cn.jmicro.transport.netty.server.httpandws;
 
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 import java.nio.ByteBuffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
-import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
-import cn.jmicro.api.net.Message;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.transport.netty.server.NettyServerSession;
@@ -22,8 +21,14 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.AttributeKey;
 
 @Component(lazy=false,side=Constants.SIDE_PROVIDER)
@@ -56,6 +61,15 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	@Inject
 	private StaticResourceHttpHandler resourceHandler;
 	
+	@Cfg(value = "/httpsEnable")
+	private boolean httpsEnable = false;
+	
+	@Cfg(value="/nettyHttpPort",required=false,defGlobal=false)
+	private int port = 0;
+	
+	@Cfg(value="/exportHttpIP",required=false,defGlobal=false)
+	private String host = "";
+	
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
@@ -64,9 +78,18 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	}
     	//logger.debug("channelRead:" + msg.toString());
     	
+    	NettyServerSession session = ctx.attr(sessionKey).get();
+    	
     	if(msg instanceof FullHttpRequest){
     		FullHttpRequest req = (FullHttpRequest)msg;
-    		NettyServerSession session = ctx.attr(sessionKey).get();
+    		if(httpsEnable) {
+        		if(session.getLocalAddress().getPort() == 80) {
+        			//httpt重定向到https
+        			doRedirect2Https(session,ctx,req);
+        			return;
+        		}
+    		}
+    		
     		//cors(req,session);
     		if(resourceHandler.canhandle(req)){
     			//全部GET请求转到资源控制器上面
@@ -103,6 +126,16 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     	}
     }
     
+	private void doRedirect2Https(NettyServerSession session,ChannelHandlerContext ctx, FullHttpRequest req) {
+		FullHttpResponse response =  new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.FOUND);
+		HttpHeaders hs = response.headers();
+		String url = req.uri();
+		hs.set(HttpHeaderNames.LOCATION, "https://"+this.host+":"+this.port+url);
+		NettyServerSession.cors(hs);
+		hs.set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+		ctx.writeAndFlush(response);
+	}
+
 	@Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         ctx.flush();

@@ -4,7 +4,7 @@ import {Message,Constants} from "@/rpc/message";
 import ApiResponse from "@/rpc/response"
 import ps from "@/rpc/pubsub"
 
-let httpContext = 'http://' + config.ip + ':' + config.port +'/'+ config.httpContext;
+let httpContext = config.protocol + '://' + config.ip + ':' + config.port + '/' + config.httpContext;
 
 export default {
 

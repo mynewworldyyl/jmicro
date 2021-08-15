@@ -60,7 +60,7 @@ public class MessageRouteTable {
 		}
 	};
 	
-	public void ready() {
+	public void jready() {
 		configListener = new RaftNodeDataListener<>(op,ApiGatewayPostFactory.TABLE_ROOT,
 				MessageRouteRow.class,false);
 		configListener.addListener(lis);

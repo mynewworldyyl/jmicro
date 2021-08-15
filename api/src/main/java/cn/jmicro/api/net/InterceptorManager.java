@@ -26,43 +26,43 @@ public class InterceptorManager {
 	
 	static final Logger logger = LoggerFactory.getLogger(InterceptorManager.class);
 	
-	private volatile Map<String,IRequestHandler> providerHandlers = new ConcurrentHashMap<>();
+	private volatile Map<Integer,IRequestHandler> providerHandlers = new ConcurrentHashMap<>();
 	
-	private volatile Map<String,IRequestHandler> consumerHandlers = new ConcurrentHashMap<>();
+	private volatile Map<Integer,IRequestHandler> consumerHandlers = new ConcurrentHashMap<>();
 	
     public IPromise<Object> handleRequest(RpcRequestJRso req) {
 		
     	boolean callSideProvider = JMicroContext.isCallSideService();
     	
-    	Map<String,IRequestHandler> hs = this.consumerHandlers;
+    	Map<Integer,IRequestHandler> hs = this.consumerHandlers;
     	String handlerName = Constants.DEFAULT_CLIENT_HANDLER;
     	if(callSideProvider) {
     		hs = this.providerHandlers;
     		handlerName = Constants.DEFAULT_HANDLER;
     	}
     	
-    	IRequestHandler handler = null;
-    	
-    	String key = reqMethodKey(req);
+    	Integer key = reqMethodKey(req);
     	
     	if( hs.containsKey(key) ){
-    		handler = hs.get(key);
-    	} else {
-    		String handlerKey = JMicroContext.get().getString(handlerName,handlerName);
-    		handler = EnterMain.getObjectFactory().getByName(handlerKey);
-    		if( handler == null ){
-    			handler = EnterMain.getObjectFactory().getByName(handlerName);
-    		}
-    		if( handler == null ){
-    			throw new CommonException("Interceptor ["+handlerKey + " not found]");
-    		}
-    		hs.put(key, handler);
+    		return hs.get(key).onRequest(req);
     	}
+
+    	IRequestHandler handler = null;
+		String handlerKey = JMicroContext.get().getString(handlerName,handlerName);
+		handler = EnterMain.getObjectFactory().getByName(handlerKey);
+		if( handler == null ){
+			handler = EnterMain.getObjectFactory().getByName(handlerName);
+		}
+		
+		if( handler == null ){
+			throw new CommonException("Interceptor ["+handlerKey + " not found]");
+		}
 		
 		IRequestHandler firstHandler = buildHanderChain(handler);
 		if(firstHandler == null) {
 			throw new CommonException("Handler is not found");
 		}
+		hs.put(key, firstHandler);
 		return firstHandler.onRequest(req);
 	}
     
@@ -189,8 +189,10 @@ public class InterceptorManager {
 		return coll;
 	}
 
-	private String reqMethodKey(RpcRequestJRso req){
-		StringBuffer sb = new StringBuffer(req.getServiceName());
+	private Integer reqMethodKey(RpcRequestJRso req){
+		return req.getSm().getKey().getSnvHash();
+		
+		/*StringBuffer sb = new StringBuffer(req.getServiceName());
 		sb.append(req.getNamespace()).append(req.getVersion())
 		.append(req.getMethod());
 		
@@ -199,5 +201,6 @@ public class InterceptorManager {
 		}
 		
 		return sb.toString();
+		*/
 	}
 }

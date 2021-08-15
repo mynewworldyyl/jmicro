@@ -22,7 +22,7 @@ public class DataClearWorker {
 	@Inject
 	private ProfileManager pm;
 	
-	public void ready() {
+	public void jready() {
 		TimerTicker.doInBaseTicker(30, "pubsub-DataClearWorker", null, (key,att)->{
 			clearLogData();
 			clearStatisData();

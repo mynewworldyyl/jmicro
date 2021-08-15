@@ -183,7 +183,7 @@ public class RpcClassLoaderHelper {
     
     public RpcClassLoaderHelper(){}
     
-    public void ready() {
+    public void jready() {
     	
     	IClassloaderRpcJMSrv cl = of.getByName("cn.jmicro.choreography.respository.ClassloaderRpcService");
     	if(cl != null) {

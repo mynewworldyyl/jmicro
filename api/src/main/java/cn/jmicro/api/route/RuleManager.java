@@ -150,7 +150,7 @@ public class RuleManager {
 		return set;
 	}
 	
-	public void ready() {
+	public void jready() {
 		rndl = new RaftNodeDataListener<>(this.dataOperator,RULE_DIR,RouteRuleJRso.class,false);
     	rndl.addListener(ruleInfoListener);
 	}

@@ -63,7 +63,7 @@ public class TransationServiceImpl implements ITransationServiceJMSrv{
 	
 	private Object syno = new Object();
 	
-	public void ready() {
+	public void jready() {
 		new Thread(this::check).start();
 		if(!resourceServices.isEmpty()) {
 			for(ITransactionResourceJMSrv$JMAsyncClient r : this.resourceServices) {

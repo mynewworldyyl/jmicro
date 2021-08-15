@@ -44,7 +44,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	@Inject
 	private ICache cache;
 	
-	public void ready() {
+	public void jready() {
 		initAccount();
 	}
 	

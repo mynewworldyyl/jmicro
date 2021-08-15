@@ -115,8 +115,7 @@ public class BreakerManager implements IStatisDataSubscribeJMSrv{
 	
 	public void init(){}
 	
-	@JMethod("ready")
-	public void ready(){
+	public void jready(){
 		doTestImpl = this::doTestService;
 		//breakerChecker = this::breakerChecker;
 		

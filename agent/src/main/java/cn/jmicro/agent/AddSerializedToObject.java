@@ -1,25 +1,22 @@
 package cn.jmicro.agent;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 
-import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.codec.ISerializeObject;
+/*import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ISerializeObject;
 import cn.jmicro.api.codec.TypeCoderFactory;
 import cn.jmicro.api.codec.typecoder.TypeCoder;
 import cn.jmicro.common.JmicroClassPool;
-import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.common.util.StringUtils;*/
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtField;
@@ -37,11 +34,14 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		if(classBeingRedefined == null || !classBeingRedefined.isAnnotationPresent(SO.class)) {
 			return null;
 		}*/
-		/*if(className.startsWith("cn.jmicro.api.registry.ServiceItem")) {
-			System.out.println(className);
-		}*/
+		
+		//System.out.println(className);
+		if(className.endsWith("RpcRequestJRso")) {
+			System.out.println("AddSerializedToObject: " + className);
+		}
+		
 		try {
-			if(RpcClassLoader.isSOClass(className)) {
+			if(isSOClass(className)) {
 				return getSerializeData(classfileBuffer, classBeingRedefined,className);
 			}
 			return null;
@@ -50,8 +50,6 @@ public class AddSerializedToObject implements ClassFileTransformer {
 			return null;
 		}
 	}
-
-
 
 	//public final Logger logger = LoggerFactory.getLogger(SerializeProxyFactory.class);
 	
@@ -63,17 +61,17 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		 //System.out.println("AddSerializedToObject agent: "+cl.getClass().getName());
 		 
 		 JmicroClassPool cp = new JmicroClassPool(true);
-		 if(cl != null && (cl instanceof RpcClassLoader)) {
-			 cp.appendClassPath(new LoaderClassPath(cl));
-		 }
+		 cp.appendClassPath(new LoaderClassPath(cl));
+		/* if(cl != null && cl.getClass().getName().equals("cn.jmicro.api.classloader.RpcClassLoader")) {
+			
+		 }*/
 		
 		 CtClass ct = cp.makeClass(new ByteArrayInputStream(classData));
-		 if(!ct.hasAnnotation(SO.class)) {
+		 /*if(!ct.hasAnnotation(SO.class)) {
 			 return null;
-		 }
+		 }*/
 		 
 		 //System.out.println(className);
-		 
 		 //ct.addMethod(CtMethod.make(sameCollectionElts(), ct));
 		 
 		 ct.addInterface(cp.get(ISerializeObject.class.getName()));
@@ -168,7 +166,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 				//sb.append(" byte preCode"+i+" = in.readByte();\n");
 				sb.append(" if(in.readByte() == cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL) { "+varName+"=null; } else { \n");
 				
-				if(fieldDeclareType.hasAnnotation(SO.class)) {
+				if(isSOClass(fieldDeclareType.getName())) {
 					sb.append(varName).append(" = new ").append(f.getType().getName()).append("();\n");
 					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)"+varName+").decode(__buffer);\n }");
 				} else {
@@ -272,7 +270,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 			}else {
 				sb.append("if(__val"+i+" == null){  out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL); \n} \n") ;
 				sb.append(" else { out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_PROXY); \n");
-				if(fieldDeclareType.hasAnnotation(SO.class)) {
+				if(isSOClass(fieldDeclareType.getName())) {
 					sb.append("java.lang.Object __o"+i).append("=__val"+i).append("; \n");
 					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)__o"+i+").encode(__buffer);\n }");
 				} else {
@@ -303,7 +301,15 @@ public class AddSerializedToObject implements ClassFileTransformer {
 	
 	}
 	
-	public static Class<?> loadClazz(String clsName) {
+	private static boolean isSOClass(String className) {
+		return className != null && className.endsWith("JRso");
+	}
+	
+	private static boolean isEmpty(String str) {
+		return str == null || str.length() == 0;
+	}
+	
+	/*public static Class<?> loadClazz(String clsName) {
 		if(clsName == null) {
 			throw new NullPointerException();
 		}
@@ -321,18 +327,18 @@ public class AddSerializedToObject implements ClassFileTransformer {
 			cls =  TypeCoder.loadClassFromCache(clsName);
 		}
 		return cls;
-	}
+	}*/
 	
 	private static String getGenericType(String gs) {
 		//Ljava/util/Set<Lorg/jmicro/api/test/Person;>
-		if(StringUtils.isEmpty(gs) || !gs.contains("<L") || !gs.endsWith(";>;")) {
+		if(isEmpty(gs) || ! gs.contains("<L") || !gs.endsWith(";>;")) {
 			return null;
 		}
 		
 		String clsName = gs.substring(gs.indexOf("<L")+2);
 		clsName = clsName.substring(0,clsName.length()-3);
 		
-		if(StringUtils.isEmpty(gs)) {
+		if(isEmpty(gs)) {
 			return null;
 		}
 
@@ -344,7 +350,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 	
 	private static String[] getMapGenericType(String gs) {
 		//Ljava/util/Map<Ljava/lang/String;Lorg/jmicro/api/test/Person;>;
-		if(StringUtils.isEmpty(gs) || !gs.contains("<L") || !gs.endsWith(";>;")) {
+		if(isEmpty(gs) || !gs.contains("<L") || !gs.endsWith(";>;")) {
 			return null;
 		}
 		
@@ -434,7 +440,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		return same;
 	}
 	
-	public static boolean collHasNullElement(Collection coll) {
+	/*public static boolean collHasNullElement(Collection coll) {
 		Iterator ite = coll.iterator();
 		while(ite.hasNext()) {
 			if(ite.next() == null) {
@@ -442,110 +448,15 @@ public class AddSerializedToObject implements ClassFileTransformer {
 			}
 		}
 		return false;
-	}
+	}*/
 	
-	public static boolean seriaFinalClass(Object arrays) {
+	/*public static boolean seriaFinalClass(Object arrays) {
 		return TypeCoder.seriaFinalClass(arrays);
-	}
+	}*/
 	
-	public static boolean hasNullElement(Object arrays) {
+	/*public static boolean hasNullElement(Object arrays) {
 		return TypeCoder.hasNullElement(arrays);
-	}
+	}*/
 
-
-	public static void encodeListElement(DataOutput buffer, Object val) throws IOException {
-		//val impossible to be null
-		Class valCls = val.getClass();
-
-		if(valCls == byte.class || valCls == Byte.TYPE || valCls == Byte.class ) {
-			buffer.writeByte((byte)val);
-			return;
-		}else if(valCls == short.class || valCls == Short.TYPE || valCls == Short.class ) {
-			buffer.writeShort((short)val);
-			return;
-		}else if(valCls == int.class || valCls == Integer.TYPE || valCls == Integer.class ) {
-			buffer.writeInt((int)val);
-			return;
-		}else if(valCls == long.class || valCls == Long.TYPE || valCls == Long.class ) {
-			buffer.writeLong((long)val);
-			return;
-		}else if(valCls == float.class || valCls == Float.TYPE || valCls == Float.class ) {
-			buffer.writeFloat((float)val);
-			return;
-		}else if(valCls == double.class || valCls == Double.TYPE || valCls == Double.class ) {
-			//buffer.write(Decoder.PREFIX_TYPE_DOUBLE);
-			buffer.writeDouble((double)val);
-			return;
-		}else if(valCls == boolean.class || valCls == Boolean.TYPE || valCls == Boolean.class ) {
-			buffer.writeBoolean((boolean)val);
-			return;
-		}else if(valCls == char.class || valCls == Character.TYPE || valCls == Character.class ) {
-			buffer.writeChar((char)val);
-			return;
-		}else if(valCls == String.class ) {
-			buffer.writeUTF((String)val);
-			return;
-		}else if(valCls == Date.class ) {
-			buffer.writeLong(((Date)val).getTime());
-			return;
-		}
-		
-		if(val != null && val instanceof ISerializeObject) {
-			//System.out.println("Use Instance "+valCls.getName());
-			/*buffer.write(Decoder.PREFIX_TYPE_PROXY);
-			short code = TypeCoderFactory.getIns().getCodeByClass(valCls);
-			buffer.writeShort(code);*/
-			((ISerializeObject)val).encode(buffer);
-			return;
-		} else {
-			TypeCoderFactory.getIns().getDefaultCoder().encode(buffer, val, null, null);
-		}
-	
-	}
-
-	public static Object decodeListElement(DataInput buffer, Class valCls) throws IOException {
-		//val impossible to be null
-
-		if(valCls == byte.class || valCls == Byte.TYPE || valCls == Byte.class ) {
-			return buffer.readByte();
-		}else if(valCls == short.class || valCls == Short.TYPE || valCls == Short.class ) {
-			return buffer.readShort();
-		}else if(valCls == int.class || valCls == Integer.TYPE || valCls == Integer.class ) {
-			return buffer.readInt();
-		}else if(valCls == long.class || valCls == Long.TYPE || valCls == Long.class ) {
-			return buffer.readLong();
-		}else if(valCls == float.class || valCls == Float.TYPE || valCls == Float.class ) {
-			return buffer.readFloat();
-		}else if(valCls == double.class || valCls == Double.TYPE || valCls == Double.class ) {
-			return buffer.readDouble();
-		}else if(valCls == boolean.class || valCls == Boolean.TYPE || valCls == Boolean.class ) {
-			return buffer.readBoolean();
-		}else if(valCls == char.class || valCls == Character.TYPE || valCls == Character.class ) {
-			return buffer.readChar();
-		}else if(valCls == String.class ) {
-			return buffer.readUTF();
-		}else if(valCls == Date.class ) {
-			return buffer.readLong();
-		}
-		
-		if(ISerializeObject.class.isAssignableFrom(valCls)) {
-			//System.out.println("Use Instance "+valCls.getName());
-			/*buffer.write(Decoder.PREFIX_TYPE_PROXY);
-			short code = TypeCoderFactory.getIns().getCodeByClass(valCls);
-			buffer.writeShort(code);*/
-			Object val;
-			try {
-				val = valCls.newInstance();
-				((ISerializeObject)val).decode(buffer);
-				return val;
-			} catch (InstantiationException | IllegalAccessException e) {
-				e.printStackTrace();
-				return null;
-			}
-		} else {
-			return TypeCoderFactory.getIns().getDefaultCoder().decode(buffer, valCls, null);
-		}
-	
-	}
 
 }

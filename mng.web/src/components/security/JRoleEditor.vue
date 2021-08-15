@@ -329,7 +329,7 @@
                         .then((resp)=>{
                             if(resp.code == 0){
                                 if(resp.total == 0) {
-
+                                    console.log("success");
                                 }else {
                                     self.roleList = resp.data;
                                     self.totalNum = resp.total;

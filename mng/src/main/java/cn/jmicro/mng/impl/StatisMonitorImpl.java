@@ -78,8 +78,7 @@ public class StatisMonitorImpl implements IStatisMonitorJMSrv {
 	
 	private String[] labels = null;
 	
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		types = new Short[MC.MONITOR_VAL_2_KEY.size()];
 		labels = new String[MC.MONITOR_VAL_2_KEY.size()];
 		int i = 0;

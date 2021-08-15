@@ -85,18 +85,19 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 
 	public void postProcessBeanFactory(ApplicationContext beanFactory) throws BeansException {
 		if(jmicroComponentFields.isEmpty()) return;
-		
+		IObjectFactory of = beanFactory.getBean(IObjectFactory.class);
 		IObjectSource jmicroSource = beanFactory.getBean(IObjectSource.class);
+		
 		for(FieldComponentHolder fc : jmicroComponentFields) {
 			Object com = null;
 			
-			 if(fc.bean.getClass().getName().contains("RigionDataTransfer")) {
+			 /*if(fc.bean.getClass().getName().contains("RigionDataTransfer")) {
 				 log.info("InjectJMicroComponentHandler => " + fc.bean.getClass().getName());
-			 }
+			 }*/
 			 
 			if(fc.ann.remoteService()) {
 				//jmicroSource.get
-				IObjectFactory of = beanFactory.getBean(IObjectFactory.class);
+				//IObjectFactory of = beanFactory.getBean(IObjectFactory.class);
 				com = of.getRemoteServie(fc.f.getType().getName(), fc.ann.namespace(), fc.ann.version(), null);
 			}else {
 				if(Utils.isEmpty(fc.ann.value())) {

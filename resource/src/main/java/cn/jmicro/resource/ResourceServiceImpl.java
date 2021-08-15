@@ -19,7 +19,7 @@ import cn.jmicro.api.monitor.ResourceDataJRso;
 @Component
 @Service(version="0.0.1", debugMode=0,
 monitorEnable=0, logLevel=MC.LOG_WARN, retryCnt=0, showFront=false, external=true)
-public class ResourceServiceIml implements IResourceServiceJMSrv {
+public class ResourceServiceImpl implements IResourceServiceJMSrv {
 
 	@Inject
 	private Set<IResource> resources = new HashSet<>();
@@ -57,6 +57,6 @@ public class ResourceServiceIml implements IResourceServiceJMSrv {
 		return rs;
 	}
 	
-	public void ready() {}
+	public void jready() {}
 	
 }

@@ -99,7 +99,7 @@ public class RedisCacheImpl implements ICache {
 	
 	private String selfPrefix;
 	
-	public void ready() {
+	public void jready() {
 		adminPrefix = "/"+ Config.getAdminClientId() + "/";
 		selfPrefix = "/"+ Config.getClientId() + "/";
 	}

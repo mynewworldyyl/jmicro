@@ -64,7 +64,7 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
 	@Cfg(Constants.EXECUTOR_RECEIVE_KEY)
 	private String receiveKey = null;
 	
-	public void ready() {
+	public void jready() {
 		if(Utils.isEmpty(this.receiveKey)) {
 			this.receiveKey = "serverReceiver";
 		}

@@ -116,7 +116,7 @@ public class PubSubManager {
 	private Object runLocker = new Object();
 	private Boolean isRunning = false;
 	
-	public void ready() {
+	public void jready() {
 		//logger.info("Init object :" +this.hashCode());
 		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsMaxSize(60);

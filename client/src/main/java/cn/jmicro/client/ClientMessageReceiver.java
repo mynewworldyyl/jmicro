@@ -101,7 +101,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				,cfg.getRejectedExecutionHandler());
 	}
 	
-	public void ready(){
+	public void jready(){
 		setGatewayMessageHandler();
 		ExecutorConfigJRso config = new ExecutorConfigJRso();
 		config.setMsCoreSize(5);

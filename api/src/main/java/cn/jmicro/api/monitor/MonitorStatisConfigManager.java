@@ -91,7 +91,7 @@ public class MonitorStatisConfigManager {
 		}
 	};
 	
-	public void ready() {
+	public void jready() {
 		//op.addChildrenListener(STATIS_WARNING_ROOT, lis);
 		if(!op.exist(StatisConfigJRso.STATIS_CONFIG_ROOT)) {
 			op.createNodeOrSetData(StatisConfigJRso.STATIS_CONFIG_ROOT, "", IDataOperator.PERSISTENT);

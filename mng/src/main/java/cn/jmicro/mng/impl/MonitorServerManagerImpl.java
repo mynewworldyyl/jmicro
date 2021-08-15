@@ -44,7 +44,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 	@Inject
 	private StatisMonitorClient monitorManager;
 	
-	public void ready() {
+	public void jready() {
 	   /*typeLabels = new String[MonitorServerStatus.TYPES.length];
 		for(int i = 0; i < MonitorServerStatus.TYPES.length; i++) {
 			typeLabels[i] = MonitorConstant.MONITOR_VAL_2_KEY.get(MonitorServerStatus.TYPES[i]);

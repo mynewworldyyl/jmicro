@@ -8,6 +8,7 @@ import java.util.Set;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
+import cn.jmicro.common.Constants;
 
 @Component
 public class I18NManager {
@@ -17,8 +18,7 @@ public class I18NManager {
 	
 	private Map<String,Map<String,String>> lang2Values = new HashMap<>();
 	
-	@JMethod("ready")
-	public void ready() {
+	public void jready() {
 		if(i18ns.isEmpty()) {
 			return;
 		}
@@ -34,7 +34,7 @@ public class I18NManager {
 	
 	public String value(String lang,String key){
 		if(this.lang2Values.isEmpty()) {
-			this.ready();
+			this.jready();
 		}
 		if(this.lang2Values.containsKey(lang)) {
 			return lang2Values.get(lang).get(key);
@@ -44,7 +44,7 @@ public class I18NManager {
 	
 	public Map<String,String> values(String lang){
 		if(this.lang2Values.isEmpty()) {
-			this.ready();
+			this.jready();
 		}
 		return lang2Values.get(lang);
 	}

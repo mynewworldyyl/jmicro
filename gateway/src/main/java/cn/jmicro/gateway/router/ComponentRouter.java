@@ -28,7 +28,7 @@ public class ComponentRouter implements IRoute {
 	@Inject
 	private Map<String,IRoute> selectors = new HashMap<>();
 	
-	public void ready() {
+	public void jready() {
 		//把自己从列表中删除
 		selectors.remove("apigatewayRouter");
 	}

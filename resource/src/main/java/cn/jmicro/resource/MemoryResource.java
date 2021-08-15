@@ -37,8 +37,8 @@ public class MemoryResource extends AbstractResource  implements IResource {
 	}
 
 	@SuppressWarnings("restriction")
-	public void ready() {
-		super.ready0();
+	public void jready() {
+		super.jready0();
 		
 		osBean = ManagementFactory.getPlatformMXBean(com.sun.management.OperatingSystemMXBean.class);
 		mngBean = ManagementFactory.getPlatformMXBean(java.lang.management.OperatingSystemMXBean.class);

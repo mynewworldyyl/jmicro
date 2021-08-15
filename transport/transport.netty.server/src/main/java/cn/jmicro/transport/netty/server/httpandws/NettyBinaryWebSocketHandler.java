@@ -46,7 +46,7 @@ import io.netty.util.AttributeKey;
 @Sharable
 public class NettyBinaryWebSocketHandler extends SimpleChannelInboundHandler<BinaryWebSocketFrame>{
 	
-	static final Logger logger = LoggerFactory.getLogger(NettyServerSession.class);
+	static final Logger logger = LoggerFactory.getLogger(NettyBinaryWebSocketHandler.class);
 	
 	private static final AttributeKey<NettyServerSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_BIN_SESSION_KEY);
@@ -118,7 +118,12 @@ public class NettyBinaryWebSocketHandler extends SimpleChannelInboundHandler<Bin
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    	logger.error("exceptionCaught",cause);
+    	if(cause.getMessage().contains("certificate_unknown")) {
+    		logger.error("exceptionCaught",cause.getMessage());
+    	}else {
+    		logger.error("exceptionCaught",cause);
+    	}
+    	
     	ISession s = ctx.channel().attr(sessionKey).get();
     	ctx.channel().attr(sessionKey).set(null);
     	if( s != null) {

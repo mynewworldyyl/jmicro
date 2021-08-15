@@ -91,7 +91,7 @@ public class MonitorAndService2TypeRelationshipManager {
 	};
 	
 	
-	public void ready() {
+	public void jready() {
 		op.addChildrenListener(Config.getRaftBasePath(Config.MonitorTypesDir), monitorTypeChildrenListener);
 		op.addChildrenListener( Config.getRaftBasePath(Config.MonitorServiceMethodTypesDir), srvChildrenListener);
 		registry.addServiceNameListener("cn.jmicro.api.monitor.IMonitorDataSubscriber", monigotDataSubscribeListener);

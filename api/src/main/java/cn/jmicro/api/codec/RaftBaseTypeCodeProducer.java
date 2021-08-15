@@ -50,7 +50,7 @@ public class RaftBaseTypeCodeProducer implements ITypeCodeProducer {
 		}
 	};
 	
-	public void ready() {
+	public void jready() {
 		typeProducer = cfg.getString(Constants.TYPE_CODE_PRODUCER, null);
 		if(StringUtils.isEmpty(typeProducer) || "raftBaseTypeCodeProducer".equals(typeProducer)) {
 			enableWork = true;

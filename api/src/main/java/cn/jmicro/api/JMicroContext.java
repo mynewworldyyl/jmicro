@@ -115,7 +115,7 @@ public class JMicroContext  {
 	
 	private JMicroContext() {}
 	
-	public static void ready0(LogMonitorClient loo,StatisMonitorClient moo) {
+	public static void jready0(LogMonitorClient loo,StatisMonitorClient moo) {
 		if(isReady) {
 			return;
 		}

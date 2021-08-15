@@ -86,7 +86,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 			FullHttpResponse response =  new DefaultFullHttpResponse(HTTP_1_1, OK,bbf);
 			response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.BINARY);
 			response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-			cors(response);
+			cors(response.headers());
 			/* 
 			if(HttpHeaders.isKeepAlive(request)) {
 				response.headers().set(CONNECTION, Values.KEEP_ALIVE);
@@ -126,8 +126,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 		}
 	}
 	
-	private void cors(FullHttpResponse response) {
-		 HttpHeaders h = response.headers();
+	public static void cors(HttpHeaders h) {
 		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS, "POST,GET");
 		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "x-requested-with,content-type");

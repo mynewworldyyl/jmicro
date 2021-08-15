@@ -29,7 +29,7 @@ public class MCTypesManager {
 	
 	private boolean enable = false;
 	
-	public void ready() {
+	public void jready() {
 		if(!op.exist(Config.getRaftBasePath(Config.CurCustomTypeCodeDir))) {
 			op.createNodeOrSetData(Config.getRaftBasePath(Config.CurCustomTypeCodeDir), MC.KEEP_MAX_VAL+"", 
 					IDataOperator.PERSISTENT);

@@ -20,7 +20,7 @@ public class ComponentSelector implements ISelector {
 	
 	private Random r = new Random();
 	
-	public void ready() {
+	public void jready() {
 		selectors.remove("defBalance");
 	}
 	

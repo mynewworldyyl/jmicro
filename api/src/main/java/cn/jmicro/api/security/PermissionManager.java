@@ -138,7 +138,7 @@ public class PermissionManager {
 		return isCurDefAdmin(Constants.FOR_TYPE_USER);
 	}
 	
-	public void ready() {
+	public void jready() {
 		sm.addListener((type,siKey,item)->{
 			if(type == IServiceListener.ADD) {
 				//serviceAdd(si);

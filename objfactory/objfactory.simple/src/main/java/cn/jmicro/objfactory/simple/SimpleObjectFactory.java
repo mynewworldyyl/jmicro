@@ -212,7 +212,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		if(!this.osSet.isEmpty() && !cls.getName().startsWith(Constants.SYSTEM_PCK_NAME_PREFIXE)) {
+		if(!this.osSet.isEmpty() && !cls.getName().startsWith("cn.jmicro.api")) {
 			for(IObjectSource os: osSet) {
 				Object co = os.get(cls);
 				if(co != null) return (T)co;//外部数据源直接返回
@@ -340,7 +340,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		return obj;
 	}
 	
-	private void cacheObj(Class<?> cls,Object obj,String componentName){
+	private Object cacheObj(Class<?> cls,Object obj,String componentName){
 		boolean success = false;
 		cls = ProxyObject.getTargetCls(cls);
 		if(!objs.containsKey(cls)){
@@ -374,8 +374,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}
 		
 		if(!success) {
-			throw new CommonException("class["+cls.getName()+"] instance exist");
+			logger.warn("class["+cls.getName()+"] instance exist");
+			//throw new CommonException("class["+cls.getName()+"] instance exist");
 		}
+		return objs.get(cls);
 	}
 	
 	private boolean canCreate(Class<?> cls) {
@@ -662,7 +664,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			loadAccountInfo(dataOperator,cfg);
 			
 			ServiceLoader sl = this.get(ServiceLoader.class, false);
-			sl.ready0();
+			sl.jready0();
 			
 			stage = INIT_FINISH;
 			
@@ -709,7 +711,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		setExitListener(dataOperator);
 		
 		if(!Utils.isEmpty(tag)) {
-			VoterPerson lp = new VoterPerson(this,tag);
+			VoterPerson lp = new VoterPerson(dataOperator,tag);
 			this.cacheObj(VoterPerson.class, lp,null);
 			logger.info("Wait for master!");
 			this.masterSlaveListen((type,isMaster)->{
@@ -1174,10 +1176,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 			 //obj = createServiceObject(obj,false);
 			 //doAfterCreate(obj,null);
 		} else {
-			obj = this.createObject(c, false);
+			if(!objs.containsKey(c)) {
+				obj = this.createObject(c, false);
+			}else {
+				return objs.get(c);
+			}
 		}
-		this.cacheObj(c, obj, null);
-		return obj;
+		return this.cacheObj(c, obj, null);
+		//return obj;
 	}
 
 	private void createPostListener() {
@@ -1737,7 +1743,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	public Object createDynamicService(Class<?> cls) {
 		//String wayd(String msg);
 		 ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		 JmicroClassPool cp = new JmicroClassPool(true);
+		 JmicroClassPool cp = ClassGenerator.getClassPool(cl);
 		 try {
 			 CtClass ct = cp.makeClass(cls.getName() + "$JmicroSrv" + SimpleObjectFactory.idgenerator.getAndIncrement());
 			 ct.setSuperclass(cp.getCtClass(cls.getName()));
@@ -1748,7 +1754,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 			 Object proxy = clazz.newInstance();
 			 return proxy;
 		} catch (Throwable e) {
-			 throw new CommonException("Gen service class error: ",e);
+			 throw new CommonException("Gen service class error: " + cls.getName(),e);
 		}finally {
 			if(cp != null) {
 				cp.release();
@@ -1941,7 +1947,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	private void doInit(Object obj) {
 		Class<?> tc = ProxyObject.getTargetCls(obj.getClass());
 		Method initMethod1 = null;
-		Method initMethod2 = null;
+		//Method initMethod2 = null;
 		List<Method> methods = new ArrayList<>();
 		Utils.getIns().getMethods(methods, tc);
 		for(Method m : methods ) {
@@ -1951,7 +1957,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 					initMethod1 = m;
 					break;
 				}
-			}/*else if(m.getName().equals("init") && m.getParameterCount()==0) {
+			}
+			/*else if(m.getName().equals("init") && m.getParameterCount()==0) {
 				initMethod2 = m;
 			}*/
 		}
@@ -1975,14 +1982,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		for(Method m : methods ) {
 			if(m.isAnnotationPresent(JMethod.class) ) {
 				JMethod jm = m.getAnnotation(JMethod.class);
-				if("ready".equals(jm.value())) {
+				if(Constants.JMICRO_READY_METHOD_NAME.equals(jm.value())) {
 					readyMethod1 = m;
 					break;
 				}
 			}/*else if(m.isAnnotationPresent(PostConstruct.class)) {
 				readyMethod1 = m;
 				break;
-			}*/ else if(m.getName().equals("ready")) {
+			}*/ else if(m.getName().equals(Constants.JMICRO_READY_METHOD_NAME)) {
 				readyMethod2 = m;
 			}
 		}

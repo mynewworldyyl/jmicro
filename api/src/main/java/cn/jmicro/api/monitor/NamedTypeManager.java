@@ -49,7 +49,7 @@ public class NamedTypeManager {
 		}
 	};
 	
-	public void ready() {
+	public void jready() {
 		if(!op.exist(Config.getRaftBasePath(Config.NamedTypesDir))) {
 			op.createNodeOrSetData(Config.getRaftBasePath(Config.NamedTypesDir), "", IDataOperator.PERSISTENT);
 		}

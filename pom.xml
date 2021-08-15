@@ -84,15 +84,13 @@
 	</repositories>  
 
     <properties>
-   		<AssemblyFile>http://jmicro.cn/assembly/without-jmicro-core.xml</AssemblyFile>
+   		<!-- <AssemblyFile>http://jmicro.cn/assembly/without-jmicro-core.xml</AssemblyFile>
    		<collect-jars>http://jmicro.cn/assembly/collect-jars.xml</collect-jars>
-   		<with-jmicro-core>http://jmicro.cn/assembly/with-jmicro-core.xml</with-jmicro-core>
+   		<with-jmicro-core>http://jmicro.cn/assembly/with-jmicro-core.xml</with-jmicro-core> -->
     	
-    	<!-- 
     	<AssemblyFile>../../assembly/without-jmicro-core.xml</AssemblyFile>
    		<collect-jars>../../assembly/collect-jars.xml</collect-jars>
    		<with-jmicro-core>../../assembly/with-jmicro-core.xml</with-jmicro-core>
-   		 -->
    		
     	<encoding>UTF-8</encoding>
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

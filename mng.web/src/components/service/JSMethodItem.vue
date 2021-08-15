@@ -246,6 +246,7 @@
     import TreeNode from  "./JServiceList.vue"
 
     import srv from "@/rpcservice/srv"
+    import rpc from "@/rpc/rpcbase"
     
     const cid = 'JMethodItem';
 export default {
