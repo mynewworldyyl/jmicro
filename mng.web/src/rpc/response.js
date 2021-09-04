@@ -1,6 +1,6 @@
-import {Constants} from "@/rpc/message"
-import JDataInput from "@/rpc/datainput"
-import utils from "@/rpc/utils"
+import {Constants} from "./message"
+import JDataInput from "./datainput"
+import utils from "./utils"
 
 const ApiResponse = function() {
     this.id = -1;

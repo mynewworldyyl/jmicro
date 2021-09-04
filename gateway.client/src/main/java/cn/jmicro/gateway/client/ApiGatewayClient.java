@@ -67,11 +67,11 @@ public class ApiGatewayClient {
 	
 	//private final static Logger logger = LoggerFactory.getLogger(ApiGatewayClient.class);
 	
-	public static final String NS_API_GATEWAY="apigateway";
-	public static final String NS_MNG="mng";
-	public static final String NS_SECURITY="security";
-	public static final String NS_REPONSITORY="repository";
-	public static final String NS_PUBSUB="pubSubServer";
+	public static final String NS_API_GATEWAY = "apigateway";
+	public static final String NS_MNG = "mng";
+	public static final String NS_SECURITY = "security";
+	public static final String NS_REPONSITORY = "repository";
+	public static final String NS_PUBSUB = "pubSubServer";
 	
 	private static final String API_GATEWAY_PUB_KEY_FILE = "/META-INF/keys/jmicro_apigateway_pub.key";
 	
@@ -521,7 +521,7 @@ public class ApiGatewayClient {
 		req.setVersion(version);*/
 		if(this.actInfo != null) {
 			//System.out.println("LKEY: " +this.actInfo.getLoginKey());
-			req.getParams().put("loginKey", this.actInfo.getLoginKey());
+			req.getParams().put(Constants.LOGIN_KEY, this.actInfo.getLoginKey());
 		}
 		
 		Message msg = new Message();

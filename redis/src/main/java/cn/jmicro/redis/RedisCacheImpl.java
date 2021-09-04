@@ -74,6 +74,7 @@ public class RedisCacheImpl implements ICache {
 	
 	private String[] adminPrefixs = new String[] {
 			JMicroContext.CACHE_LOGIN_KEY,
+			Constants.CACHE_DIR_PREFIX
 	};
 	
 	@Cfg("/RedisCacheImpl/openDebug")
@@ -100,8 +101,8 @@ public class RedisCacheImpl implements ICache {
 	private String selfPrefix;
 	
 	public void jready() {
-		adminPrefix = "/"+ Config.getAdminClientId() + "/";
-		selfPrefix = "/"+ Config.getClientId() + "/";
+		adminPrefix =Config.getAdminClientId() + ":";
+		selfPrefix = Config.getClientId() + ":";
 	}
 	
 	@Override
@@ -118,7 +119,8 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] k = ICache.keyData(selfPrefix+key);
+		key = securityKey(key);
+		byte[] k = ICache.keyData(key);
 		if(k == null) {
 			return false;
 		}
@@ -132,6 +134,9 @@ public class RedisCacheImpl implements ICache {
 		
 		Jedis jedis = null;
 		try {
+			 if(logger.isInfoEnabled()) {
+				 logger.info("Put KEY: {}, LEN: {}",key,value.length);
+			 }
 			 jedis = jeditPool.getResource();
 			 jedis.set(k, value);
 			 return true;
@@ -169,6 +174,7 @@ public class RedisCacheImpl implements ICache {
 		return key;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> T get(String key) {
 		checkPermission(key);
@@ -185,10 +191,16 @@ public class RedisCacheImpl implements ICache {
 		try {
 			 jedis = jeditPool.getResource();
 			 byte[] val = jedis.get(k);
+			 
+			 if(logger.isInfoEnabled()) {
+				 logger.info("Get KEY: {}, LEN: {}",key,(val == null?"Null":val.length));
+			 }
+			 
 			if(val != null && val.length > 0) {
 				//命中缓存,理想情况下,大部份缓存都走到这里返回
 				return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
 			} else {
+				 
 				//上次从源读取过相同数据,但是数据不存在,则判断和上次更新时间是否超过1秒,是则更新缓存，否则直接返回空
 				if(notExistData.containsKey(key)) {
 					long interval = TimeUtils.getCurTime() - notExistData.get(key);

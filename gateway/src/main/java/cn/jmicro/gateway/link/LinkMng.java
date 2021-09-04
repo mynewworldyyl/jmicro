@@ -1,31 +1,40 @@
 package cn.jmicro.gateway.link;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
+import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcResponseJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.Constants;
 
 @Component(value="linkMessageHandler")
 public class LinkMng implements IMessageHandler {
@@ -36,6 +45,14 @@ public class LinkMng implements IMessageHandler {
 	private ConcurrentHashMap<Long,LinkNode> ppMsgId2DownSess = new ConcurrentHashMap<>();
 	
 	private ConcurrentHashMap<Long,LinkNode> manyMsgId2DownSess = new ConcurrentHashMap<>();
+	
+	private Random r = new Random(System.currentTimeMillis()%1000);
+	
+	@Inject
+	private RpcClassLoader rpcClassloader;
+	
+	@Inject
+	private ICache cache;
 	
 	@Inject
 	private SecretManager secretMng;
@@ -62,6 +79,8 @@ public class LinkMng implements IMessageHandler {
     	private Message srcMsg;
     	private long cMsgId;//客户端过来的消息ID
     	private long lastActiveTime = TimeUtils.getCurTime();
+    	
+    	private ServiceMethodJRso sm;
     	
     	private Map<Byte,Object> extraMap;
     	private int flag;
@@ -115,6 +134,8 @@ public class LinkMng implements IMessageHandler {
 		n.msgId = msg.getMsgId();
 		n.lastActiveTime = TimeUtils.getCurTime();
 		n.extrFlag = msg.getExtrFlag();
+		
+		n.sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		
 		msg.setMsgId(n.msgId);
 		
@@ -202,6 +223,9 @@ public class LinkMng implements IMessageHandler {
 		}
 		
 		msg.setInsId(pi.getId());
+		
+		cacheData(msg,n);
+		
 		n.sec.write(msg);
 		
 		if(pp) {
@@ -214,4 +238,39 @@ public class LinkMng implements IMessageHandler {
 		return true;
 	}
     
+	
+	private void cacheData(Message msg,LinkNode n) {
+		if(n.sm == null || msg.isError()) return;
+		ServiceMethodJRso sm = n.sm;
+		
+		if(sm.getCacheType() != Constants.CACHE_TYPE_NO) {
+			boolean doc = true;
+			//默认非RespJRso响应实例，全部缓存
+			/*if(resp.getResult() instanceof RespJRso) {
+				RespJRso re = (RespJRso) resp.getResult();//成功响应才做缓存
+				if(re.getCode() != RespJRso.CODE_SUCCESS || re.getData() == null) {
+					doc = false;
+				}
+			}*/
+			
+			if(doc) {
+				String ck = IServer.cacheKey(rpcClassloader,msg, sm,null);
+				if(ck != null) {
+					int et = sm.getCacheExpireTime();
+					ByteBuffer sb = (ByteBuffer)msg.getPayload();
+					sb.mark();
+					if(et > 0) {
+						et = et*1000;
+						int bt = (int)(et*0.5);
+						bt = r.nextInt() % bt;//加一个0到二分之一正负ET之间的随机数，避免缓存雪崩
+						int rv = et + bt;
+						cache.put(ck, msg.getPayload(),rv);
+					}else {
+						cache.put(ck, msg.getPayload(),Math.abs(r.nextInt()));
+					}
+					sb.reset();
+				}
+			}
+		}
+	}
 }

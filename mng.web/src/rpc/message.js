@@ -1,13 +1,18 @@
-import JDataInput from "@/rpc/datainput";
-import utils from "@/rpc/utils";
-import security from "@/rpc/security";
-import config from "@/rpc/config";
-import JDataOutput from "@/rpc/dataoutput";
+import JDataInput from "./datainput";
+import utils from "./utils";
+import config from "./config";
+import JDataOutput from "./dataoutput";
 
 let PREFIX_TYPE_ID = -128;
 
+let security = null;
+if(config.sslEnable) {
+    security = import("./security")
+}
+
 let Constants = {
 
+    TOKEN : '-119',
     //MSG_TYPE_REQ_RAW : 0x03,  //纯二进制数据请求
     //MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
 
@@ -194,6 +199,10 @@ let Constants = {
 
     //public static final Byte EXTRA_KEY_MSG_ID = -117;
     EXTRA_KEY_MSG_ID : -117,
+
+    EXTRA_KEY_LOGIN_SYS : -116,
+
+    EXTRA_KEY_ARG_HASH : -115,
 
     //RPC METHOD NAME
      EXTRA_KEY_METHOD : 127,
@@ -505,7 +514,7 @@ Message.prototype.decode=function(/*JDataInput*/ arr) {
     if(len > 0){
         msg.payload = b.readByteArray(len);
 
-        if(msg.isDownSsl()) {
+        if(msg.isDownSsl() && security) {
             security.checkAndDecrypt(msg);
         }
 

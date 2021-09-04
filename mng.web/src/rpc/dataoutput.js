@@ -1,5 +1,6 @@
-import {Constants} from "@/rpc/message"
-import utils from "@/rpc/utils"
+/* eslint-disable */
+import {Constants} from "./message"
+import utils from "./utils"
 
 
 const JDataOutput = function(buf) {
@@ -8,6 +9,8 @@ const JDataOutput = function(buf) {
     } else if(typeof buf == 'number') {
         let size = parseInt(buf);
         this._buf = new ArrayBuffer(size);
+    }else {
+        this._buf = new ArrayBuffer(256);
     }
     this.buf = new DataView(this._buf);
     this.oriSize = this._buf.byteLength;
@@ -101,8 +104,8 @@ JDataOutput.prototype.writeInt = function(v) {
 
 //public static void
 JDataOutput.prototype.writeUnsignedInt = function(n) {
-    if(n > Constants.MAX_UINT_VALUE) {
-        throw "Max int value is: "+Constants.MAX_UINT_VALUE+", but value "+n;
+    if(n > Constants.MAX_INT_VALUE) {
+        throw "Max int value is: "+Constants.MAX_INT_VALUE+", but value "+n;
     }
     this.writeInt(n);
 
@@ -133,17 +136,18 @@ JDataOutput.prototype.writeUnsignedLong = function(v) {
     }
     //JS无64位表示
     this.checkCapacity(8);
-    //this.buf.setBigInt64(this.writePos,v,false);
-    //this.writePos += 8;
+    //dataview.setBigInt64(byteOffset, value [, littleEndian])
+    this.buf.setBigInt64(this.writePos,BigInt(v),false);
+    this.writePos += 8;
 
-    this.writeUByte((v >> 56) & 0xFF);
-    this.writeUByte((v >> 48) & 0xFF);
-    this.writeUByte((v >> 40) & 0xFF);
-    this.writeUByte((v >> 32) & 0xFF);
-    this.writeUByte((v >> 24) & 0xFF);
-    this.writeUByte((v >> 16) & 0xFF);
-    this.writeUByte((v >> 8) & 0xFF);
-    this.writeUByte((v >> 0) & 0xFF);
+    /*this.writeUByte((v >>> 56) & 0xFF);
+    this.writeUByte((v >>> 48) & 0xFF);
+    this.writeUByte((v >>> 40) & 0xFF);
+    this.writeUByte((v >>> 32) & 0xFF);
+    this.writeUByte((v >>> 24) & 0xFF);
+    this.writeUByte((v >>> 16) & 0xFF);
+    this.writeUByte((v >>> 8) & 0xFF);
+    this.writeUByte((v >>> 0) & 0xFF);*/
 }
 
 JDataOutput.prototype.writeByteArrayWithShortLen = function(arr) {
@@ -182,8 +186,9 @@ JDataOutput.prototype.writeArrayBuffer = function(ab) {
         let size = ab.byteLength;
         this.checkCapacity(4+size);
         this.writeUnsignedInt(size);
+        let dv = new DataView(ab,0,size)
         for(let i = 0; i < size; i++) {
-            this.writeUByte(ab[i])
+            this.writeUByte(dv.getUint8(i))
         }
     }
 }

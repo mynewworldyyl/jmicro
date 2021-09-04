@@ -59,7 +59,7 @@
 <script>
     import ps from "@/rpc/pubsub"
     import rpc from "@/rpc/rpcbase"
-    import i18n from "@/rpcservice/i18n"
+    import i18n from "@/rpc/i18n"
 
     const cid="testingPubsub";
 

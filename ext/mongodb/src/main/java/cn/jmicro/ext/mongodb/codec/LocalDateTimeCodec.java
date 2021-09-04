@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
 
 import org.bson.BsonReader;
 import org.bson.BsonType;
@@ -13,6 +14,8 @@ import org.bson.codecs.Codec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecConfigurationException;
+
+import cn.jmicro.api.utils.DateUtils;
 
 public class LocalDateTimeCodec implements Codec<LocalDateTime>{
 
@@ -87,6 +90,10 @@ public class LocalDateTimeCodec implements Codec<LocalDateTime>{
 			}
 		}else if(currentType.equals(BsonType.INT64)) {
 			 return Instant.ofEpochMilli(reader.readInt64()).atZone(ZoneOffset.UTC).toLocalDateTime();
+		} else if(currentType.equals(BsonType.STRING)) {
+			String str = reader.readString();
+			Date d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DD_HHMMSSSSST);
+			return Instant.ofEpochMilli(d.getTime()).atZone(ZoneOffset.UTC).toLocalDateTime();
 		} else {
             throw new CodecConfigurationException(format("Could not decode into %s, expected '%s' BsonType but got '%s'.",
                     getEncoderClass().getSimpleName(), LocalDateTime.class.getName(), currentType));

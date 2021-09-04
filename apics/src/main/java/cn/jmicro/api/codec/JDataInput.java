@@ -154,5 +154,58 @@ public class JDataInput implements DataInput {
 			return null;
 		}
 	}
+	
+	public static String readString(byte[] data,int pos) {
+		
+		int len = data[pos];
+		pos += 1;
+		
+		if(len == -1) {
+			return null;
+		}else if(len == 0) {
+			return "";
+		}
+		
+		if(len == Byte.MAX_VALUE) {
+			len = Message.readUnsignedShort(data, pos);
+			pos += 2;
+			if(len == Short.MAX_VALUE) {
+				len = Message.readInt(data, pos);
+				pos += 4;
+			}
+		}
+		try {
+			return new String(data,pos,len,Constants.CHARSET);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public static int stringTakeLen(byte[] data,int pos) {
+		
+		int tl = 1;
+		
+		int len = data[pos];
+		if(len == -1 || len == 0) {
+			return tl;
+		}
+		
+		pos += 1;
+		
+		if(len == Byte.MAX_VALUE) {
+			len = Message.readUnsignedShort(data, pos);
+			tl += 2;
+			
+			pos += 2;
+			if(len == Short.MAX_VALUE) {
+				len = Message.readInt(data, pos);
+				pos += 4;
+				tl += 4;
+			}
+		}
+		
+		return tl+len;
+	}
 
 }

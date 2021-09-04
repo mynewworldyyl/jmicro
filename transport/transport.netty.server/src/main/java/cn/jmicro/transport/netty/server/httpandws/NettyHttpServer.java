@@ -84,6 +84,9 @@ public class NettyHttpServer implements IServer{
 	@Cfg(value="/startHttp",required=false,defGlobal=false)
 	private boolean startHttp = false;
 	
+	@Cfg(value="/start80Http",required=false,defGlobal=false)
+	private boolean start80Http = false;
+	
 	@Inject
 	private IObjectFactory of;
 	
@@ -134,7 +137,7 @@ public class NettyHttpServer implements IServer{
             .childHandler(initializer);
              
         	ChannelFuture channelFuture =  null;
-        	 if(httpsEnable) {
+        	 if(httpsEnable && start80Http) {
         		 channelFuture = server.bind(address);
         		 if(p != 80) {//同时开启80端口，后面将80端口请求转发到https
         			 server.bind(new InetSocketAddress(listenHttpIP,80)).sync();

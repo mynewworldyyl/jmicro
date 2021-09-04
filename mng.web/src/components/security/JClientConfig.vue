@@ -82,7 +82,7 @@
         </Drawer>
 
         <Modal title="令牌信息" v-model="tokenDialog" :mask-closable="false" @on-visible-change="onOpenClose">
-            {{ tokenContent }}
+            {{tokenContent}}
         </Modal>
 
     </div>

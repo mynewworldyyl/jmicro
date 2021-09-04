@@ -148,6 +148,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 				defaultExecutor.execute(()->{
 					try {
 						if(!gatewayMessageHandler.onMessage(session,msg)) {
+							//非网关下行消息，自个处理接口消息
 							IMessageHandler h = handlers.get(msg.getType());
 							if(h != null){
 								h.onMessage(session,msg);
@@ -163,6 +164,7 @@ public class ClientMessageReceiver implements IMessageReceiver{
 					}
 				});
 			} else {
+				//非网关消息
 				IMessageHandler h = handlers.get(msg.getType());
 				if(h != null){
 					defaultExecutor.execute(()->{

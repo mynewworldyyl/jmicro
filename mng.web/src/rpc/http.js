@@ -1,6 +1,6 @@
-import config from "@/rpc/config"
-import utils from "@/rpc/utils"
-import cons from "@/rpc/constants"
+import config from "./config"
+import utils from "./utils"
+import cons from "./constants"
 
 export default  {
     getQueryParam : function(name) {

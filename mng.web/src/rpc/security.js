@@ -1,12 +1,8 @@
-var CryptoJS = require("crypto-js");
-var JSEncrypt = require("jsencrypt");
+import JSEncrypt from "jsencrypt"
+import CryptoJS from "crypto-js"
 
-import utils from "@/rpc/utils"
-import config from "@/rpc/config"
-
-//import AES from 'crypto-js/aes';
-//import JSEncrypt from "@/rpc/jsencrypt"
-//import CryptoJS from "@/rpc/aes"
+import utils from "./utils"
+import config from "./config"
 
 let cfg = {
 

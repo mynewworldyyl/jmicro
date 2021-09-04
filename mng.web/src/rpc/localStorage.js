@@ -1,4 +1,4 @@
-import utils from "@/rpc/utils"
+//import utils from "./utils"
 
 export default  {
     //this.updateBrowser_ = jm.utils.i18n.get('update_your_browser');
@@ -36,7 +36,7 @@ export default  {
         }
     },
 
-    supportLocalstorage() {
+    isSupport() {
         try {
             return window.localStorage !== null;
         } catch (e) {
@@ -44,12 +44,5 @@ export default  {
         }
     },
 
-    isSupport() {
-        if(utils.isIe() && utils.version() < 8) {
-            return false;
-        }else {
-            return true;
-        }
-    }
 
 }

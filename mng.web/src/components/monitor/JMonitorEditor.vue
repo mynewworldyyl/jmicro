@@ -47,7 +47,7 @@
     import TreeNode from '../common/JTreeNode.js'
 
     import config from "@/rpc/config"
-    import i18n from "@/rpcservice/i18n"
+    import i18n from "@/rpc/i18n"
     import monitor from "@/rpcservice/monitor"
 
 

@@ -6,7 +6,7 @@ import iView from 'view-design'
 import 'view-design/dist/styles/iview.css'
 
 import JMicroEditor from  './components/JMicroEditor.vue'
-import i18n from  '@/rpcservice/i18n'
+import i18n from  '@/rpc/i18n'
 
 import * as filters from './components/common/JFilters'
 Object.keys(filters).forEach(key => {

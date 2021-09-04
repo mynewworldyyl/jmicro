@@ -1,5 +1,5 @@
-import {Constants} from "@/rpc/message"
-import JDataOutput from "@/rpc/dataoutput"
+import {Constants} from "./message"
+import JDataOutput from "./dataoutput"
 
 let reqId = 1;
 

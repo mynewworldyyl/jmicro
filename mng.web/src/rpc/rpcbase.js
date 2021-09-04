@@ -1,20 +1,20 @@
-import localStorage from "@/rpc/localStorage";
-import ApiRequest from "@/rpc/request";
-import cons from "@/rpc/constants";
-import security from "@/rpc/security";
-import config from "@/rpc/config"
-import utils from "@/rpc/utils"
+import localStorage from "./localStorage";
+import ApiRequest from "./request";
+import cons from "./constants";
+import config from "./config"
+import utils from "./utils"
 
-import {Message,Constants} from "@/rpc/message"
+import {Message,Constants} from "./message"
 
-import transport from "@/rpc/transport"
+import transport from "./transport"
 
-//import socket from "@/rpc/socket";
+//import socket from "./socket";
 
 //let idCache = {};
 let actListeners = {};
 
 const fnvCode = -655376287
+const FNV_32_PRIME = 0x01000193
 
 let mk2code = {
     "cn.jmicro.api.gateway.IBaseGatewayServiceJMSrv##apigateway##0.0.1##############1##fnvHash1a":fnvCode,
@@ -37,8 +37,8 @@ function __actreq(method,args){
 }
 
 export default {
-    config,
-    actInfo:null,
+     config,
+     actInfo:null,
 
      creq(sn,ns,v,method,args){
         let req = {};
@@ -47,6 +47,13 @@ export default {
         req.version = v;
         req.args = args;
         req.method = method;
+        return req;
+    },
+
+    cmreq(mcode,args){
+        let req = {};
+        req.mcode = mcode;
+        req.args = args;
         return req;
     },
 
@@ -128,7 +135,6 @@ export default {
             if(cb) {
                 cb(null,err)
             }
-
         });
     },
 
@@ -170,12 +176,23 @@ export default {
     },
 
     init : function(ip,port,actName,pwd){
-        if(config.useWs && !window.WebSocket){
-            config.useWs = false;
+        if(config.useWs){
+            if(window && window.WebSocket || this.isWx()) {
+            /*    import('./socket.js')
+                    .then(so=>{
+                        so.init()
+                    })*/
+                //let socket = require('./socket.js')
+            }else {
+                config.useWs = false
+            }
         }
 
         if(config.sslEnable) {
-            security.init();
+            import('./security')
+                .then(so=>{
+                so.init()
+            });
         }
 
         if(ip && ip.length > 0) {
@@ -201,11 +218,10 @@ export default {
         req.method = 'bestHost';
         req.args = ["nettyhttp"];
 
-        /*this.callRpc(req)
+       /* this.callRpc(req)
             .then((data)=>{
                 if(data && data.length > 0) {
                     //let jo = jm.utils.parseJson(data);
-                    console.log("Server IP List: "+data)
                     let arr = data.split('#');
                     if(arr[0] && arr[1] && ( arr[0] != config.ip ||  arr[1] != config.port )) {
                         config.ip = arr[0];
@@ -300,39 +316,55 @@ export default {
             downProtocol = Constants.PROTOCOL_JSON;
         }
 
-        let cid = req.clientId ? req.clientId : config.clientId
-
         /*if(req.method == 'serverList') {
             console.log(req.method);
         }*/
 
-        let smsvnKey = req.serviceName +"##"+req.namespace+"##"+req.version+"##############"+cid+"##"+req.method;
-        if(mk2code[smsvnKey]) {
-            return this.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,mk2code[smsvnKey]);
-        } else {
-            let self = this;
-            return new Promise((reso,reje)=>{
-                let methodCodeReq = new ApiRequest();
-                methodCodeReq.method = 'fnvHash1a';
-                methodCodeReq.args = [smsvnKey];
-                methodCodeReq.type = Constants.MSG_TYPE_REQ_JRPC;
-                self.__callRpcWithTypeAndProtocol(methodCodeReq, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON, fnvCode)
-                    .then((methodCode)=>{
-                        mk2code[smsvnKey] = methodCode;
-                        self.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,methodCode)
-                            .then((resp)=>{
-                                //console.log(req.method);
-                                reso(resp);
-                            })
-                            .catch((err)=>{
-                                reje(err);
-                            })
-                    })
-                    .catch((err)=>{
-                        reje(err);
-                    })
-            });
+        if(req.mcode) {
+            return this.__callRpcWithTypeAndProtocol(req, upProtocol, downProtocol, req.mcode);
+        }else {
+            let cid = req.clientId ? req.clientId : config.clientId
+            let smSvnKey = req.serviceName +"##"+req.namespace+"##"+req.version+"##############"+cid+"##"+req.method;
+            if( mk2code[smSvnKey] ) {
+                return this.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,mk2code[smSvnKey]);
+            } else {
+                let self = this;
+                return new Promise((reso,reje)=>{
+                    let methodCodeReq = new ApiRequest();
+                    methodCodeReq.method = 'fnvHash1a';
+                    methodCodeReq.args = [smSvnKey];
+                    methodCodeReq.type = Constants.MSG_TYPE_REQ_JRPC;
+                    self.__callRpcWithTypeAndProtocol( methodCodeReq, Constants.PROTOCOL_JSON,
+                        Constants.PROTOCOL_JSON, fnvCode )
+                        .then((methodCode)=>{
+                            mk2code[smSvnKey] = methodCode;
+                            self.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,methodCode)
+                                .then((resp)=>{
+                                    reso(resp);
+                                }).catch((err)=>{
+                                    reje(err);
+                                })
+                        }).catch((err)=>{
+                            reje(err);
+                        })
+                });
+            }
         }
+    },
+
+    argHash( args) {
+        let h = 0;//无参数或参数都为空时
+        if(args != null && args.length > 0) {
+            for(let i = 0; i < args.length; i++) {
+                let a = args[i]
+                if( a != null ) {
+                    //只有非空字段才参数hash
+                    h ^=  a.hashCode()
+                    h *= FNV_32_PRIME
+                }
+            }
+        }
+        return h;
     },
 
     __callRpcWithTypeAndProtocol(req, upProtocol, downProtocol, methodCode){
@@ -350,8 +382,8 @@ export default {
             msg.setRpcMk(true)
             msg.setSmKeyCode(methodCode)
             msg.setForce2Json(true)
-            if(config.includeMethod) {
-                msg.putExtra(Constants.EXTRA_KEY_METHOD,req.method,Constants.PREFIX_TYPE_STRING);
+            if(config.includeMethod && req.method) {
+                msg.putExtra(Constants.EXTRA_KEY_METHOD,req.method, Constants.PREFIX_TYPE_STRING);
             }
 
             //console.log(req.method+" => " + methodCode);
@@ -364,14 +396,21 @@ export default {
             }
 
             if(self.actInfo) {
-                req.params['loginKey'] = self.actInfo.loginKey
+                //req.params[Constants.TOKEN] = self.actInfo.loginKey
+                msg.putExtra(Constants.EXTRA_KEY_LOGIN_KEY,self.actInfo.loginKey,Constants.PREFIX_TYPE_STRING);
             }
+
+            let mn = req.method;
 
             req.serviceName = null
             req.namespace = null
             req.version = null
             req.method = null
             req.type = null
+
+            if(req.args == null || typeof req.args =='undefined') {
+                req.args = []
+            }
 
             if(upProtocol == Constants.PROTOCOL_JSON) {
                 msg.payload =  utils.toUTF8Array(JSON.stringify(req))
@@ -392,8 +431,16 @@ export default {
                 msg.setRespType(Constants.MSG_TYPE_PINGPONG);
             }
             transport.send(msg,function(rstMsg,err){
-                if(err || !rstMsg.payload.success) {
-                    console.log(rstMsg.payload);
+                if(!rstMsg || err) {
+                    reje(err);
+                    return;
+                }
+                if(!rstMsg.payload) {
+                    reje(rstMsg);
+                    return;
+                }
+                if(!rstMsg.payload.success) {
+                    console.log(mn + ", " + JSON.stringify(rstMsg.payload));
                     let rst = rstMsg.payload.result
                     let doFailure = true;
                     if(rst && rst.errorCode != 0) {

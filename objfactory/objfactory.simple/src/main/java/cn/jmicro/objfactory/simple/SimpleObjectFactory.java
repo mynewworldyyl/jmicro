@@ -205,6 +205,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		} else {
 			obj = objs.get(cls);
 			if(obj == null && create){
+				logger.warn("Create ins: {} by get method:",cls.getName());
 				obj = this.createObject(cls,true);
 				if(obj != null) {
 					cacheObj(cls,obj,null);
@@ -348,6 +349,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			success = true;
 		/*	throw new CommonException("class["+cls.getName()+"] instance exist"
 					+ this.objs.get(cls).getClass().getName());*/
+		} else {
+			success = objs.get(cls) == obj;
 		}
 		
 		if(!StringUtils.isEmpty(componentName) && !this.nameToObjs.containsKey(componentName)) {
@@ -392,6 +395,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		try {
 			if(!isLazy(cls)) {
 				obj = cls.newInstance();
+				objs.put(cls, obj);//确保不重复创建同一对象
 				if(doAfterCreate){
 					 doAfterCreate(obj,null);
 				}

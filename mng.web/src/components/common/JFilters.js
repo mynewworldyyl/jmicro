@@ -1,4 +1,4 @@
-import i18n0 from "@/rpcservice/i18n"
+import i18n0 from "@/rpc/i18n"
 
 const FORMAT_DATE = 'yyyy/MM/dd';  //1
 const FORMAT_DATE_TIME = 'yyyy/MM/dd hh:mm:ss'; //2

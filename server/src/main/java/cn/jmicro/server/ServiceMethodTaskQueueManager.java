@@ -1,6 +1,5 @@
 package cn.jmicro.server;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,7 +32,7 @@ import cn.jmicro.server.ServerMessageReceiver.JMicroTask;
 import cn.jmicro.server.limit.StatisServiceCounter;
 
 /**
-   *     实现高并发任务的削峰填谷
+   *实现高并发任务的削峰填谷
  * 
  * @author yeyulei
  */
@@ -139,7 +138,7 @@ public class ServiceMethodTaskQueueManager implements ILimitDataJMSrv{
 							if(tq.sm.getLimitType() == Constants.LIMIT_TYPE_SS) {
 								MT.rpcEvent(tq.sm,MC.MT_SERVER_LIMIT_MESSAGE_POP, ts.length);
 							} else {
-								tq.addCounter( ts.length);
+								tq.addCounter(ts.length);
 							}
 						}
 					}

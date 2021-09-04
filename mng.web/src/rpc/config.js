@@ -9,19 +9,21 @@ export default {
     binContext : process.env.binContext,
     httpContext : process.env.httpContext,
     useWs : process.env.useWs,
-    sslEnable:process.env.sslEnable,*/
+    sslEnable:process.env.sslEnable,
+    */
 
-    wsProtocol:'wss',
-    protocol:'https',
-    //ip:'192.168.56.1',
+    wsProtocol:'ws',
+    protocol:'http',
+    ip:'192.168.56.1',
     //ip:'apigate.jmicro.cn',
-    ip:'jmicro.cn',
-    //port:'9090',
-    port:'443',
-    //port:'80',
+    //ip:'jmicro.cn',
+  /*  port:'',
+    sport:'',*/
+    port:'8443',
+    sport:'9999',
     txtContext : '_txt_',
     binContext : '_bin_',
-    httpContext : '/_http_',
+    httpContext : '_http_',
     useWs : true,
 
     sslEnable:false,
@@ -31,6 +33,7 @@ export default {
     includeMethod:true,
 
     clientId: 1,//system client id
+    mod:'jmng',
 
     adminModelPerm : ADMIN_MODEL_PER,
     adminOpPerm: ADMIN_OP_PER,

@@ -1,7 +1,7 @@
 
-import PSData from "@/rpc/psdata";
-import rpc from "@/rpc/rpcbase";
-import cons from "@/rpc/constants"
+import PSData from "./psdata";
+import rpc from "./rpcbase";
+import cons from "./constants"
 
 let pssn = "cn.jmicro.gateway.MessageServiceImpl";
 let    sn = 'cn.jmicro.api.pubsub.IPubSubClientServiceJMSrv'

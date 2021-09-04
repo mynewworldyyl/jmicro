@@ -68,6 +68,7 @@ import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 
 /** 
@@ -310,6 +311,28 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		msg.setUpProtocol(Message.PROTOCOL_BIN);
 		msg.setMsgId(req.getRequestId());
 		
+		msg.putExtra(Message.EXTRA_KEY_LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
+		
+		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
+			if(pi.isLogin()) {
+				msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, cxt.getString(JMicroContext.LOGIN_KEY_SYS, null));
+				//req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
+			} else {
+				String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().methodID();
+				LG.log(MC.LOG_ERROR, this.getClass(), desc);
+				throw new CommonException(desc);
+			}
+		}
+		
+		if(req.getRequestParams().containsKey(JMicroContext.LOGIN_KEY_SYS)) {
+			msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, req.getRequestParams().get(JMicroContext.LOGIN_KEY_SYS));
+		}
+		
+		if(sm.getCacheType() != Constants.CACHE_TYPE_NO) {
+			int h = HashUtils.argHash(req.getArgs());
+			msg.putExtra(Message.EXTRA_KEY_ARG_HASH, h);
+		}
+		
 		//msg.setVersion(Message.MSG_VERSION);
 		msg.setPriority(Message.PRIORITY_NORMAL);
 		
@@ -421,7 +444,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				
 				Map<String,Object> cxtParams = new HashMap<>();
 				cxt.getAllParams(cxtParams);
-				
 				p.setContext(cxtParams);
 				
 				waitForResponse.put(msg.getMsgId(),p);
@@ -521,7 +543,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		JMicroContext cxt = JMicroContext.get();
 		try {
 			if(p.getContext() != null) {
-				cxt.putAllParams(p.getContext());
+				cxt.putAllParams(p.getContext());//将p的Context合并到当前
 				p.setContext(null);
 			}
 			
@@ -529,7 +551,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			ServiceItemJRso si = cxt.getParam(Constants.SERVICE_ITEM_KEY,null);
 			if(cxt.isDebug()) {
 				//下行包网络耗时
-				cxt.appendCurUseTime("Down cost "+(TimeUtils.getCurTime()-respMsg.getTime()),false);
+				cxt.appendCurUseTime("Down cost "+(TimeUtils.getCurTime() - respMsg.getTime()),false);
 				cxt.appendCurUseTime("Got async resp ",true);
     		}
 		
@@ -537,32 +559,40 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			
 			//下面处理响应消息
 			if(respMsg.isMonitorable()) {
-	      	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ,1);
-	      	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ_BYTES,respMsg.getLen());
+	      	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ, 1);
+	      	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ_BYTES, respMsg.getLen());
 	        }
 			
-			RpcResponseJRso resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-					RpcResponseJRso.class,respMsg.getUpProtocol());
-			resp.setMsg(respMsg);
-			
-			if(resp.isSuccess()) {
-				JMLogItemJRso mi = cxt.getMRpcLogItem();
-				if(mi != null) {
-					mi.setResp(resp);
+			if(respMsg.isError()) {
+				ServerErrorJRso se = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
+						ServerErrorJRso.class,respMsg.getUpProtocol());
+				if(se.getCode() == MC.MT_AES_DECRYPT_ERROR) {//密钥问题，重置
+					this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
 				}
-				p.setResult(resp.getResult());
-			} else {
-				if(resp.getResult() instanceof ServerErrorJRso) {
-					ServerErrorJRso se = (ServerErrorJRso)resp.getResult();
-					if(se.getCode() == MC.MT_AES_DECRYPT_ERROR) {
-						this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
+				p.setFail(se.getCode(), se.getMsg());
+			}else {
+				RpcResponseJRso resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
+						RpcResponseJRso.class,respMsg.getUpProtocol());
+				resp.setMsg(respMsg);
+				
+				if(resp.isSuccess()) {
+					JMLogItemJRso mi = cxt.getMRpcLogItem();
+					if(mi != null) {
+						mi.setResp(resp);
 					}
-					p.setFail(se.getCode(), se.getMsg());
+					p.setResult(resp.getResult());
 				} else {
-					p.setFail(MC.LOG_ERROR, "Server return error!");
+					if(resp.getResult() instanceof ServerErrorJRso) {
+						ServerErrorJRso se = (ServerErrorJRso)resp.getResult();
+						if(se.getCode() == MC.MT_AES_DECRYPT_ERROR) {
+							this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
+						}
+						p.setFail(se.getCode(), se.getMsg());
+					} else {
+						p.setFail(MC.LOG_ERROR, "Server return error!");
+					}
 				}
 			}
-			
 		}catch(Throwable e) {
 			String errMsg = "Client callback error reqID:"+respMsg.getMsgId()+",linkId:"+respMsg.getLinkId()+",Service: "+sm.getKey().fullStringKey();
 			logger.error(errMsg,e);

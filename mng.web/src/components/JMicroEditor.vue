@@ -28,6 +28,7 @@
 
                         <!--  Config -->
                         <JConfigItem v-else-if="item.group == 'config'" :item="item"></JConfigItem>
+                        <JI18nConfig v-else-if="item.group == 'i18nConfig'" :item="item"></JI18nConfig>
 
                         <!-- Shell -->
                         <JShell v-else-if="item.group == 'shell'" :item="item"></JShell>
@@ -155,6 +156,7 @@
             JServiceMethodList:()=> import('./security/JServiceMethodList.vue'),
 
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
+            JI18nConfig : () => import('./i18n/JI18nConfig.vue'),
 
             JTestingPubsub : () => import('./pubsub/JTestingPubsub.vue'),
             JPubsubItemView : () => import('./pubsub/JPubsubItemView.vue'),

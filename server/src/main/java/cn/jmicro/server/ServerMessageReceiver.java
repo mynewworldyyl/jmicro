@@ -34,6 +34,7 @@ import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
@@ -47,6 +48,7 @@ import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
+import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequestJRso;
@@ -54,11 +56,15 @@ import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.AccountManager;
+import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.StringUtils;
 
 /**
  * 
@@ -70,6 +76,12 @@ public class ServerMessageReceiver implements IMessageReceiver{
 
 	private static final Logger logger = LoggerFactory.getLogger(ServerMessageReceiver.class);
 	private static final Class<?> TAG = ServerMessageReceiver.class;
+	
+	@Inject
+	private AccountManager accountManager;
+	
+	@Inject
+	private PermissionManager pm;
 	
 	@Inject
 	private ExecutorFactory ef;
@@ -198,7 +210,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		
 		ServiceMethodJRso sm = null;
-		if(!msg.isOuterMessage() && msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
+		if(/*!msg.isOuterMessage() && */msg.getType() == Constants.MSG_TYPE_REQ_JRPC) {
 			sm = srvMng.getServiceMethodByHash(msg.getSmKeyCode());
 			if(sm == null) {
 				/*UniqueServiceMethodKeyJRso smkey = srvMng.getServiceMethodWithHashBySearch(msg.getSmKeyCode());
@@ -281,11 +293,17 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	public void doReceive(JMicroTask task){
 		Message msg = task.msg;
 		IServerSession s = task.s;
-		JMicroContext.configProvider(s,msg,task.sm);
+		JMicroContext.configProvider(s, msg, task.sm);
+		
 		if(task.sm != null) {
 			JMicroContext.get().setParam(Constants.SERVICE_METHOD_KEY, task.sm);
 		}
+		
 		try {
+			if(!checkLoginAndPermission(s,msg,task.sm)) {
+				return;
+			}
+			
 			if(msg.isDebugMode()) {
 				JMicroContext.get().setParam(JMicroContext.DEBUG_LOG_BASE_TIME, task.gotTime);
 				StringBuilder sb = JMicroContext.get().getDebugLog();
@@ -293,7 +311,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				
 				sb.append("Client to server cost: ").append(task.gotTime - msg.getTime()).append(", ");
 				sb.append("Queue cost: ").append(curTime-task.gotTime).append(", ");
-				 sb.append(msg.getMethod())
+				sb.append(msg.getMethod())
 				.append(",MsgId:").append(msg.getMsgId())
 				.append(",linkId:").append(JMicroContext.lid());
 			}
@@ -330,7 +348,129 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			offerTask(task);
 		}
 	}
+
+	private boolean checkLoginAndPermission(IServerSession s, Message msg,ServiceMethodJRso sm) {
+		
+		if(sm != null) {
+			if(sm.getMaxPacketSize() > 0 && msg.getLen() > sm.getMaxPacketSize()) {
+	    		ServerErrorJRso se = new ServerErrorJRso(MC.MT_PACKET_TOO_MAX,"Packet too max " + msg.getLen() + 
+	    				" limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId()+","+sm.getKey().getMethod());
+				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1);
+				resp2Client(se,s,msg,sm);
+				return false;
+			}
+		}
+		
+		String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
+		ActInfoJRso ai = null;
+		
+		String slk = msg.getExtra(Message.EXTRA_KEY_LOGIN_SYS);
+		ActInfoJRso sai = null;
+		
+		if(StringUtils.isNotEmpty(lk)) {
+			ai = this.accountManager.getAccount(lk);
+		}
+		
+		if(StringUtils.isNotEmpty(slk)) {
+			sai = this.accountManager.getAccount(slk);
+		}
+		
+		if(sai != null) {
+			JMicroContext.get().setString(JMicroContext.LOGIN_KEY_SYS, slk);
+			JMicroContext.get().setSysAccount(sai);
+		}
+		
+		if(ai != null) {
+			JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
+			JMicroContext.get().setAccount(ai);
+		}
+		
+		if(sm != null) {
+			if(ai == null && sm.isNeedLogin()) {
+				ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
+				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+				resp2Client(se,s,msg,sm);
+				return false;
+			} 
+		
+			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
+				ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk+",insId: " + msg.getInsId());
+				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+				resp2Client(se,s,msg,sm);
+				return false;
+			}
+			
+			ServerErrorJRso se = pm.permissionCheck(sm,sm.getKey().getUsk().getClientId());
+			
+			if(se != null) {
+				resp2Client(se,s,msg,sm);
+				return false;
+			}
+			
+		}
+		
+		return true;
+	}
 	
+	private void resp2Client(ServerErrorJRso se, ISession s,Message msg,ServiceMethodJRso sm) {
+		if(!msg.isNeedResponse()){
+			submitItem();
+			return;
+		}
+		
+		if(msg.isDebugMode()) {
+    		JMicroContext.get().appendCurUseTime("Service Return",true);
+		}
+		
+		if(msg.isError()) {
+			msg.setPayload(ICodecFactory.encode(codecFactory,se,Message.PROTOCOL_JSON));
+		} else {
+			msg.setPayload(ICodecFactory.encode(codecFactory,se,msg.getDownProtocol()));
+		}
+		
+		//请求类型码比响应类型码大1，
+		msg.setType((byte)(msg.getType()+1));
+		LG.log(MC.LOG_ERROR, TAG, "Request failure end: " + msg.getMsgId()+",insId: " + msg.getInsId());
+		MT.rpcEvent(MC.MT_SERVER_ERROR,1);
+		//错误不需要做加密或签名
+		msg.setUpSsl(false);
+		msg.setDownSsl(false);
+		msg.setSign(false);
+		msg.setSec(false);
+		msg.setSaltData(null);
+		msg.setError(true);//响应错误响应消息
+
+		msg.setInsId(pi.getId());
+		//msg.setFromWeb(false);
+		msg.setOuterMessage(false);
+		
+		try {
+			msg.setTime(TimeUtils.getCurTime());
+			s.write(msg);
+			MT.rpcEvent(MC.MT_SERVER_JRPC_RESPONSE_WRITE, msg.getLen());
+			if(msg.isDebugMode()) {
+				JMicroContext.get().appendCurUseTime("Server finish write",true);
+			}
+			
+			submitItem();
+			
+		} catch (Throwable e) {
+			//到这里不能再抛出异常，否则可能会造成重复响应
+			logger.error("",e);
+		}
+	}
+	
+	private void submitItem() {
+		if(JMicroContext.get().isDebug()) {
+			JMicroContext.get().appendCurUseTime("Async respTime",false);
+			//JMicroContext.get().debugLog(0);
+		}
+		JMicroContext.get().submitMRpcItem();
+	}
+
 	private void responseException(Message msg,IServerSession s,Throwable e,ServiceMethodJRso sm) {
 		
 		StackTraceElement se = Thread.currentThread().getStackTrace()[2];

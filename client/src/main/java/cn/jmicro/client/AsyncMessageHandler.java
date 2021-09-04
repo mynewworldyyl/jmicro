@@ -111,7 +111,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 		
 		IAsyncCallback callback = (IAsyncCallback)session.getParam(key);
 		if(callback == null){
-			logger.error("Service [ "+key+"] not found!");
+			logger.error("Service [ " + key + "] not found!");
 			return;
 		}
 		callback.onResult(resp.getResult(),null,null);

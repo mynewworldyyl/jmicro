@@ -66,9 +66,9 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	private static final AttributeKey<IClientSession> sessionKey = 
 			AttributeKey.newInstance(Constants.IO_SESSION_KEY+TimeUtils.getCurTime());
 	
-	private AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
+	private static final AttributeKey<Boolean> monitorEnableKey = AttributeKey.newInstance(JMicroContext.IS_MONITORENABLE);
 	
-	private final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
+	private static final Map<String,IClientSession> sessions = new ConcurrentHashMap<>();
 	
 	//private final Map<String,IClientSession> tempSessions = new ConcurrentHashMap<>();
 	

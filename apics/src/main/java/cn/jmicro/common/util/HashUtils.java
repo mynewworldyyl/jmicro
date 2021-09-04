@@ -31,10 +31,24 @@ public class HashUtils {
 	private static final long FNV_64_INIT = 0xcbf29ce484222325L;
 	private static final long FNV_64_PRIME = 0x100000001b3L;
 
-	private static final int FNV_32_INIT = 0x811c9dc5;
-	private static final int FNV_32_PRIME = 0x01000193;
+	public static final int FNV_32_INIT = 0x811c9dc5;
+	public static final int FNV_32_PRIME = 0x01000193;
 
 	private HashUtils() {}
+	
+	public static int argHash(Object[] args) {
+		int h = 0;//无参数或参数都为空时
+		if(args != null && args.length > 0) {
+			for(Object a : args) {
+				if(a != null) {
+					//只有非空字段才参数hash
+					h ^=  a.hashCode();
+					h *= FNV_32_PRIME;
+				}
+			}
+		}
+		return h;
+	}
 
 	public static int hash32(final byte[] data) {
 		

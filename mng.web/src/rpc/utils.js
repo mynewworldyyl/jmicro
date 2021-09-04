@@ -1,5 +1,5 @@
-import cons from "@/rpc/constants";
-import {Constants} from "@/rpc/message"
+//import cons from "./constants";
+import {Constants} from "./message"
 
 const b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -115,53 +115,9 @@ if(typeof String.prototype.rightTrim == 'undefined') {
     }
 }
 
-let browser = {};
-
-var ua = navigator.userAgent.toLowerCase();
-var s = null;
-var key = null;
-//var bv = null;
-//"mozilla/5.0 (windows nt 10.0; wow64; trident/7.0; .net4.0c; .net4.0e; manmjs; rv:11.0) like gecko"
-s = ua.match(/msie ([\d.]+)/)
-if(s) {
-    key = cons.IE;
-    key = key + s[1].split('.')[0];
-}else if((s = ua.match(/rv:([\d.]+)/))) {
-    key = cons.IE
-}else if((s = ua.match(/firefox\/([\d.]+)/))) {
-    key = cons.firefox
-}else if((s = ua.match(/chrome\/([\d.]+)/))) {
-    key = cons.chrome;
-}else if((s = ua.match(/opera.([\d.]+)/))) {
-    key = cons.opera;
-}else if((s = ua.match(/version\/([\d.]+).*safari/))) {
-    key = cons.safari;
-}
-
-if(s != null) {
-    browser[key] = [];
-    browser[key][0] = s[0].trim();
-    browser[key][1] = s[1].trim();
-}
-
-function isBrowser(browser){
-    return browser[browser] != null;
-}
-
-
-if(isBrowser('ie')) {
-    Array.prototype.fill = function(e) {
-        for(let i = 0; i < this.length; i++) {
-            this[i] = e;
-        }
-    }
-}
-
 let _genId = 0;
 
 export  default  {
-    browser,
-    isBrowser,
 
     goTo(url) {
         location.href = url;
@@ -233,8 +189,8 @@ export  default  {
         return myReg.test(value);
     },
 
-    checkMobile (phone){
-        return /^1(3|4|5|6|7|8|9)d{9}$/.test(phone);
+    checkMobile (mobile){
+        return /^1(3|4|5|6|7|8|9)d{9}$/.test(mobile);
     },
 
     checkIP (value)   {
@@ -293,21 +249,6 @@ export  default  {
         }
 
         return params;
-    },
-
-
-
-    version() {
-        for(var b in browser) {
-            return browser[b][1].split('.')[0];
-        }
-    },
-
-    isIe() {
-        return this.isBrowser(cons.IE9) ||
-            this.isBrowser(cons.IE8) ||
-            this.isBrowser(cons.IE7) ||
-            this.isBrowser(cons.IE6)
     },
 
     clone(jsObj) {

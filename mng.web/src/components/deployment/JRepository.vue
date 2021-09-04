@@ -55,7 +55,10 @@
                     </Select>
                 </td></tr>
 
-                <tr v-if="model != 0"><td>VALUE</td><td><input type="file" ref="resFile" @change="fileChange()"/></td></tr>
+                <tr v-if="model != 0"><td>VALUE</td><td>
+                    <input type="file" ref="resFile" @change="fileChange()"/>
+                </td>
+                </tr>
 
                 <tr v-if="upStatis.onUpload"><td colspan="2">SIZE&FINISH:{{upStatis.totalSize}}/{{upStatis.finishSize}}&nbsp;&nbsp;
                     COST:{{upStatis.costTime}}&nbsp;&nbsp;SPEED:{{upStatis.uploadSpeed}}</td></tr>
@@ -340,7 +343,7 @@
                             this.errMsg = "资源版本不匹配，只能在同一个资源中做修改";
                             return;
                         }
-                    }else {
+                    } else {
                         this.res0.artifactId = atName ;
                         this.res0.version = ver;
                     }
@@ -558,7 +561,6 @@
                         self.$Message.error(err);
                     });
                 }
-
             },
 
             resetUploadStatis() {

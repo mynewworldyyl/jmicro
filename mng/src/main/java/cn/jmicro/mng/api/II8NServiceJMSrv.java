@@ -8,5 +8,5 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface II8NServiceJMSrv {
 
-	RespJRso<Map<String,String>> keyValues(String resPath,String lang);
+	RespJRso<Map<String,String>> keyValues(String module, String lang,int clientId);
 }

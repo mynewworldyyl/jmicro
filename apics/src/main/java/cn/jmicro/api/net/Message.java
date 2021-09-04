@@ -144,6 +144,8 @@ public final class Message {
 	//是否包含实例ID
 	public static final int EXTRA_FLAG_INS_ID = 1 << 13;
 	
+	public static final int EXTRA_FLAG_FROM_APIGATEWAY = 1 << 14;
+	
 	public static final Byte EXTRA_KEY_LINKID = -127;
 	public static final Byte EXTRA_KEY_INSID = -126;
 	public static final Byte EXTRA_KEY_TIME = -125;
@@ -158,6 +160,10 @@ public final class Message {
 	public static final Byte EXTRA_KEY_FLAG = -118;
 	
 	public static final Byte EXTRA_KEY_MSG_ID = -117;
+	
+	public static final Byte EXTRA_KEY_LOGIN_SYS= -116;
+	
+	public static final Byte EXTRA_KEY_ARG_HASH= -115;
 	
 	//rpc method name
 	public static final Byte EXTRA_KEY_METHOD = 127;
@@ -221,8 +227,6 @@ public final class Message {
 	
 	private Map<Byte,Object> extraMap;
 	
-	//*****************extra data begin******************//
-	
 	/**
 	 * 0        dm:       is development mode EXTRA_FLAG_DEBUG_MODE = 1 << 1;
 	 * 1,2      PP:       Message priority   EXTRA_FLAG_PRIORITY
@@ -236,8 +240,8 @@ public final class Message {
 	 * 10       SE        密码
 	 * 11       SI        是否有签名值 0：无，1：有
 	 * 12       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
-	 * 13
-	             ENT SI  SE  WE MK SV  DS   US   DO   UP  P    P   dm   
+	 * 13       ERROR     0:正常包， 1：错误响应包
+	          E  ENT SI  SE  WE MK SV  DS   US   DO   UP  P    P   dm   
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
      
@@ -251,6 +255,8 @@ public final class Message {
 	
 	//附加数居
 	private transient ByteBuffer extra = null;
+	
+	private transient IRequest req = null;
 		
 	//非对称加密签名
 	//private transient String signData;
@@ -677,6 +683,14 @@ public final class Message {
 		extrFlag = set(f,extrFlag,EXTRA_FLAG_DOWN_SSL);
 	}
 	
+	public boolean isFromApiGateway() {
+		return is(extrFlag,EXTRA_FLAG_FROM_APIGATEWAY);
+	}
+	
+	public void setFromApiGateway(boolean f) {
+		extrFlag = set(f,extrFlag,EXTRA_FLAG_FROM_APIGATEWAY);
+	}
+	
 	public boolean isRsaEnc() {
 		return is(extrFlag,EXTRA_FLAG_ENC_TYPE);
 	}
@@ -724,6 +738,15 @@ public final class Message {
 	public void setRpcMk(boolean f) {
 		extrFlag = set(f,extrFlag, EXTRA_FLAG_RPC_MCODE);
 	}
+	
+	
+	/*public boolean isError() {
+		return is(extrFlag, EXTRA_FLAG_ERROR);
+	}
+	
+	public void setError(boolean f) {
+		extrFlag = set(f,extrFlag, EXTRA_FLAG_ERROR);
+	}*/
 	
 	public boolean isDumpUpStream() {
 		return is(extrFlag,EXTRA_FLAG_DUMP_UP);
@@ -888,6 +911,13 @@ public final class Message {
 		}
 	}
 	
+	 public static int readUnsignedShort(byte[] b,int pos) {
+			int firstByte = (0xFF & ((int)b[pos]));
+			int secondByte = (0xFF & ((int)b[pos+1]));
+			int anUnsignedShort  = (int) (firstByte << 8 | secondByte);
+	        return anUnsignedShort;
+		 }
+	 
 	
 	 public static int readUnsignedShort(ByteBuffer b) {
 		int firstByte = (0xFF & ((int)b.get()));
@@ -895,6 +925,34 @@ public final class Message {
 		int anUnsignedShort  = (int) (firstByte << 8 | secondByte);
         return anUnsignedShort;
 	 }
+	 
+	 public static long readLong(byte[] b,int pos) {
+			byte firstByte = b[pos++];
+			byte secondByte = b[pos++];
+			byte thirdByte = b[pos++];
+			byte fourByte = b[pos++];
+			
+			byte fiveByte = b[pos++];
+			byte sixByte = b[pos++];
+			byte sevenByte = b[pos++];
+			byte eigthByte = b[pos++];
+			
+			/*long anUnsignedShort  = (long) (
+					firstByte << 56 | secondByte<<48
+					| thirdByte << 40 | fourByte<<32
+					| fiveByte << 24 | sixByte<<16
+					| sevenByte << 8 | eigthByte
+					);
+	        return anUnsignedShort;*/
+			
+			return makeLong(firstByte,secondByte,thirdByte,fourByte,fiveByte,sixByte,sevenByte,eigthByte);
+	}
+	 
+	private static long makeLong(byte b7, byte b6, byte b5, byte b4, byte b3, byte b2, byte b1, byte b0) {
+		return ((((long) b7) << 56) | (((long) b6 & 0xff) << 48) | (((long) b5 & 0xff) << 40)
+				| (((long) b4 & 0xff) << 32) | (((long) b3 & 0xff) << 24) | (((long) b2 & 0xff) << 16)
+				| (((long) b1 & 0xff) << 8) | (((long) b0 & 0xff)));
+	}
 	 
 	 public static long readUnsignedLong(ByteBuffer b) {
 			int firstByte = (0xFF & ((int)b.get()));
@@ -943,6 +1001,19 @@ public final class Message {
 		short vv = (short) (b.get() & 0xff);
 	    return vv;
 	}
+	
+	  public static int readInt(byte data[],int startPos) {
+	    	int firstByte = (0xFF & ((int)data[startPos]));
+			int secondByte = (0xFF & ((int)data[startPos+1]));
+			int thirdByte = (0xFF & ((int)data[startPos+2]));
+			int fourByte = (0xFF & ((int)data[startPos+3]));
+			int anUnsignedShort  = (int) (
+					firstByte << 24 | secondByte<<16
+					| thirdByte << 8 | fourByte
+					);
+	        return anUnsignedShort;
+	        
+	  }
     
     public static long readUnsignedInt(ByteBuffer b) {
     	int firstByte = (0xFF & ((int)b.get()));
@@ -951,8 +1022,8 @@ public final class Message {
 		int fourByte = (0xFF & ((int)b.get()));
 		
 		int anUnsignedShort  = (int) (
-				firstByte << 56 | secondByte<<48
-				| thirdByte << 40 | fourByte<<32
+				firstByte << 24 | secondByte<<16
+				| thirdByte << 8 | fourByte
 				);
         return anUnsignedShort;
     	

@@ -27,6 +27,8 @@
 package cn.jmicro.api.utils;
 
 import java.lang.ref.SoftReference;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -35,6 +37,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+
+import cn.jmicro.common.CommonException;
 
 /**
 * A utility class for parsing and formatting HTTP dates as used in cookies and
@@ -45,6 +49,8 @@ import java.util.TimeZone;
 */
 public final class DateUtils {
 
+	 public static final String PATTERN_YYYY_MM_DD_HHMMSSSSST = "yyyy-MM-dd HH:mm:ss.SSS'T'";
+	 
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSSZZZ = "yyyy-MM-dd HH:mm:ss SSS";
 	 
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSS = "yyyy-MM-dd HH:mm:ss";
@@ -118,6 +124,22 @@ public final class DateUtils {
    public static Date parseDate(final String dateValue, final String[] dateFormats) {
        return parseDate(dateValue, dateFormats, null);
    }
+   
+   public static Date parseDate(final String dateValue, final String dateFormats) {
+       try {
+		return dateFormat(dateFormats).parse(dateValue);
+	} catch (ParseException e) {
+		throw new CommonException(dateValue+" with pattern "+dateFormats);
+	}
+   }
+   
+   private static DateFormat dateFormat(String pattern) {
+	   DateFormat dateFormat = new SimpleDateFormat(pattern);
+	   dateFormat.setLenient(false);
+	   return dateFormat;
+   }
+   
+  
 
    /**
     * Parses the date value using the given date formats.

@@ -167,6 +167,9 @@ public final class ServiceMethodJRso {
 	
 	private byte txPhase = TxConstants.TX_2PC;
 	
+	private byte cacheType = Constants.CACHE_TYPE_NO;
+	private int cacheExpireTime = 60; //缓存超时是间
+	
 	private int[] authClients;
 	
 	public void formPersisItem(ServiceMethodJRso p){
@@ -220,6 +223,8 @@ public final class ServiceMethodJRso {
 		this.txPhase = p.txPhase;
 		
 		this.desc = p.desc;
+		this.cacheType = p.cacheType;
+		this.cacheExpireTime = p.cacheExpireTime;
 		
 		this.key.form(p.key);
 	}

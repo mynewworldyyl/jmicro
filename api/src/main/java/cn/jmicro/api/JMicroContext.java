@@ -66,9 +66,8 @@ public class JMicroContext  {
 	public static final String LOGIN_ACT = "_loginAccount";
 	public static final String LOGIN_ACT_SYS = "_loginAccountSys";
 	
-	public static final String LOGIN_KEY = Constants.TOKEN_KEY;
-	
-	public static final String LOGIN_KEY_SYS = "loginKeySys";
+	public static final String LOGIN_KEY = Message.EXTRA_KEY_LOGIN_KEY + ""; //Constants.TOKEN_KEY;
+	public static final String LOGIN_KEY_SYS = Message.EXTRA_KEY_LOGIN_SYS + ""; //"loginKeySys";
 	
 	public static final String SM_LOG_LEVEL = "__smLogLevel";
 	

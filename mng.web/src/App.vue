@@ -28,6 +28,7 @@
                       <Menu-item name="__statisConfig"><Icon type="ios-alert" />{{"statisConfig"|i18n}}</Menu-item>
                       <Menu-item name="__warningConfig"><Icon type="ios-alert" />{{"warningConfig"|i18n}}</Menu-item>
                       <Menu-item name="__resourceConfig"><Icon type="ios-alert" />{{"resourceConfig"|i18n}}</Menu-item>
+                      <Menu-item name="__i18nConfig"><Icon type="ios-alert" />{{"i18nConfig"|i18n}}</Menu-item>
                    </Menu-group>
                   <Menu-group :title="'TypeConfig'|i18n">
                       <Menu-item name="__typeConfig"><Icon type="ios-cog"></Icon>{{"BaseConfig"|i18n("Base Config")}}</Menu-item>

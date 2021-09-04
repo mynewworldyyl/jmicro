@@ -407,7 +407,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	public static Map<Object,Object> decodeMap(DataInput buffer,Class<?> mapType, ParameterizedType paramType){
 		int len = 0;
 		try {
-			len = buffer.readShort();
+			len = TypeCoder.getLength(buffer);
 		} catch (IOException e) {
 			//logger.error("decodeMap",e);
 			System.err.println(e.getStackTrace());
@@ -454,7 +454,6 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 				//logger.error("decodeMap",e);
 				e.printStackTrace();
 			}
-			
 		}
 		
 		return map;
@@ -464,9 +463,8 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	public static void decodeCollection(DataInput buffer, Collection coll, Class<?> declareType,Type genericType){
 		int len=0;
 		try {
-			len = buffer.readShort();
+			len = TypeCoder.getLength(buffer);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		if(len <= 0) {
@@ -498,7 +496,7 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 		int len=0;
 		byte flag = 0;
 		try {
-			len = buffer.readShort();
+			len = TypeCoder.getLength(buffer);
 			if(len <= 0) {
 				return null;
 			}
@@ -614,7 +612,11 @@ public interface TypeCoder<T> extends Comparable<TypeCoder<T>>{
 	}
 	
 	public static void putLength(DataOutput buffer,int len) throws IOException {
-		buffer.writeShort(len);
+		buffer.writeInt(len);
+	}
+	
+	public static int getLength(DataInput buffer) throws IOException {
+		return buffer.readInt();
 	}
 	
 	public static void encodeString(DataOutput buffer,String str) throws IOException{

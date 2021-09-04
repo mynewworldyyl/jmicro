@@ -89,14 +89,14 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			}*/
 			req.setTransport(Constants.TRANSPORT_NETTY);
 			req.setSnvHash(si.getKey().getSnvHash());
-			req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
+			//req.putObject(JMicroContext.LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 			
 			if(JMicroContext.get().exists(TxConstants.TX_ID)) {
 				req.putObject(TxConstants.TX_ID, JMicroContext.get().getLong(TxConstants.TX_ID, null));
 				req.putObject(TxConstants.TX_SERVER_ID, JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, null));
 			}
 			
-			if(sm.getForType() == Constants.FOR_TYPE_SYS) {
+			/*if(sm.getForType() == Constants.FOR_TYPE_SYS) {
 				if(pi.isLogin()) {
 					req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
 				} else {
@@ -104,7 +104,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 					LG.log(MC.LOG_ERROR, this.getClass(), desc);
 					throw new CommonException(desc);
 				}
-			}
+			}*/
 			
 			req.setReqParentId(cxt.getLong(JMicroContext.REQ_PARENT_ID, -1L));
 			

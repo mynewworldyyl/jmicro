@@ -31,7 +31,7 @@ public interface Constants {
 	public static final String INVALID_LOG_DESC = "nl";
 	public static final byte USE_SYSTEM_CLIENT_ID = -2;
 	
-	public static final String TOKEN_KEY = "loginKey";
+	public static final String LOGIN_KEY = "-119";
 	
 	public static final int NO_CLIENT_ID = -1;
 	
@@ -225,9 +225,6 @@ public interface Constants {
 	public static final byte MSG_TYPE_REQ_JRPC = 0x01; //普通RPC调用请求，发送端发IRequest，返回端返回IResponse
 	public static final byte MSG_TYPE_RRESP_JRPC = 0x02;//返回端返回IResponse
 	
-	//public static final byte MSG_TYPE_REQ_RAW = -2; //Api网关请求
-	//public static final byte MSG_TYPE_RRESP_RAW = -1;//Api网关响应
-	
 	public static final byte MSG_TYPE_PUBSUB = 0x03; //订阅消息
 	public static final byte MSG_TYPE_PUBSUB_RESP = 0x04;//订阅消息响应
 	
@@ -288,5 +285,14 @@ public interface Constants {
 	public static final byte NULL_VAL = (byte)0X01;
 	
 	/*==============================================================*/
+	
+	public static final String CACHE_DIR_PREFIX = "CP:";
+	
+	//缓存策略
+	public static final byte CACHE_TYPE_NO = 0;
+	//服务方法级缓存
+	public static final byte CACHE_TYPE_MCODE = 1;
+	//服务方法 + 账号
+	public static final byte CACHE_TYPE_ACCOUNT = 2;
 	
 }

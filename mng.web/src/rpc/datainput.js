@@ -1,5 +1,5 @@
-import utils from "@/rpc/utils";
-import {Constants} from "@/rpc/message";
+import utils from "./utils";
+import {Constants} from "./message";
 
 let JDataInput = function(buf) {
     if(!buf) {

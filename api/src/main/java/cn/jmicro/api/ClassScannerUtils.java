@@ -380,7 +380,7 @@ public class ClassScannerUtils {
                                         	//logger.info("ClassName: " + packageName + '.'  + className);
                                         	Class<?> c = cl.loadClass(cn);
                                         	if(c != null) {
-                                        		 logger.info(cl.getClass().getSimpleName()+" : "+cn);
+                                        		 //logger.info(cl.getClass().getSimpleName()+" : "+cn);
                                         		 classes.add(c);
                                         		 if(c.isAnnotationPresent(SO.class) || c.isAnnotationPresent(Service.class)) {
                                         			 try(InputStream is = jar.getInputStream(entry)){

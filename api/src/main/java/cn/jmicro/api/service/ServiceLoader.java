@@ -713,6 +713,7 @@ public class ServiceLoader{
 				sm.setTxType(TxConstants.TYPE_TX_NO);
 				sm.setTxPhase(TxConstants.TX_2PC);
 				sm.setTxIsolation((byte)Connection.TRANSACTION_READ_COMMITTED);
+				sm.setCacheType(Constants.CACHE_TYPE_NO);
 			} else {
 
 				 //实现类方法配置具有高优先级
@@ -754,10 +755,12 @@ public class ServiceLoader{
 				sm.setTxType(manno.txType());
 				sm.setTxIsolation(manno.txIsolation());
 				sm.setTxPhase(manno.txPhase());
-				 
-				 if(sm.getTimeout() <= 0) {
+				sm.setCacheType(manno.cacheType());
+				sm.setCacheExpireTime(manno.cacheExpireTime());
+				
+				if(sm.getTimeout() <= 0) {
 					throw new CommonException("Invalid timeout val with 0 for  " +item.getImpl() + "."+ m.getName());
-				 }
+				}
 				 
 				sm.getBreakingRule().setBreakTimeInterval(sbr.breakTimeInterval());
 				sm.getBreakingRule().setEnable(sbr.enable());
@@ -765,6 +768,14 @@ public class ServiceLoader{
 				sm.getBreakingRule().setCheckInterval(sbr.checkInterval());
 
 			} 
+			
+			if(sm.getCacheExpireTime() > 1800) {
+				sm.setCacheExpireTime(1800);//最大超时时间30分钟
+			}
+			
+			if(sm.getCacheExpireTime() <= 0) {
+				sm.setCacheExpireTime(30);//最小超时时间30秒
+			}
 			
 			sm.getKey().setUsk(usk);
 			sm.getKey().setMethod(m.getName());

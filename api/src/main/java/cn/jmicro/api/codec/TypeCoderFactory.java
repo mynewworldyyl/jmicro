@@ -407,7 +407,9 @@ public class TypeCoderFactory {
 			@Override
 			public void encodeData(DataOutput buffer, ByteBuffer val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
+				
 				TypeCoder.putLength(buffer, val.remaining());
+				
 				byte[] data = new byte[val.remaining()];
 				val.get(data);
 				buffer.write(data);
@@ -416,7 +418,7 @@ public class TypeCoderFactory {
 			@Override
 			public ByteBuffer decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 				try {
-					int len = buffer.readShort();
+					int len =TypeCoder.getLength(buffer);
 					byte[] data = new byte[len];
 					buffer.readFully(data, 0, len);
 					return ByteBuffer.wrap(data);

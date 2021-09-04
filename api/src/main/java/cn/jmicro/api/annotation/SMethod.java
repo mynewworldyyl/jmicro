@@ -155,28 +155,27 @@ public @interface SMethod {
 	 */
 	public int avgResponseTime() default -1;
 	
-	public int maxPacketSize() default 2048;//以字节为单位的包最大小
+	//以字节为单位的包最大小
+	public int maxPacketSize() default 2048;
 	
+	//登录相关
 	//是否需要强制赋予账号权限才能使用
 	public boolean perType() default false;
-	
 	//必须登陆才能使用
 	public boolean needLogin() default true;
 	
+	//加密相关
 	public boolean downSsl() default false;
-	
 	public boolean upSsl()  default false;
-	
-	//public boolean isSsl() default false;
-	
 	//0:对称加密，1：RSA 非对称加密
 	public byte encType() default 0;
-	
 	public int forType() default Constants.FOR_TYPE_ALL;
 	
+	//事务相关
 	public byte txType() default TxConstants.TYPE_TX_NO;
-	
 	public byte txPhase() default TxConstants.TX_2PC;
-	
 	public byte txIsolation() default Connection.TRANSACTION_READ_COMMITTED;
+	
+	public byte cacheType() default Constants.CACHE_TYPE_NO;
+	public int cacheExpireTime() default 60;//单位秒
 }
