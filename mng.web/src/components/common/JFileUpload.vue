@@ -1,15 +1,15 @@
 <template>
     <div class="JFileUpload">
-        <div class="btnBox">
+        <!--<div class="btnBox">
             <Button @click="doUpdate()">确定</Button>
-        </div>
+        </div>-->
         <div class="error">{{errMsg}}</div>
         <div class="fileBox">
             <Label  for="file">{{'File'|i18n}}</Label>
             <input  id ="file"  type="file" ref="fileUpload" @change="fileChange()"/><br/>
 
-            <Label v-if="extParams"  for="extParams">{{extParams |i18n}}</Label>
-            <Input  v-if="extParams"  id="extParams" v-model="res.extParams"/>
+           <!-- <Label v-if="extParams"  for="extParams">{{extParams |i18n}}</Label>
+            <Input  v-if="extParams"  id="extParams" v-model="res.extParams"/>-->
 
 <!--            <input type="file" ref="fileUpload" @change="fileChange()"/>
             <input type="text" ref="fileUpload" @change="fileChange()"/>-->
@@ -54,16 +54,6 @@ export default {
             type:String,
         },
 
-        extParams:{
-            default:'',
-            type:String,
-        },
-
-        extNotNull:{
-            default:true,
-            type:Boolean,
-        },
-
         method:{
             default:'',
             type:String,
@@ -89,7 +79,6 @@ export default {
                 name:'',
                 modifiedTime:0,
                 resExtType:'',
-                extParams:'',
             }
         };
     },
@@ -114,7 +103,7 @@ export default {
             this.res.resExtType = "";
         },
 
-        doUpdate(){
+        doUpdate(extParams){
             this.errMsg = "";
             let self = this;
             if(!this.res.fc) {
@@ -128,10 +117,10 @@ export default {
                 throw 'Invalid file name length ' + this.res.name;
             }
 
-            if(this.extNotNull && !this.res.extParams) {
+    /*        if(this.extNotNull && !this.res.extParams) {
                 this.errMsg = this.extParams + '不能为空';
                 return
-            }
+            }*/
 
             delete this.res.fc;
 
@@ -140,7 +129,7 @@ export default {
                 let jo = new JDataOutput(128);
                 jo.writeInt(0)
                 jo.writeUnsignedLong(self.res.size)
-                jo.writeUtf8String(this.res.extParams)
+                jo.writeUtf8String(extParams)
                 jo.writeUtf8String(this.res.name)
 
                 self.callRemote(self.mcode,[jo.getBuf()])

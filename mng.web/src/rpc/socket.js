@@ -5,14 +5,13 @@ import ps from "./pubsub"
 import  config from "./config"
 import  rpc from "./rpcbase"
 
+import  utils from "./utils"
+
 let listeners = {};
 let waiting = [];
 //let logData = null;
 //let idCallback = {};
 //let isInit = false;
-
-let wxs = null
-if(typeof wx == 'object') wxs = wx
 
 let wsk = null;
 
@@ -68,8 +67,8 @@ export default {
                     onopen();
                 }
             }
-        }else if(wxs) {
-            wsk = wxs.connectSocket({
+        }else if( utils.isWx()) {
+            wsk = wx.connectSocket({
                 url: url,
             });
 

@@ -12,8 +12,8 @@
                         <td>{{'country' | i18n }}</td>
                         <td>{{'lan' | i18n }}</td>
                         <td>{{'desc' | i18n }}</td>
-                        <td>{{'createdTime' | i18n }}</td>
-                        <td>{{'updatedTime' | i18n }}</td>
+                        <!--<td>{{'createdTime' | i18n }}</td>
+                        <td>{{'updatedTime' | i18n }}</td>-->
                         <td>{{'Operation' | i18n }}</td>
                     </tr>
                 </thead>
@@ -26,10 +26,10 @@
                     <td>{{c.country}}</td>
                     <td>{{c.lan}}</td>
                     <td>{{c.desc}}</td>
-                    <td>{{c.createdTime | formatDate(1)}}</td>
-                    <td>{{c.updatedTime | formatDate(1)}}</td>
+                  <!--  <td>{{c.createdTime | formatDate(1)}}</td>
+                    <td>{{c.updatedTime | formatDate(1)}}</td>-->
                     <td>
-                        <a v-if="isLogin" @click="update(c)">{{'Update' | i18n }}</a>
+                        <a v-if="isLogin" @click="update(c)">{{'Update' | i18n }}</a>&nbsp;&nbsp;&nbsp;&nbsp;
                         <a v-if="isLogin" @click="deleteItem(c.id)">{{'Delete' | i18n }}</a>
                     </td>
                 </tr>
@@ -47,20 +47,30 @@
         <div v-if="isLogin  && (!list || list.length == 0)" >{{msg}}</div>
 
         <!--  创建 或 更新 -->
-        <Drawer  ref="addClient"  v-model="addDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
+        <Drawer  v-model="addDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
                 :draggable="true" :scrollable="true" width="50">
+            <div class="error">{{errMsg}}</div>
             <div class="addClientcls">
-                <a v-if="actInfo" @click="doAdd()">{{'确认提交'|i18n}}</a>
+                <a v-if="actInfo  && !importFileModel" @click="doAdd()">{{'Confirm'|i18n}}</a>
+                <a v-if="actInfo && importFileModel" @click="doImport()">{{'DoImport'|i18n}}</a>
             </div>
             <div>
+
+                <!--  文件导入 -->
+                <JFileUpload v-if="importFileModel" ref="importFile" mcode="1168774889"
+                             @finish="uploadFinish()"></JFileUpload>
+
+                <Label v-if="!importFileModel"  for="key">{{'key'|i18n}}</Label>
+                <Input  v-if="!importFileModel"   :disabled="updateModel"  id="key" v-model="ic.key"/>
+
+                <Label  v-if="!importFileModel" for="val">{{'val'|i18n}}</Label>
+                <Input  v-if="!importFileModel" id="val" v-model="ic.val"/>
+
+                <Label v-if="actInfo && actInfo.admin"  for="clientId">{{'clientId'|i18n}}</Label>
+                <Input v-if="actInfo && actInfo.admin"   id="clientId" v-model="ic.clientId"/>
+
                 <Label  for="mod">{{'mod'|i18n}}</Label>
                 <Input  id="mod" v-model="ic.mod"/>
-
-                <Label  for="key">{{'key'|i18n}}</Label>
-                <Input :disabled="updateModel"  id="key" v-model="ic.key"/>
-
-                <Label for="val">{{'val'|i18n}}</Label>
-                <Input  id="val" v-model="ic.val"/>
 
                 <Label for="country">{{'country'|i18n}}</Label>
                <!-- <Input id="country" v-model="ic.country"/>-->
@@ -83,21 +93,12 @@
                 <Label  for="updatedTime">{{'updatedTime'|i18n}}</Label>
                 <div id="updatedTime">{{ic.updatedTime| formatDate(1)}}</div>
 
-                <Label  for="clientId">{{'clientId'|i18n}}</Label>
-                <Input :disabled="true"  id="clientId" v-model="ic.clientId"/>
-
                 <Label  for="id">{{'id'|i18n}}</Label>
                 <Input :disabled="true"  id="id" v-model="ic.id"/>
 
             </div>
 
-            <div>{{errMsg}}</div>
-        </Drawer>
 
-        <!--  文件导入 -->
-        <Drawer v-model="importDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
-                 :draggable="true" :scrollable="true" width="50">
-            <JFileUpload :extNotNull="true" extParams="mod" mcode="1168774889" @finish="uploadFinish()"></JFileUpload>
         </Drawer>
 
         <div v-if="isLogin"  :style="qryDrawer.drawerBtnStyle" class="drawerJinvokeBtnStatu"
@@ -108,36 +109,36 @@
             <table id="queryTable">
                 <tr>
                     <td>{{'Country'|i18n}}</td><td>
-                    <Select data-op="eq" :filterable="false" ref="lan"  v-model="qryData.country">
+                    <Select :filterable="false" ref="lan"  v-model="qryData.country">
                         <Option value="" >{{'None'|i18n}}</Option>
                         <Option v-for="c in conList" :key="c.l" :value="c.l" >{{c.b}}</Option>
                     </Select>
                 </td>
                     <td>{{'Lan'|i18n}}</td><td>
-                    <Select data-op="eq" :filterable="false" ref="lan"  v-model="qryData.lan">
+                    <Select :filterable="false" ref="lan"  v-model="qryData.lan">
                         <Option value="" >{{'None'|i18n}}</Option>
                         <Option v-for="c in langList" :key="c.l" :value="c.l" >{{c.b}}</Option>
                     </Select>
                 </td>
                 </tr>
                 <tr>
-                    <td>{{'Key'|i18n}}(*)</td>
+                    <td>{{'Key'|i18n}}</td>
                     <td>
-                        <Input  data-op="regex"   v-model="qryData.key"/>
+                        <Input  v-model="qryData.key"/>
                     </td>
-                    <td>{{'Val'|i18n}}(*)</td>
+                    <td>{{'Val'|i18n}}</td>
                     <td>
-                        <Input   data-op="regex"   v-model="qryData.val"/>
+                        <Input  v-model="qryData.val"/>
                     </td>
                 </tr>
                 <tr>
-                    <td>{{'Mod'|i18n}}(*)</td>
+                    <td>{{'Mod'|i18n}}</td>
                     <td>
-                        <Input  data-op="regex"   v-model="qryData.mod"/>
+                        <Input v-model="qryData.mod"/>
                     </td>
-                    <td></td>
+                    <td>{{'clientId'|i18n}}(*)</td>
                     <td>
-
+                        <Input  v-model="qryData.clientId"/>
                     </td>
                 </tr>
                 <tr>
@@ -152,7 +153,7 @@
 <script>
 
     import rpc from "@/rpc/rpcbase"
-    //import cons from "@/rpc/constants"
+    import lc from "@/rpc/localStorage"
     const cid = 'i18nConfig';
 
     const lans = [{'l':'zh',b:'中文'},{'l':'zh-cn',b:'中文(简体)'},{'l':'zh-hk', b:'中文(香港)'},
@@ -184,22 +185,24 @@
                     key:'',
                     val:'',
                     mod:'',
-                    ps : [{opType:1,fn:'country',v:null},{opType:1,fn:'lan',v:null},
-                        {opType:2,fn:'key',v:null},{opType:2,fn:'val',v:null},]
+                    ps : [{opType:1,fn:'country',v:null},{opType:1,fn:'lan',v:null},{opType:1,fn:'clientId',v:null},
+                        {opType:2,fn:'key',v:null},{opType:2,fn:'val',v:null},{opType:2,fn:'mod',v:null},]
                 },
 
                qry : {
-                    pageSize:10,
+                    pageSize:30,
                     curPage:1,
                     sortName:'createdTime',
                     order:1,//1:增序  -1：降序
                     ps : []
                },
 
-                ic:{country:'cn',lan:'zh'},
+                ic:{},
                 isLogin:false,
                 list: [],
                 errMsg:'',
+
+                importFileModel:false,
 
                 updateModel: false,
                 tokenDialog: false,
@@ -224,6 +227,7 @@
         },
 
         methods: {
+
             openDrawer() {
                 this.qryDrawer.drawerStatus = true;
                 this.qryDrawer.drawerBtnStyle.zindex = 10000;
@@ -239,11 +243,21 @@
             },
 
             import0(){
-                this.importDrawer.drawerStatus = true
+                this.importFileModel = true
+                this.defaultIc()
+                this.updateModel = false;
+                this.errMsg = '';
+                this.addDrawer.drawerStatus = true;
             },
 
             doImport() {
-
+                this.checkVal();
+                if(this.errMsg != '') {
+                    return
+                }
+                let exp = this.ic.country +':' + this.ic.lan + ':' + this.ic.mod + ':' + this.ic.clientId
+                let imf = this.$refs.importFile;
+                imf.doUpdate(exp);
             },
 
             doQuery(){
@@ -269,30 +283,58 @@
                 })
             },
 
-            pageSizeChange(pageSize) {
-                this.qry.pageSize = pageSize;
-                this.qry.curPage = 1;
-                this.refresh();
-            },
-
-            curPageChange(curPage) {
-                this.qry.curPage = curPage
-                this.refresh()
-            },
-
             update(c) {
+                this.importFileModel = false
                 this.updateModel = true
                 this.errMsg = ''
                 this.ic = c
                 this.addDrawer.drawerStatus = true
             },
 
+            checkVal(){
+                if(!this.ic.country) {
+                    this.errMsg = '国家代码不能为空'
+                    return;
+                }
+
+                if(!this.ic.lan) {
+                    this.errMsg = '语言代码不能为空'
+                    return;
+                }
+
+                if(!this.ic.clientId) {
+                    this.errMsg = '租户ID不能为空'
+                    return;
+                }
+
+                if(!(/\d+/.test(this.ic.clientId))) {
+                    this.errMsg = '租户ID包含非法字符'
+                    return;
+                }
+
+                if(!this.ic.mod) {
+                    this.errMsg = '模块名称不能为空'
+                    return;
+                }
+                this.errMsg = ''
+            },
+
             doAdd() {
                 let self = this
-                self.errMsg = ''
-                if(!this.ic.mod) {
-                    self.errMsg = '模块参数不能为空'
+
+                this.checkVal();
+                if(self.errMsg != '') {
                     return
+                }
+
+                if(!this.ic.key) {
+                    this.errMsg = '资源名称不能为空'
+                    return;
+                }
+
+                if(!this.ic.val) {
+                    this.errMsg = '资源名称不能为空'
+                    return;
                 }
 
                 if(self.updateModel) {
@@ -308,12 +350,27 @@
                         this.addDrawer.drawerStatus = false
                     })
                 }
+
+                this.setLcv('country',this.ic.country)
+                this.setLcv("lang",this.ic.lan)
+                this.setLcv("clientId",this.ic.clientId)
+                this.setLcv("mod",this.ic.mod)
+
             },
 
+            defaultIc() {
+                let cn = this.getLcv('country')
+                let la =  this.getLcv("lang")
+                let clientId =  this.getLcv("clientId")
+                let mod =  this.getLcv("mod")
+                this.ic = {country:cn,lan:la,mod:mod,clientId:clientId};
+             },
+
             add() {
+                this.importFileModel = false
+                this.defaultIc()
                 this.updateModel = false;
                 this.errMsg = '';
-                this.ic = {country:'cn',lan:'zh'};
                 this.addDrawer.drawerStatus = true;
             },
 
@@ -375,6 +432,23 @@
                     }
                 });
             },
+            pageSizeChange(pageSize) {
+                this.qry.pageSize = pageSize;
+                this.qry.curPage = 1;
+                this.refresh();
+            },
+
+            curPageChange(curPage) {
+                this.qry.curPage = curPage
+                this.refresh()
+            },
+            getLcv(key) {
+                return lc.get(cid+':'+key)
+            },
+
+            setLcv(key,val) {
+                return lc.set(cid+':'+key,val)
+            }
         },
 
         mounted () {

@@ -1,5 +1,6 @@
 package cn.jmicro.ext.mongodb;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -89,16 +91,16 @@ public class CRUDService<T extends PersistVo> {
 			
 			switch(qd.getOpType()) {
 			case QryDefJRso.OP_EQ:
-				filter.put(qd.getFn(), qd.getV());
+				filter.put(qd.getFn(), getValue(clazz,qd));
 				break;
 			case QryDefJRso.OP_GT:
 				Map<String,Object> gt = new HashMap<>();
-				gt.put("$gt", qd.getV());
+				gt.put("$gt", Double.parseDouble(qd.getV().toString()));
 				filter.put(qd.getFn(), gt);
 				break;
 			case QryDefJRso.OP_GTE:
 				Map<String,Object> gte = new HashMap<>();
-				gte.put("$gte", qd.getV());
+				gte.put("$gte",  Double.parseDouble(qd.getV().toString()));
 				filter.put(qd.getFn(), gte);
 				break;
 			case QryDefJRso.OP_IN:
@@ -108,10 +110,10 @@ public class CRUDService<T extends PersistVo> {
 				filter.put(qd.getFn(), in);
 				break;
 			case QryDefJRso.OP_LT:
-				filter.put(qd.getFn(), qd.getV());
+				filter.put(qd.getFn(),  Double.parseDouble(qd.getV().toString()));
 				break;
 			case QryDefJRso.OP_LTE:
-				filter.put(qd.getFn(), qd.getV());
+				filter.put(qd.getFn(),  Double.parseDouble(qd.getV().toString()));
 				break;
 			case QryDefJRso.OP_REGEX:
 				Map<String,Object> re = new HashMap<>();
@@ -134,5 +136,21 @@ public class CRUDService<T extends PersistVo> {
 		
 		return r;
 
+	}
+
+	private Object getValue(Class<T> clazz, QryDefJRso qd) {
+		try {
+			Field f = clazz.getDeclaredField(qd.getFn());
+			Object v = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(qd.getV()), f.getType());
+			return v;
+		} catch (NoSuchFieldException | SecurityException e) {
+			try {
+				Field f = clazz.getSuperclass().getDeclaredField(qd.getFn());
+				Object v = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(qd.getV()), f.getType());
+				return v;
+			} catch (NoSuchFieldException | SecurityException e1) {
+				return qd.getV();
+			}
+		}
 	}
 }

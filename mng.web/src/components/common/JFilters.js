@@ -7,6 +7,9 @@ const FORMAT_TIME = 'hh:mm:ss'; //4
 const FORMAT_TIME_MS = 'hh:mm:ss S'; //5
 
 let formatDate = function(time,t) {
+
+    if(!time) return ''
+
     let f = FORMAT_DATE_TIME_MS;
 
     switch (t) {

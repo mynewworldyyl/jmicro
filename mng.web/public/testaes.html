@@ -49,7 +49,9 @@
 <script  type="text/javascript">
     $(function(){
         jm.config.sslEnable = true;
-        jm.rpc.init("localhost",9090);
+        jm.rpc.init({
+           ip: "localhost",port:9090
+        });
     })
 
     var iv = CryptoJS.lib.WordArray.random(128/8);

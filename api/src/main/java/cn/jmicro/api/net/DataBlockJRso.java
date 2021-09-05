@@ -37,6 +37,11 @@ public class DataBlockJRso {
 	
 	private String extParams;
 	
+	private int clientId;
+	private String country;
+	private String lang;
+	private String mod;
+	
 	private long lastUseTime = TimeUtils.getCurTime();
 	
 	public int addFinishBlockNum() {

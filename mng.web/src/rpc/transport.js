@@ -5,11 +5,11 @@ import {Message,Constants} from "./message";
 import ApiResponse from "./response"
 import ps from "./pubsub"
 import rpc from "./rpcbase"
+import utils from "./utils"
 
 let url = config.protocol + '://'+ config.ip + ':' + config.port +'/'+ config.httpContext;
 
-let wxs = null
-if(typeof wx == 'object') wxs = wx
+let iswx = utils.isWx();
 
 function decodeMessage(respBuff,cb) {
     let respMsg = new  Message();
@@ -32,11 +32,11 @@ function decodeMessage(respBuff,cb) {
 export default {
 
     send : function(msg,cb){
-        if(config.useWs){
+        if(config.useWs && !utils.isWx()){
             socket.send(msg,cb);
         } else {
             let buff = msg.encode();
-            if(wxs) {
+            if(iswx) {
                 //微信平台
 
                 let h = {'Content-Type': 'application/json'}
@@ -44,7 +44,7 @@ export default {
                     h[Constants.TOKEN] = rpc.actInfo.loginKey;
                 }
 
-                wxs.request({
+                wx.request({
                     url: url,
                     data: buff,
                     method: 'POST',

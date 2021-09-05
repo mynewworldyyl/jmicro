@@ -1,7 +1,12 @@
+/* eslint-disable */
 //import cons from "./constants";
 import {Constants} from "./message"
 
 const b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+let wxs = null
+
+if(typeof wx == 'object') wxs = wx
 
 String.prototype.startWith=function(str){
     var reg=new RegExp("^"+str);
@@ -118,6 +123,10 @@ if(typeof String.prototype.rightTrim == 'undefined') {
 let _genId = 0;
 
 export  default  {
+
+    isWx : function(){
+        return wxs != null
+    },
 
     goTo(url) {
         location.href = url;

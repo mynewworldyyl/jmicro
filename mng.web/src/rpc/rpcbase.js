@@ -3,6 +3,7 @@ import ApiRequest from "./request";
 import cons from "./constants";
 import config from "./config"
 import utils from "./utils"
+import i18n from "./i18n"
 
 import {Message,Constants} from "./message"
 
@@ -24,7 +25,7 @@ let errCode2Msg = {
     0x06 : "Service not available maybe not started",
 };
 
-let reqId = 1;
+let reqId = 1
 
 function __actreq(method,args){
     let req = {};
@@ -175,9 +176,12 @@ export default {
         });
     },
 
-    init : function(ip,port,actName,pwd){
-        if(config.useWs){
-            if(window && window.WebSocket || this.isWx()) {
+    init : function(opts,cb){
+         //ip,port,actName,pwd,mod
+        let useWs = opts.useWs ? opts.useWs : config.useWs
+
+        if(useWs){
+            if(window && window.WebSocket || utils.isWx()) {
             /*    import('./socket.js')
                     .then(so=>{
                         so.init()
@@ -188,6 +192,14 @@ export default {
             }
         }
 
+        if(opts.clientId) {
+            config.clientId = opts.clientId
+        }
+
+        if(opts.mod) {
+            config.mod = opts.mod
+        }
+
         if(config.sslEnable) {
             import('./security')
                 .then(so=>{
@@ -195,28 +207,27 @@ export default {
             });
         }
 
-        if(ip && ip.length > 0) {
-            config.ip = ip;
+        if( opts.ip &&  opts.ip.length > 0) {
+            config.ip =  opts.ip;
         }
 
-        if(port && port > 0) {
-            config.port = port;
+        if( opts.port &&  opts.port > 0) {
+            config.port =  opts.port;
         }
 
-        if(actName && actName.length > 0) {
-            localStorage.set("actName",actName);
+        if( opts.actName &&  opts.actName.length > 0) {
+            localStorage.set("actName", opts.actName);
         }
 
-        if(pwd && pwd.length > 0) {
-            localStorage.set("pwd",pwd);
+        if( opts.pwd &&  opts.pwd.length > 0) {
+            localStorage.set("pwd", opts.pwd);
         }
 
         let req = {};
-        req.serviceName = 'cn.jmicro.api.gateway.IBaseGatewayServiceJMSrv';
-        req.namespace = cons.NS_API_GATEWAY;
-        req.version = '0.0.1';
-        req.method = 'bestHost';
         req.args = ["nettyhttp"];
+        req.mcode=-1318264465
+
+        i18n.init(cb)
 
        /* this.callRpc(req)
             .then((data)=>{

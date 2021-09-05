@@ -25,6 +25,7 @@ import cn.jmicro.api.net.UploadFileManager;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -85,7 +86,15 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 		String lan =  INI8NMngJMSrv.DEF_LAN;
 		String con =  INI8NMngJMSrv.DEF_CONTRIY;
 		
-		String fn = db.getFileName();
+		if(!Utils.isEmpty(db.getLang())) {
+			lan = db.getLang();
+		}
+		
+		if(!Utils.isEmpty(db.getCountry())) {
+			con = db.getCountry();
+		}
+		
+		/*String fn = db.getFileName();
 		
 		int idx = fn.indexOf("_");
 		if(idx > 0) {
@@ -108,7 +117,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 				//zh
 				con = fn;
 			}
-		}
+		}*/
 		
 		try {
 			
@@ -119,8 +128,8 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 			Map<String,Object> filter = new HashMap<>();
 			filter.put("lan", lan);
 			filter.put("country", con);
-			filter.put("clientId", ai.getClientId());
-			filter.put("mod", db.getExtParams());
+			filter.put("clientId", db.getClientId());
+			filter.put("mod", db.getMod());
 			
 			br = new BufferedReader(new InputStreamReader(new FileInputStream(db.getFilePath()),Constants.CHARSET));
 			String l = null;
@@ -174,14 +183,14 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 				} else {
 					v = new I18nJRso();
 					v.setDesc(de);
-					v.setClientId(ai.getClientId());
+					v.setClientId(db.getClientId());
 					v.setCountry(con);
 					v.setCreatedBy(ai.getId());
 					v.setKey(k);
 					v.setLan(lan);
 					v.setUpdatedBy(ai.getId());
 					v.setVal(ar[1]);
-					v.setMod(db.getExtParams());
+					v.setMod(db.getMod());
 					crudSrv.add(I18nJRso.class, v);
 				}
 			}
@@ -211,7 +220,13 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		return new PromiseImpl<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
-			vo.setClientId(Config.getClientId());
+			
+			RespJRso<Boolean> rr =  checkPermission(vo);
+			if(rr != null) {
+				suc.success(rr);
+				return;
+			}
+			
 			vo.setCreatedBy(ai.getId());
 			vo.setUpdatedBy(ai.getId());
 			
@@ -251,9 +266,24 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public IPromise<RespJRso<Boolean>> delete(Long id) {
 		return new PromiseImpl<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
+			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
+			
+			I18nJRso vo = crudSrv.getById(I18nJRso.class, id);
+			if(vo == null) {
+				r.setMsg("Data not found");
+				suc.success(r);
+				return;
+			}
+			
+			RespJRso<Boolean> rr =  checkPermission(vo);
+			if(rr != null) {
+				suc.success(rr);
+				return;
+			}
+			
 			boolean s = crudSrv.deleteById(I18nJRso.class, id);
 			r.setData(s);
+			r.setCode(RespJRso.CODE_SUCCESS);
 			suc.success(r);
 		});
 	}
@@ -263,10 +293,17 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	public IPromise<RespJRso<Boolean>> update(I18nJRso vo) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		return new PromiseImpl<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
+			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
+			RespJRso<Boolean> rr =  checkPermission(vo);
+			if(rr != null) {
+				suc.success(rr);
+				return;
+			}
+			
 			vo.setUpdatedBy(ai.getId());
 			boolean s = crudSrv.updateById(I18nJRso.class, vo);
 			r.setData(s);
+			r.setCode(RespJRso.CODE_SUCCESS);
 			suc.success(r);
 		});
 	}
@@ -289,6 +326,28 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 			r.setData(o);
 			suc.success(r);
 		});
+	}
+	
+	
+	private  RespJRso<Boolean> checkPermission(I18nJRso vo) {
+		ActInfoJRso ai = JMicroContext.get().getAccount();
+		RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
+		if(vo.getClientId()<= 0) {
+			r.setMsg("无效clientId");
+			log.error(r.getMsg()+" : " + JsonUtils.getIns().toJson(vo));
+			return r;
+		}
+		
+		if(vo.getClientId() != ai.getClientId()) {
+			if(!PermissionManager.isCurAdmin()) {
+				r.setMsg("语言选项缺失");
+				log.error(r.getMsg()+" : " + JsonUtils.getIns().toJson(vo));
+				return r;
+			}
+		}
+		
+		return null;
+		
 	}
 
 }

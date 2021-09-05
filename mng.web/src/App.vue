@@ -195,7 +195,7 @@ export default {
     mounted() {
         //rpc.config.ip='';
         config.sslEnable = false;
-        rpc.init(config.ip,config.port);
+        rpc.init({ useWs:false, mod:'shopApi' });
         //jm.mng.init();
         let self = this;
 

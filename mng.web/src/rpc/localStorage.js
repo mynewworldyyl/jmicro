@@ -1,4 +1,6 @@
-//import utils from "./utils"
+/* eslint-disable */
+import util from "./utils"
+const iswx = util.isWx()
 
 export default  {
     //this.updateBrowser_ = jm.utils.i18n.get('update_your_browser');
@@ -7,7 +9,7 @@ export default  {
             //alert(this.updateBrowser_);
             return;
         }
-        window.localStorage.setItem(key,value);
+        iswx ? wx.setStorageSync(key,value) : window.localStorage.setItem(key,value);
     },
 
     remove(key) {
@@ -15,7 +17,7 @@ export default  {
             //alert(this.updateBrowser_);
             return;
         }
-        window.localStorage.removeItem(key);
+        iswx ? wx.removeStorageSync(key) :window.localStorage.removeItem(key);
     },
 
     get(key) {
@@ -23,7 +25,7 @@ export default  {
             //alert(this.updateBrowser_);
             return;
         }
-        return window.localStorage.getItem(key);
+        return  iswx ? wx.getStorageSync(key) : window.localStorage.getItem(key);
     },
 
     clear() {
@@ -32,17 +34,16 @@ export default  {
             return;
         }
         if(confirm('this operation will clear all local storage data?')) {
-            window.localStorage.clear();
+          iswx ? wx.clearStorageSync() : window.localStorage.clear();
         }
     },
 
     isSupport() {
         try {
-            return window.localStorage !== null;
+            return iswx || window.localStorage !== null
         } catch (e) {
             return false;
         }
     },
-
 
 }

@@ -137,17 +137,17 @@ JDataOutput.prototype.writeUnsignedLong = function(v) {
     //JS无64位表示
     this.checkCapacity(8);
     //dataview.setBigInt64(byteOffset, value [, littleEndian])
-    this.buf.setBigInt64(this.writePos,BigInt(v),false);
-    this.writePos += 8;
-
-    /*this.writeUByte((v >>> 56) & 0xFF);
-    this.writeUByte((v >>> 48) & 0xFF);
-    this.writeUByte((v >>> 40) & 0xFF);
-    this.writeUByte((v >>> 32) & 0xFF);
+    //this.buf.setBigInt64(this.writePos,BigInt(v),false);
+    //this.writePos += 8;
+    //浏览器端支持4字节整数，对于LONG型，高4字节默认为0
+    this.writeUByte(0);
+    this.writeUByte(0);
+    this.writeUByte(0);
+    this.writeUByte(0);
     this.writeUByte((v >>> 24) & 0xFF);
     this.writeUByte((v >>> 16) & 0xFF);
     this.writeUByte((v >>> 8) & 0xFF);
-    this.writeUByte((v >>> 0) & 0xFF);*/
+    this.writeUByte((v >>> 0) & 0xFF);
 }
 
 JDataOutput.prototype.writeByteArrayWithShortLen = function(arr) {

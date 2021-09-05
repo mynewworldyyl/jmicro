@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
@@ -17,6 +18,8 @@ import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
+import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
@@ -103,6 +106,12 @@ public class UploadFileManager {
 			String extParams = JDataInput.readString(data,pos);//读取扩展参数
 			pos += JDataInput.stringTakeLen(data, pos);
 			
+			DataBlockJRso db = new DataBlockJRso();
+			RespJRso<DataBlockJRso> rr = parseAndCheckExtParam(db,extParams);
+			if(rr != null) {
+				return rr;
+			}
+			
 			String fn = JDataInput.readString(data, pos);//文件名最后，不需要再移动pos
 			
 			if(Utils.isEmpty(fn)) {
@@ -113,7 +122,7 @@ public class UploadFileManager {
 				return resp;
 			}
 			
-			DataBlockJRso db = new DataBlockJRso();
+			
 			db.setBlockSize(uploadBlockSize);
 			db.setId(idGenerator.getIntId(DataBlockJRso.class));
 			db.setTotalLen(totalLen);
@@ -199,7 +208,75 @@ public class UploadFileManager {
 		return resp;
 	}
 	
-   private void mergeUploadFile(DataBlockJRso db) {
+   private RespJRso<DataBlockJRso> parseAndCheckExtParam(DataBlockJRso db,String extParams) {
+	   
+	   RespJRso<DataBlockJRso> resp = new RespJRso<>(RespJRso.CODE_FAIL);
+	   
+	   if(Utils.isEmpty(extParams)) {
+		   resp.setMsg("无效参数："+extParams);
+		   return resp;
+	   }
+	   
+	   String[] arr = extParams.split(":");
+	   if(arr.length != 4) {
+		   resp.setMsg("参数缺失："+extParams);
+		   return resp;
+	   }
+	   
+	   if(Utils.isEmpty(arr[0])) {
+		   resp.setMsg("国家代码为空："+extParams);
+		   return resp;
+	   }
+	   db.setCountry(arr[0]);
+	   
+	   if(Utils.isEmpty(arr[1])) {
+		   resp.setMsg("语言代码为空："+arr[1]);
+		   return resp;
+	   }
+	   db.setLang(arr[1]);
+	   
+	   if(Utils.isEmpty(arr[2])) {
+		   resp.setMsg("模块名称为空："+arr[2]);
+		   return resp;
+	   }
+	   db.setMod(arr[2]);
+	   
+	   if(Utils.isEmpty(arr[3])) {
+		   resp.setMsg("系统ID为空："+arr[3]);
+		   return resp;
+	   }
+	  
+	   int clientId = 0;
+	   try {
+		 clientId = Integer.parseInt(arr[3]);
+	    if(clientId < 0) {
+	    	 resp.setMsg("系统ID值不合法："+arr[3]);
+			 return resp;
+	    }
+	} catch (NumberFormatException e) {
+		 resp.setMsg("系统ID值不合法："+arr[3]);
+		 return resp;
+	}
+
+	   ActInfoJRso ai = JMicroContext.get().getAccount();
+		if(clientId <= 0) {
+			resp.setMsg("无效clientId");
+			log.error(resp.getMsg()+" : " + clientId);
+			return resp;
+		}
+		
+		if(clientId != ai.getClientId()) {
+			if(!PermissionManager.isCurAdmin()) {
+				resp.setMsg("语言选项缺失");
+				log.error(resp.getMsg()+" : " +clientId);
+				return resp;
+			}
+		}
+		 db.setClientId(clientId);
+		return null;
+	}
+
+private void mergeUploadFile(DataBlockJRso db) {
 		
 		String bp = this.tempDir.getAbsolutePath() + "/" + db.getId();
 		File bpDir = new File(bp);
