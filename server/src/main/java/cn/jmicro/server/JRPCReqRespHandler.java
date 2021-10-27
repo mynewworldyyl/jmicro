@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -36,14 +37,11 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.net.IMessageHandler;
-import cn.jmicro.api.net.IResponse;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.InterceptorManager;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequestJRso;
-import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
@@ -112,7 +110,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 	public boolean onMessage(ISession s, Message msg) {
 
 		RpcRequestJRso req = null;
-		RpcResponseJRso resp = new RpcResponseJRso();
+		final RespJRso<Object> resp = new RespJRso<>();
 		boolean finish[] = new boolean[] { false };
 		ServiceMethodJRso sm0 = null;
 		try {
@@ -174,8 +172,8 @@ public class JRPCReqRespHandler implements IMessageHandler {
 				LG.log(MC.LOG_DEBUG, TAG, LG.reqMessage("", req1));
 			}
 
-			resp.setMsg(msg);
-			resp.setSuccess(true);
+			resp.setPkgMsg(msg);
+			resp.setCode(RespJRso.CODE_SUCCESS);;
 			// resp.setId(idGenerator.getLongId(IResponse.class));
 			// msg.setInsId(pi.getId());
 
@@ -183,13 +181,13 @@ public class JRPCReqRespHandler implements IMessageHandler {
 
 			// JMicroContext.get().getAccount();
 
-			IPromise<Object> rr = interceptorManger.handleRequest(req);
+			IPromise<Object> promise = interceptorManger.handleRequest(req);
 
 			if (!msg.isNeedResponse()) {
 				// 无需返回值
 				// 数据发送后，不需要返回结果，也不需要请求确认包，直接返回
-				if (rr != null) {
-					rr.then((rst, fail, resultCxt) -> {
+				if (promise != null) {
+					promise.then((rst, fail, resultCxt) -> {
 						if (fail != null) {
 							LG.log(MC.LOG_ERROR, TAG, fail.toString());
 							MT.rpcEvent(MC.MT_SERVER_ERROR);
@@ -209,41 +207,57 @@ public class JRPCReqRespHandler implements IMessageHandler {
 				return true;
 			}
 
-			final RpcResponseJRso r = resp;
+			//final RespJRso r = resp;
 
-			if (rr != null) {
-				rr.success((rst, resultCxt) -> {
+			if (promise != null) {
+				promise.success((rst, resultCxt) -> {
 					if (finish[0]) {
 						logger.warn("ReqId: " + req1.getRequestId() + ", linkId: " + msg.getLinkId()
 								+ " has synchronized response!");
 						return;
 					}
-					r.setSuccess(true);
-					r.setResult(rst);
-					msg.setError(false);
-					resp2Client(r, s, msg, sm);
+					
+					if(rst instanceof RespJRso) {
+						RespJRso<Object> val = (RespJRso<Object>)rst;
+						resp.setCode(val.getCode());
+						resp.setData(val.getData());
+						resp.setMsg(val.getMsg());
+						resp.setKey(val.getKey());
+						resp.setPageSize(val.getPageSize());
+						resp.setCurPage(val.getCurPage());
+						resp.setTotal(val.getTotal());
+						if(val.getCode() == RespJRso.CODE_SUCCESS) {
+							msg.setError(false);
+						}else {
+							msg.setError(true);
+						}
+					} else {
+						resp.setCode(RespJRso.CODE_SUCCESS);
+						resp.setData(rst);
+						msg.setError(false);
+					}
+					
+					resp2Client(resp, s, msg, sm);
 					finish[0] = true;
+					
 				}).fail((code, errorMsg, resultCxt) -> {
 					if (finish[0]) {
 						return;
 					}
-					ServerErrorJRso se0 = new ServerErrorJRso(code, errorMsg);
-					r.setSuccess(false);
-					r.setResult(se0);
+					resp.setCode(code);
+					resp.setData(errorMsg);
 					msg.setError(true);
-					resp2Client(r, s, msg, sm);
+					resp2Client(resp, s, msg, sm);
 					finish[0] = true;
 				});
 			} else {
 				if (finish[0]) {
 					return true;
 				}
-				ServerErrorJRso se0 = new ServerErrorJRso(MC.MT_SERVER_ERROR,
-						"Got null result!" + ",insId: " + msg.getInsId());
-				r.setSuccess(false);
-				r.setResult(se0);
+				resp.setCode(MC.MT_SERVER_ERROR);
+				resp.setData("Got null result!" + ",insId: " + msg.getInsId());
 				msg.setError(true);
-				resp2Client(r, s, msg, sm);
+				resp2Client(resp, s, msg, sm);
 				finish[0] = true;
 			}
 		} catch (Throwable e) {
@@ -260,7 +274,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 		return true;
 	}
 
-	private void doException(RpcRequestJRso req, RpcResponseJRso resp0, ISession s, Message msg, Throwable e) {
+	private void doException(RpcRequestJRso req, RespJRso resp0, ISession s, Message msg, Throwable e) {
 
 		// 返回错误
 		LG.log(MC.LOG_ERROR, TAG.getName(), "JRPCReq error", e);
@@ -271,16 +285,17 @@ public class JRPCReqRespHandler implements IMessageHandler {
 
 		if (msg.isNeedResponse()) {
 			// 返回错误
-			ServerErrorJRso error = null;
 			if (e instanceof CommonException) {
 				CommonException ce = (CommonException) e;
-				error = new ServerErrorJRso(ce.getKey(), e.getMessage());
+				resp0.setCode(ce.getKey());
+				resp0.setMsg(e.getMessage());
 			} else {
-				error = new ServerErrorJRso(0, e.getMessage());
+				resp0.setCode(RespJRso.CODE_FAIL);
+				resp0.setMsg(e.getMessage());
 			}
 
 			// 错误下行数据全用JSON
-			msg.setPayload(ICodecFactory.encode(codeFactory, error, Message.PROTOCOL_JSON));
+			msg.setPayload(ICodecFactory.encode(codeFactory, resp0, Message.PROTOCOL_JSON));
 			msg.setType((byte) (msg.getType() + 1));
 			msg.setInsId(pi.getId());
 			msg.setUpSsl(false);
@@ -305,7 +320,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 		}
 	}
 
-	private void resp2Client(IResponse resp, ISession s, Message msg, ServiceMethodJRso sm) {
+	private void resp2Client(RespJRso<Object> resp, ISession s, Message msg, ServiceMethodJRso sm) {
 		if (!msg.isNeedResponse()) {
 			submitItem();
 			return;
@@ -316,7 +331,8 @@ public class JRPCReqRespHandler implements IMessageHandler {
 		}
 
 		if (msg.isError()) {
-			msg.setPayload(ICodecFactory.encode(codeFactory, resp.getResult(), Message.PROTOCOL_JSON));
+			msg.setDownProtocol(Message.PROTOCOL_JSON);
+			msg.setPayload(ICodecFactory.encode(codeFactory, resp, Message.PROTOCOL_JSON));
 		} else {
 			msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getDownProtocol()));
 		}
@@ -375,7 +391,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 		JMicroContext.get().submitMRpcItem();
 	}
 
-	private void config(RpcRequestJRso req, RpcResponseJRso resp, Long linkId, ServiceMethodJRso sm) {
+	private void config(RpcRequestJRso req, RespJRso<Object> resp, Long linkId, ServiceMethodJRso sm) {
 
 		Object obj = serviceLoader.getService(sm.getKey().getUsk().getSnvHash());
 		if (obj == null) {
@@ -390,7 +406,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 		cxt.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
 		cxt.setString(JMicroContext.CLIENT_METHOD, req.getMethod());
 		cxt.setString(JMicroContext.CLIENT_VERSION, req.getVersion());
-		// context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
+		//context.setLong(JMicroContext.REQ_PARENT_ID, req.getRequestId());
 		cxt.setParam(JMicroContext.REQ_ID, req.getRequestId());
 
 		cxt.setParam(JMicroContext.CLIENT_ARGSTR, UniqueServiceMethodKeyJRso.paramsStr(req.getArgs()));

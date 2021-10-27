@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
 import cn.jmicro.api.internal.async.PromiseImpl;
@@ -36,7 +37,6 @@ import cn.jmicro.api.internal.pubsub.IInternalSubRpcJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSDataJRso;
@@ -175,7 +175,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 				});
 			})
 			.fail((code,msg,pda)->{
-				IPromise<List<PSDataJRso>>  fsPro = notifyResult(new ServerErrorJRso(code,msg),items,PSDataJRso.RESULT_FAIL_DISPATCH);
+				IPromise<List<PSDataJRso>>  fsPro = notifyResult(new RespJRso(code,msg),items,PSDataJRso.RESULT_FAIL_DISPATCH);
 				fsPro
 				.fail((code0,msg0,cxt)->{
 					//回调成功并不表示此数据发送成功，原始数据转发失败即认为此消息发送失败。回调只是告诉原始发送者此消息发送失败

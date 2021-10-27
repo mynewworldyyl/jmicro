@@ -11,9 +11,9 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.registry.BreakRuleJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
@@ -236,12 +236,12 @@ public class TestPrefixTypeED {
 	@Test
 	public void testRpcResponse() {
 		
-		RpcResponseJRso pe = new RpcResponseJRso();
-		pe.setResult(new int[] {22,33,55});
+		RespJRso pe = new RespJRso();
+		pe.setData(new int[] {22,33,55});
 		
 		ByteBuffer bb = decoder.encode(pe);
 		
-		RpcResponseJRso ped = decoder.decode(bb);
+		RespJRso ped = decoder.decode(bb);
 		int[] rs = (int[])ped.getResult();
 		System.out.println(rs);
 		

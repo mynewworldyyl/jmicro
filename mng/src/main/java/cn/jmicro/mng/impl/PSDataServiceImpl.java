@@ -19,6 +19,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.pubsub.PSDataJRso;
@@ -102,7 +103,7 @@ public class PSDataServiceImpl implements IPSDataServiceJMSrv {
 	private Document getCondtions(Map<String, String> queryConditions) {
 		Document match = new Document();
 		
-		 if(!PermissionManager.isCurAdmin()) {
+		 if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			 match.put("srcClientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		

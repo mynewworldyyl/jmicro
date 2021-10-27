@@ -19,6 +19,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Constants;
@@ -103,7 +104,7 @@ public class PSStatisServiceImpl implements IPSStatisServiceJMSrv {
 	private Document getCondtions(Map<String, String> queryConditions) {
 		Document match = new Document();
 		
-		 if(!PermissionManager.isCurAdmin()) {
+		 if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			 match.put(Constants.CLIENT_ID, JMicroContext.get().getAccount().getClientId());
 		 }
 		

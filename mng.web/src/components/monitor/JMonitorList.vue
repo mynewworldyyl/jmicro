@@ -70,7 +70,8 @@
             },
 
             loadMonitors() {
-                monitor.serverList().then((nodes)=>{
+                monitor.serverList().then((res)=>{
+                    let nodes = res.data
                     if(!nodes || nodes.length == 0 ) {
                         this.srcNodes=[];
                         this.groups = [];

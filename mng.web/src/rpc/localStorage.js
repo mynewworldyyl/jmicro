@@ -2,6 +2,8 @@
 import util from "./utils"
 const iswx = util.isWx()
 
+const OBJ_PREFIX = '%%_'
+
 export default  {
     //this.updateBrowser_ = jm.utils.i18n.get('update_your_browser');
     set(key,value) {
@@ -9,6 +11,11 @@ export default  {
             //alert(this.updateBrowser_);
             return;
         }
+
+        if(!iswx && typeof value == 'object') {
+            value =  OBJ_PREFIX + JSON.stringify(value)
+        }
+
         iswx ? wx.setStorageSync(key,value) : window.localStorage.setItem(key,value);
     },
 
@@ -25,7 +32,20 @@ export default  {
             //alert(this.updateBrowser_);
             return;
         }
-        return  iswx ? wx.getStorageSync(key) : window.localStorage.getItem(key);
+        if(iswx) {
+            return wx.getStorageSync(key)
+        } else {
+            let v = localStorage.getItem(key)
+            if(v == '[object Object]') {
+                this.remove(key)
+                throw 'invalid storage val: '+v + 'with key: ' + key
+            }
+            if(v && v.startWith(OBJ_PREFIX)) {
+                v = v.substr(OBJ_PREFIX.length)
+                v = JSON.parse(v)
+            }
+            return v
+        }
     },
 
     clear() {

@@ -9,13 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.IServiceListener;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.service.ServiceManager;
@@ -64,23 +64,23 @@ public class PermissionManager {
 		return ai.getClientId() == targetDataClientId || ai.getClientId() == Config.getClientId();
 	}
 	
-	public static final boolean isCurAdmin(int forType) {
+	public static final boolean isCurAdmin(int forType, int targetClientId) {
 		
 		switch (forType) {
 		case Constants.FOR_TYPE_ALL:
 			ActInfoJRso ai = JMicroContext.get().getAccount();
-			if (ai != null && ai.getClientId() == Config.getClientId()) {
+			if (ai != null && ai.getClientId() == targetClientId) {
 				return true;
 			}
 			ai = JMicroContext.get().getSysAccount();
-			if (ai != null && ai.getClientId() == Config.getClientId()) {
+			if (ai != null && ai.getClientId() == targetClientId) {
 				return true;
 			}
 			return false;
 		case Constants.FOR_TYPE_USER:
 			ai = JMicroContext.get().getAccount();
 			if (ai != null) {
-				return ai.getClientId() == Config.getClientId();
+				return ai.getClientId() == targetClientId;
 			} else {
 				return false;
 			}
@@ -88,7 +88,7 @@ public class PermissionManager {
 		case Constants.FOR_TYPE_SYS:
 			ai = JMicroContext.get().getSysAccount();
 			if (ai != null) {
-				return ai.getClientId() == Config.getClientId();
+				return ai.getClientId() == targetClientId;
 			} else {
 				return false;
 			}
@@ -130,8 +130,8 @@ public class PermissionManager {
 		return false;
 	}
 	
-	public static final boolean isCurAdmin() {
-		return isCurAdmin(Constants.FOR_TYPE_USER);
+	public static final boolean isCurAdmin(int targetClientId) {
+		return isCurAdmin(Constants.FOR_TYPE_USER,targetClientId);
 	}
 	
 	public static final boolean isCurDefAdmin() {
@@ -165,8 +165,8 @@ public class PermissionManager {
 		return Collections.unmodifiableMap(pers);
 	}
 	
-	public ServerErrorJRso permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
-		if(isCurAdmin(sm.getForType()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
+	public RespJRso<Object> permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
+		if(isCurAdmin(sm.getForType(),sm.getKey().getUsk().getClientId()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
 			return null;
 		}
 		
@@ -176,7 +176,7 @@ public class PermissionManager {
 		if(sm.isNeedLogin() && (ai == null && sai == null ||
 				ai == null && Constants.FOR_TYPE_USER == sm.getForType()
 				|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) ) {
-			ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,
+			RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,
 					 "Have to login for invoking to " + sm.getKey().methodID());
 			LG.log(MC.LOG_ERROR, TAG,se.toString());
 			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
@@ -190,7 +190,7 @@ public class PermissionManager {
 		
 		if(sm.isPerType() && (ai == null || ai.getPers() == null 
 				|| !ai.getPers().contains(sm.getKey().getSnvHash()))) {
-			ServerErrorJRso se = new ServerErrorJRso(MC.MT_ACT_PERMISSION_REJECT,
+			RespJRso<Object> se = new RespJRso<>(MC.MT_ACT_PERMISSION_REJECT,
 					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
 			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().fullStringKey());
 			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);

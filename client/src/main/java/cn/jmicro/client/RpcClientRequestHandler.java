@@ -26,11 +26,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
+import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
@@ -51,8 +53,6 @@ import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.objectfactory.ClientServiceProxyHolder;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
@@ -121,6 +121,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	
 	@Inject
 	private SecretManager secManager;
+	
+	@Inject
+	private RpcClassLoader rpcClassLoader;
 	
 	//测试统计模式使用
 	//@Cfg(value="/RpcClientRequestHandler/clientStatis",defGlobal=false)
@@ -445,6 +448,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				Map<String,Object> cxtParams = new HashMap<>();
 				cxt.getAllParams(cxtParams);
 				p.setContext(cxtParams);
+				p.setResultType(sm.getKey().getReturnParamClass());
 				
 				waitForResponse.put(msg.getMsgId(),p);
     		}
@@ -563,34 +567,34 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	      	  MT.rpcEvent(MC.MT_CLIENT_IOSESSION_READ_BYTES, respMsg.getLen());
 	        }
 			
+			RespJRso resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
+					RespJRso.class, respMsg.getDownProtocol());
+			
+			if(p.resultType() == RespJRso.class) {
+				p.setResult(resp);
+			} else {
+				p.setResult(resp.getData());
+			}
+			
+			JMLogItemJRso mi = cxt.getMRpcLogItem();
+			if(mi != null) {
+				mi.setResp(resp);
+			}
+			
+			resp.setPkgMsg(respMsg);
+			
 			if(respMsg.isError()) {
-				ServerErrorJRso se = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-						ServerErrorJRso.class,respMsg.getUpProtocol());
-				if(se.getCode() == MC.MT_AES_DECRYPT_ERROR) {//密钥问题，重置
+				if(resp.getCode() == MC.MT_AES_DECRYPT_ERROR) {
+					//密钥问题，重置
 					this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
 				}
-				p.setFail(se.getCode(), se.getMsg());
-			}else {
-				RpcResponseJRso resp = ICodecFactory.decode(this.codecFactory,respMsg.getPayload(),
-						RpcResponseJRso.class,respMsg.getUpProtocol());
-				resp.setMsg(respMsg);
-				
-				if(resp.isSuccess()) {
-					JMLogItemJRso mi = cxt.getMRpcLogItem();
-					if(mi != null) {
-						mi.setResp(resp);
+				p.setFail(resp.getCode(), resp.getMsg());
+			} else {
+				if (resp.getCode() != RespJRso.CODE_SUCCESS) {
+					if (resp.getCode() == MC.MT_AES_DECRYPT_ERROR) {
+						this.secManager.resetLocalSecret(respMsg.isOuterMessage(), si.getInsId());
 					}
-					p.setResult(resp.getResult());
-				} else {
-					if(resp.getResult() instanceof ServerErrorJRso) {
-						ServerErrorJRso se = (ServerErrorJRso)resp.getResult();
-						if(se.getCode() == MC.MT_AES_DECRYPT_ERROR) {
-							this.secManager.resetLocalSecret(respMsg.isOuterMessage(),si.getInsId());
-						}
-						p.setFail(se.getCode(), se.getMsg());
-					} else {
-						p.setFail(MC.LOG_ERROR, "Server return error!");
-					}
+					p.setFail(resp.getCode(), resp.getMsg());
 				}
 			}
 		}catch(Throwable e) {
@@ -601,8 +605,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
     		/*RpcResponse resp = new RpcResponse();
     		resp.setSuccess(false);
     		resp.setResult();*/
-    		Object errO = new ServerErrorJRso(10,e.getMessage());
-    		p.setResult(errO);
+    		p.setFail(10,e.getMessage());
     		return false;
 		} finally {
 			if(cxt.getBoolean(Constants.NEW_LINKID,false)) {

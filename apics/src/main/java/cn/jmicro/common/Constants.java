@@ -166,6 +166,9 @@ public interface Constants {
 	public static final String ListenSocketIP = "listenSocketIP";
 	public static final String ListenHttpIP = "listenHttpIP";
 	
+	public static final String RemoteIp = "remoteIp";
+	public static final String LocalIp = "localIp";
+	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
 	public static final String INSTANCE_PREFIX = "instanceName";
 	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";

@@ -8,11 +8,11 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.gateway.ApiRequestJRso;
 import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.test.PersonJRso;
 import cn.jmicro.common.Constants;
 
@@ -23,17 +23,17 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEndoceArrayResult(){
-		RpcResponseJRso resp = new RpcResponseJRso(1,new Integer[]{1,2,3});
-		resp.setSuccess(true);
+		RespJRso resp = new RespJRso(1,new Integer[]{1,2,3});
+		/*resp.setSuccess(true);
 		resp.getParams().put("key01", 3);
 		resp.getParams().put("key02","hello");
 		resp.setMsg(new Message());
-		resp.setResult("Hell result");
+		resp.setResult("Hell result");*/
 		
 		ByteBuffer dest = encoder.encode(resp);
 		dest.flip();
 		
-		RpcResponseJRso result = decoder.decode(dest);
+		RespJRso result = decoder.decode(dest);
 		Object r = result.getResult();
 		
 		System.out.println(r.toString());
@@ -318,15 +318,15 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEncodeResponse(){
-		RpcResponseJRso si = new RpcResponseJRso();
+		RespJRso si = new RespJRso();
 		
-		si.setResult(MC.MTMS_TYPES_ARR);
+		si.setData(MC.MTMS_TYPES_ARR);
 		
 		ByteBuffer bb = encoder.encode(si);
 		
 		bb.flip();
 		
-		RpcResponseJRso si1 = decoder.decode(bb);
+		RespJRso si1 = decoder.decode(bb);
 		
 		Integer[]  arr = (Integer[])si1.getResult();
 		

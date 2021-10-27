@@ -2,6 +2,7 @@ import JDataInput from "./datainput";
 import utils from "./utils";
 import config from "./config";
 import JDataOutput from "./dataoutput";
+//import localStorage from "./localStorage";
 
 let PREFIX_TYPE_ID = -128;
 
@@ -13,6 +14,12 @@ if(config.sslEnable) {
 let Constants = {
 
     TOKEN : '-119',
+    USER_INFO: 'userInfo',
+    ACT_NAME_KEY:"actName",
+    ACT_PWD_KEY:"pwd",
+    ACT_REM_PWD_KEY:"rememberPwd",
+    ACT_GUEST_NAME_KEY: "guestName",
+
     //MSG_TYPE_REQ_RAW : 0x03,  //纯二进制数据请求
     //MSG_TYPE_RRESP_RAW : 0x04, //纯二进制数据响应
 

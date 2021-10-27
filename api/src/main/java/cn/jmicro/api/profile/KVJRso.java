@@ -6,9 +6,7 @@ import cn.jmicro.api.annotation.SO;
 public  class KVJRso {
 
 	private Object val;
-	
 	private String type;
-	
 	private String key;
 
 	public Object getVal() {

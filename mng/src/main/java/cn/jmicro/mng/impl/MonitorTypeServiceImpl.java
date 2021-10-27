@@ -78,7 +78,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public RespJRso<Void> update(MCConfigJRso mc) {
 		RespJRso<Void> resp = new RespJRso<Void>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -97,7 +97,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public RespJRso<Void> delete(short type) {
 		RespJRso<Void> resp = new RespJRso<Void>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -120,7 +120,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public RespJRso<Void> add(MCConfigJRso mc) {
 		RespJRso<Void> resp = new RespJRso<Void>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -269,7 +269,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public RespJRso<Void> updateMonitorTypes(String key, Short[] adds, Short[] dels) {
 		RespJRso<Void> resp = new RespJRso<Void>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -331,7 +331,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	public RespJRso<Void> updateServiceMethodMonitorTypes(String key, Short[] adds, Short[] dels) {
 
 		RespJRso<Void> resp = new RespJRso<Void>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -439,7 +439,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	public RespJRso<Void> updateNamedTypes(String name, Short[] adds, Short[] dels) {
 
 		RespJRso<Void> resp = new RespJRso<Void>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;
@@ -477,7 +477,7 @@ public class MonitorTypeServiceImpl implements IMonitorTypeServiceJMSrv {
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public RespJRso<Void> addNamedTypes(String name) {
 		 RespJRso<Void> resp = new RespJRso<>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			resp.setCode(RespJRso.CODE_NO_PERMISSION);
 			resp.setMsg("No permission!");
 			return resp;

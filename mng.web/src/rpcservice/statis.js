@@ -24,7 +24,8 @@ let statis = {
             req.method = 'startStatis';
             req.args = [mkey, t];
             rpc.callRpc(req)
-              .then(status =>{
+              .then((res)=>{
+                  let status = res.data
                 if(status) {
                   reso(status);
                 } else {
@@ -73,7 +74,8 @@ let statis = {
       req.method = 'index2Label';
       req.args = [];
       rpc.callRpc(req,rpc.Constants.PROTOCOL_JSON, rpc.Constants.PROTOCOL_JSON)
-        .then(r=>{
+        .then(res=>{
+            let r = res.data
           self.type2Labels = r.indexes;
           self.types = r.types;
           self.labels = r.labels;

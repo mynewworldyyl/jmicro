@@ -132,7 +132,8 @@ export default {
                         return;
                     }
                     monitor.status(self.cache.monitorServers)
-                        .then((status)=>{
+                        .then((res)=>{
+                            let status = res.data
                             self.cache.serverList[0].data = status[0];
                             for(let i = 0; i < self.cache.monitorServers.length; i++) {
                                 let ser = null;

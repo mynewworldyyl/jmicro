@@ -44,8 +44,6 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.rsa.EncryptUtils;
 import cn.jmicro.api.security.ActInfoJRso;
@@ -410,7 +408,7 @@ public class ApiGatewayClient {
 			
 			if(respMsg.isError()) {
 				//错误下行消息全用JSON，返回数据为ServerError实例
-				ServerErrorJRso se = JsonUtils.getIns().fromJson(json, ServerErrorJRso.class);
+				RespJRso se = JsonUtils.getIns().fromJson(json, RespJRso.class);
 				p.setFail(se.getCode(),se.getMsg());
 				p.done();
 				return null;
@@ -427,8 +425,8 @@ public class ApiGatewayClient {
 				}
 				return rst;
 			} else {
-				RpcResponseJRso apiResp = JsonUtils.getIns().fromJson(json, RpcResponseJRso.class);
-				if(apiResp.isSuccess()) {
+				RespJRso apiResp = JsonUtils.getIns().fromJson(json, RespJRso.class);
+				if(apiResp.getCode() == RespJRso.CODE_SUCCESS) {
 					 if(apiResp.getResult() == null || resultType == Void.class || Void.TYPE == resultType) {
 						 p.done();
 					 } else {
@@ -440,7 +438,7 @@ public class ApiGatewayClient {
 					 }
 				} else {
 					 String js = JsonUtils.getIns().toJson(apiResp.getResult());
-					 ServerErrorJRso se = JsonUtils.getIns().fromJson(js, ServerErrorJRso.class);
+					 RespJRso se = JsonUtils.getIns().fromJson(js, RespJRso.class);
 					 if(se != null) {
 						 p.setFail(se.getCode(), se.getMsg());
 					 }else {

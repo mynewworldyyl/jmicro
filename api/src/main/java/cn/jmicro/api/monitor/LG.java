@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.gateway.ApiRequestJRso;
@@ -33,7 +34,6 @@ import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequestJRso;
-import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.ActInfoJRso;
@@ -374,9 +374,9 @@ public class LG {
 	
 	public static String respMessage(String prefix, IResp r) {
 		StringBuffer sb = new StringBuffer(prefix);
-		if(r instanceof RpcResponseJRso) {
-			RpcResponseJRso req = (RpcResponseJRso)r;
-			sb.append(",success:").append(req.isSuccess());
+		if(r instanceof RespJRso) {
+			RespJRso req = (RespJRso)r;
+			sb.append(",success:").append(req.getCode() == 0);
 			sb.append(",result:").append(req.getResult());
 		}else if(r instanceof ApiResponseJRso) {
 			ApiResponseJRso req = (ApiResponseJRso)r;

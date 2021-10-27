@@ -7,11 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
 import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -36,23 +35,13 @@ public class PromiseUtils {
 		IClientAsyncCallback cb = new IClientAsyncCallback() {
 			@SuppressWarnings("unchecked")
 			@Override
-			public void onResponse(IResponse resp) {
-				if(resp.isSuccess()) {
+			public void onResponse(RespJRso resp) {
+				if(resp.getCode() == RespJRso.CODE_SUCCESS) {
 					p.setResult((R)resp.getResult());
 				} else {
 					AsyncFailResult f = new AsyncFailResult();
-					if(resp.getResult() instanceof ServerErrorJRso) {
-						ServerErrorJRso se = (ServerErrorJRso)resp.getResult();
-						f.setCode(se.getCode());
-						f.setMsg(se.getMsg());
-					} else {
-						f.setCode(1);
-						if(resp.getResult() != null) {
-							f.setMsg(resp.getResult().toString());
-						} else {
-							f.setMsg("Promise got error result");
-						}
-					}
+					f.setCode(resp.getCode());
+					f.setMsg(resp.getMsg());
 					p.setFail(f);
 				}
 				p.done();

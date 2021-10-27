@@ -168,7 +168,8 @@ export default {
             let self = this;
             let ms = this.node.val.methods;
            srv.updateItem(this.node.val)
-               .then((rst)=>{
+               .then((res) => {
+                   let rst = res.data
                    this.node.val.methods = ms;
                     if(rst) {
                         self.$Message.success("Save successfully");

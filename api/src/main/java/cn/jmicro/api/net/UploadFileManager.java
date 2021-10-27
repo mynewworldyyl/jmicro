@@ -15,6 +15,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.JDataInput;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -266,7 +267,7 @@ public class UploadFileManager {
 		}
 		
 		if(clientId != ai.getClientId()) {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				resp.setMsg("语言选项缺失");
 				log.error(resp.getMsg()+" : " +clientId);
 				return resp;

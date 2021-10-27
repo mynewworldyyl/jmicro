@@ -90,7 +90,8 @@ export default {
         let self = this;
         return new Promise((reso,reje)=>{
             rpc.callRpcWithParams(pssn,ns,v,'subscribe',[topic, ctx || {}])
-                .then((id)=>{
+                .then((res)=>{
+                    let id = res.data
                     if( id > 0 && !!callback ) {
                         callback.id = id;
                     }else if(!(id.errorCode == 4 ||id.errorCode == 5 ||id.errorCode == 6)) {
@@ -127,7 +128,8 @@ export default {
         let self = this;
         return new Promise(function(reso,reje){
             rpc.callRpcWithParams(self.pssn, self.ns, self.v, 'unsubscribe',[callback.id])
-                .then((rst)=>{
+                .then((res)=>{
+                    let rst = res.data
                     if(!rst) {
                         //console.log("Fail to unsubscribe topic:"+topic);
                         reje("Fail to unsubscribe topic:"+topic)

@@ -4,21 +4,19 @@ import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
-import cn.jmicro.api.codec.DecoderConstant;
-import cn.jmicro.api.codec.Encoder;
-import cn.jmicro.api.net.RpcResponseJRso;
+import cn.jmicro.api.RespJRso;
 
 public class TestFiber {
 
 	@Test
 	public void testEndoceArrayResult(){
-		RpcResponseJRso resp = new RpcResponseJRso(1,new Integer[]{1,2,3});
+		RespJRso resp = new RespJRso(1,new Integer[]{1,2,3});
 		
 		ByteBuffer dest = ByteBuffer.allocate(1024);
 		Encoder.encodeObject(dest, resp);
 		dest.flip();
 		
-		RpcResponseJRso result = Decoder.decodeObject(dest);
+		RespJRso result = Decoder.decodeObject(dest);
 		Object r = result.getResult();
 		System.out.println(r);
 	}

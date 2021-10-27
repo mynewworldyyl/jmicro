@@ -71,10 +71,10 @@ public class ConfigManagerImpl implements IConfigManagerJMSrv {
 	@SMethod(perType=true,needLogin=true,maxSpeed=10,maxPacketSize=512,logLevel=MC.LOG_NO)
 	public RespJRso<ConfigNodeJRso[]> getChildren(String path,Boolean getAll) {
 		RespJRso<ConfigNodeJRso[]> r = new RespJRso<>();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			path = Config.getRaftBasePathByClientId(JMicroContext.get().getAccount().getClientId(),"");
 		}
-		ConfigNodeJRso[] rst = getChildren0(path,getAll,PermissionManager.isCurAdmin());
+		ConfigNodeJRso[] rst = getChildren0(path,getAll,PermissionManager.isCurAdmin(Config.getClientId()));
 		r.setCode(RespJRso.CODE_SUCCESS);
 		r.setData(rst);
 		return r;
@@ -134,7 +134,7 @@ public class ConfigManagerImpl implements IConfigManagerJMSrv {
 	@SMethod(perType=true,maxSpeed=10,maxPacketSize=1024)
 	public boolean update(String path, String val) {
 		try {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				if(!canView(path)) {
 					LG.log(MC.LOG_ERROR, this.getClass(), "Permission reject to update ["+path + "="+val+"] by account: "+JMicroContext.get().getAccount().getActName());
 					return false;
@@ -153,7 +153,7 @@ public class ConfigManagerImpl implements IConfigManagerJMSrv {
 	@SMethod(perType=true,maxSpeed=10,maxPacketSize=256)
 	public boolean delete(String path) {
 		try {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				if(!canView(path)) {
 					LG.log(MC.LOG_ERROR, this.getClass(), "Permission reject to delete ["+path + "] by account: "+JMicroContext.get().getAccount().getActName());
 					return false;
@@ -171,7 +171,7 @@ public class ConfigManagerImpl implements IConfigManagerJMSrv {
 	@SMethod(perType=true,maxSpeed=10,maxPacketSize=2048)
 	public boolean add(String path, String val,Boolean isDir) {
 		try {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				if(!canView(path)) {
 					LG.log(MC.LOG_ERROR, this.getClass(), "Permission reject to add ["+path +"="+ val+"] by account: "+JMicroContext.get().getAccount().getActName());
 					return false;

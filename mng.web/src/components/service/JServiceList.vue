@@ -107,7 +107,8 @@
 
             loadServices(cb) {
                 srv.getServices(this.showAll)
-                    .then((nodes)=>{
+                    .then((res)=>{
+                    let nodes = res.data
                     if(!nodes || nodes.length == 0 ) {
                         if(cb) {
                             cb([]);

@@ -208,7 +208,8 @@
                         self.createRouter.uniqueId = id;
                         let val = JSON.stringify(self.createRouter);
                         conf.add(path,val,false)
-                            .then((result) => {
+                            .then((res) => {
+                                let result = res.data
                                 if(result) {
                                     self.createRouterDialog = false;
                                     self.$Message.success('successfully');

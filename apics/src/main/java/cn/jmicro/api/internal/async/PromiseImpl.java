@@ -11,7 +11,6 @@ import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.client.IAsyncFailCallback;
 import cn.jmicro.api.client.IAsyncSuccessCallback;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.common.CommonException;
 
 public class PromiseImpl<R> implements IPromise<R>{
@@ -173,12 +172,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 			throw ex0;
 		}
 		
-		if(result instanceof ServerErrorJRso ) {
-			ServerErrorJRso se = (ServerErrorJRso)result;
-			throw new CommonException(se.getCode(),se.getMsg());
-		} else {
-			return result;
-		}
+		return result;
 	}
 
 	public void setResult(R result) {

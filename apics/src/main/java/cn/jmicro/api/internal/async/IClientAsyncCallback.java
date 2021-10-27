@@ -1,9 +1,9 @@
 package cn.jmicro.api.internal.async;
 
-import cn.jmicro.api.net.IResponse;
+import cn.jmicro.api.RespJRso;
 
 public interface IClientAsyncCallback {
 
-	void onResponse(IResponse resp);
+	void onResponse(RespJRso resp);
 	
 }

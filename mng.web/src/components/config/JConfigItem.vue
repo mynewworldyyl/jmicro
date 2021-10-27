@@ -99,7 +99,8 @@
 
                 let path = self.item.val.path + '/' + self.inputName;
                 conf.add(path,self.inputVal,self.isDir)
-                    .then(function(result){
+                    .then(function(res){
+                        let result = res.data
                         if(result) {
                             let val = {name:self.inputName, val:self.inputVal, path:path};
                             if(self.isDir) {
@@ -162,7 +163,8 @@
                 }
 
                 conf.update(valNode.path, self.inputVal)
-                    .then(function(result){
+                    .then(function(res){
+                        let result = res.data
                         if(result) {
                             valNode.val = self.inputVal;
                             self.$Message.success('Successfully add');
@@ -197,7 +199,8 @@
                     return;
                 }
                 conf.delete(delNode.path)
-                    .then(function(result){
+                    .then(function(res){
+                        let result = res.data
                         if(result) {
                             self.item.val.children.splice(idx,1);
                             self.$Message.success('Successfully add');

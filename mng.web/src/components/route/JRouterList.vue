@@ -103,7 +103,8 @@
 
             loadRouters(cb) {
                 conf.getChildren(cons.ROUTER_ROOT,true)
-                    .then((nodes) => {
+                    .then((res) => {
+                        let nodes = res.data
                         this.srcRouters = nodes;
                         let rs = this.parseRouterNode(nodes);
                         if(cb) {

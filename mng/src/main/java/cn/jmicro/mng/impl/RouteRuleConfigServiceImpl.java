@@ -53,7 +53,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigServiceJMSrv 
 		List<RouteRuleJRso> l  = new ArrayList<>();
 		r.setData(l);
 		
-		boolean isAll = PermissionManager.isCurAdmin();
+		boolean isAll = PermissionManager.isCurAdmin(Config.getClientId());
 		
 		for(String ns : insNames) {
 			String path = ROOT + "/" + ns;
@@ -223,7 +223,7 @@ public class RouteRuleConfigServiceImpl implements IRouteRuleConfigServiceJMSrv 
 			return r;
 		}
 
-		if(cfg.getClientId() != ai.getClientId() && !PermissionManager.isCurAdmin()) {
+		if(cfg.getClientId() != ai.getClientId() && !PermissionManager.isCurAdmin(Config.getClientId())) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setMsg("Permission reject to specify clientId");
 			return r;

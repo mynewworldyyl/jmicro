@@ -28,10 +28,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.codec.ICodecFactory;
@@ -41,7 +41,6 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.registry.IRegistry;
@@ -406,7 +405,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		
 		Object op = params.get("op");
 		if( op == null) {
-			responseError(session,msg,ServerErrorJRso.SE_INVALID_OP_CODE,"Op code is null");
+			responseError(session,msg,RespJRso.SE_INVALID_OP_CODE,"Op code is null");
 			return true;
 		}
 		
@@ -416,7 +415,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		if(opCode == 1) {
 			String topic = (String)params.get("topic");
 			if(Utils.isEmpty(topic)) {
-				responseError(session,msg,ServerErrorJRso.SE_INVALID_TOPIC,"Topic is null");
+				responseError(session,msg,RespJRso.SE_INVALID_TOPIC,"Topic is null");
 				return true;
 			}
 			params.remove("topic");
@@ -425,7 +424,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		} else if(opCode == 2) {
 			String subId = (String)params.get("subId");
 			if(Utils.isEmpty(subId)) {
-				responseError(session,msg,ServerErrorJRso.SE_INVALID_SUB_ID,"Invalid subscribe id");
+				responseError(session,msg,RespJRso.SE_INVALID_SUB_ID,"Invalid subscribe id");
 				return true;
 			}
 			int sid = Integer.parseInt(subId);
@@ -441,7 +440,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 
 	private void responseError(ISession s,Message msg,int seInvalidTopic, String msgStr) {
 		msg.setError(true);
-		ServerErrorJRso se = new ServerErrorJRso(seInvalidTopic,msgStr);
+		RespJRso se = new RespJRso(seInvalidTopic,msgStr);
 		try {
 			byte[] d = JsonUtils.getIns().toJson(se).getBytes(Constants.CHARSET);
 			msg.setPayload(ByteBuffer.wrap(d));

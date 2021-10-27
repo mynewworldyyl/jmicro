@@ -102,7 +102,7 @@ public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 			return resp;
 		}
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			List<DeploymentJRso> l = getDeploymentList().getData();
 			long cnt = l.stream().filter(e -> {return e.getClientId() == ai.getClientId();}).count();
 			if(ai.isGuest() && cnt >= 5) {
@@ -148,7 +148,8 @@ public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 		}
 		
 		
-		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
+		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE 
+				&& !PermissionManager.isCurAdmin(Config.getClientId())) {
 			 //非Admin添加的部署需要严格验证参数
 			 checkNonAdminProgramArgs(dep);
 		}
@@ -418,7 +419,7 @@ public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 			return resp;
 		}
 		
-		if(!PermissionManager.isCurAdmin() && dep.getStatus() == DeploymentJRso.STATUS_ENABLE) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId()) && dep.getStatus() == DeploymentJRso.STATUS_ENABLE) {
 			List<DeploymentJRso> l = this.getDeploymentList().getData();
 			long ecnt = l.stream().filter(e -> {return e.getClientId() == dep.getClientId() && e.getStatus() == DeploymentJRso.STATUS_ENABLE;}).count();
 			if(ai.isGuest() && ecnt >= 1) {
@@ -449,7 +450,8 @@ public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 		}
 		
 		//Map<String, String> params = Utils.parseProgramArgs(dep.getArgs());
-		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE && !PermissionManager.isCurAdmin()) {
+		if(dep.getStatus() == DeploymentJRso.STATUS_ENABLE 
+				&& !PermissionManager.isCurAdmin(Config.getClientId())) {
 			//非Admin添加的部署需要严格验证参数
 			checkNonAdminProgramArgs(dep);
 		}

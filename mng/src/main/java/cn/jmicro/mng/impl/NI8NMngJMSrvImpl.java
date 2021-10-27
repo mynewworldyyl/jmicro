@@ -339,7 +339,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 		}
 		
 		if(vo.getClientId() != ai.getClientId()) {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				r.setMsg("语言选项缺失");
 				log.error(r.getMsg()+" : " + JsonUtils.getIns().toJson(vo));
 				return r;

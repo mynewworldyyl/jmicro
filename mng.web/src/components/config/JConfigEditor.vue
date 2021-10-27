@@ -142,7 +142,8 @@
                     return false;
                 }
                 conf.add(self.selectNode.path+'/'+self.inputName,self.inputVal,self.isDir)
-                    .then(function(result){
+                    .then(function(res){
+                        let result = res.data
                         if(result) {
                             let p = self.selectNode.path+'/'+self.inputName;
                             let newNode = {id:p,name:self.inputName, val:self.inputVal,path:p};
@@ -207,7 +208,8 @@
                 }
 
                 conf.update(self.selectNode.path+'/'+self.inputName,self.inputVal)
-                    .then(function(result){
+                    .then(function(res){
+                        let result = res.data
                         if(result) {
                             lf.val = self.inputVal;
                             self.items[0] = self.selectNode;
@@ -243,7 +245,8 @@
                     return;
                 }
                 conf.delete(lf.path)
-                    .then(function(result){
+                    .then(function(res){
+                        let result = res.data
                         if(result) {
                             self.selectNode.leaf.splice(idx,1);
                             self.items[0] = self.selectNode;

@@ -7,6 +7,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.mng.IManageServiceJMSrv;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.IRegistry;
@@ -36,7 +37,7 @@ public class ManageServiceImpl implements IManageServiceJMSrv {
 		 
 		 Set<ServiceItemJRso> sis = new TreeSet<>();
 		 
-		 if(all && PermissionManager.isCurAdmin()) {
+		 if(all && PermissionManager.isCurAdmin(Config.getClientId())) {
 			 for(UniqueServiceKeyJRso key : items) {
 				 ServiceItemJRso sij = this.srvManager.getServiceByKey(key.fullStringKey());
 				 if(sij == null) continue;

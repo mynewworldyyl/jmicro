@@ -61,7 +61,6 @@
                 rpc.removeActListener(cid);
             },
 
-
             nodeSelect(evt){
                window.jm.vue.$emit('userProfileSelect',evt);
             },

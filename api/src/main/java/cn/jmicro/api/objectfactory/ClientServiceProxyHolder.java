@@ -24,12 +24,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.InvocationHandler;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.IServiceListener;
@@ -275,7 +275,11 @@ public class ClientServiceProxyHolder implements IServiceListener{
 					//p.getResult()直到服务端数据返回或超时失败才后才会返回
 					return getVal(p.getResult(),sm.getKey().getReturnParamClass());
 				} else {
-					throw new CommonException(p.getFailCode(),p.getFailMsg());
+					if(p.resultType() == RespJRso.class) {
+						return (T)p.getResult();//RespJRso明确成功或失败
+					}else {
+						throw new CommonException(p.getFailCode(),p.getFailMsg());
+					}
 				}
 			}
 		} finally {

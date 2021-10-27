@@ -66,6 +66,9 @@
                 <Label  v-if="!importFileModel" for="val">{{'val'|i18n}}</Label>
                 <Input  v-if="!importFileModel" id="val" v-model="ic.val"/>
 
+                <Label for="desc">{{'desc'|i18n}}</Label>
+                <Input  id="desc" v-model="ic.desc"/>
+
                 <Label v-if="actInfo && actInfo.admin"  for="clientId">{{'clientId'|i18n}}</Label>
                 <Input v-if="actInfo && actInfo.admin"   id="clientId" v-model="ic.clientId"/>
 
@@ -83,9 +86,6 @@
                 <Select :disabled="updateModel"  id="lan" :filterable="false" ref="lan"  v-model="ic.lan">
                     <Option v-for="c in langList" :key="c.l" :value="c.l" >{{c.b}}</Option>
                 </Select>
-
-                <Label for="desc">{{'desc'|i18n}}</Label>
-                <Input  id="desc" v-model="ic.desc"/>
 
                 <Label  for="createdTime">{{'createdTime'|i18n}}</Label>
                 <div id="createdTime">{{ic.createdTime| formatDate(1)}}</div>
@@ -193,7 +193,7 @@
                     pageSize:30,
                     curPage:1,
                     sortName:'createdTime',
-                    order:1,//1:增序  -1：降序
+                    order:-1,//1:增序  -1：降序
                     ps : []
                },
 
@@ -355,6 +355,7 @@
                 this.setLcv("lang",this.ic.lan)
                 this.setLcv("clientId",this.ic.clientId)
                 this.setLcv("mod",this.ic.mod)
+                this.setLcv("desc",this.ic.desc)
 
             },
 
@@ -363,7 +364,8 @@
                 let la =  this.getLcv("lang")
                 let clientId =  this.getLcv("clientId")
                 let mod =  this.getLcv("mod")
-                this.ic = {country:cn,lan:la,mod:mod,clientId:clientId};
+                let desc = this.getLcv("desc")
+                this.ic = { country:cn, lan:la, mod:mod, clientId:clientId, desc:desc };
              },
 
             add() {

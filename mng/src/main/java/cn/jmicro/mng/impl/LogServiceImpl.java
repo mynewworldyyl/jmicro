@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bson.Document;
-import org.bson.json.JsonWriterSettings;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -30,6 +29,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.gateway.ApiRequestJRso;
 import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.mng.LogEntry;
@@ -40,7 +40,6 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.RpcRequestJRso;
-import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
@@ -75,7 +74,7 @@ public class LogServiceImpl implements ILogServiceJMSrv {
 		 Document match = new Document();
 		 match.put("linkId", linkId);
 		 
-		 if(!PermissionManager.isCurAdmin()) {
+		 if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		
@@ -573,7 +572,7 @@ public class LogServiceImpl implements ILogServiceJMSrv {
 	private Document getLogCondtions(Map<String, String> queryConditions) {
 		Document match = this.getCondtions(queryConditions);
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		
@@ -611,7 +610,7 @@ public class LogServiceImpl implements ILogServiceJMSrv {
 	private Document getCondtions(Map<String, String> queryConditions) {
 		Document match = new Document();
 		
-		 if(!PermissionManager.isCurAdmin()) {
+		 if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		 }
 		 
@@ -856,7 +855,7 @@ public class LogServiceImpl implements ILogServiceJMSrv {
 					//ar.setArgs(args);
 					return ar;
 				} else {
-					RpcResponseJRso r = context.deserialize(json, RpcResponseJRso.class);
+					RespJRso r = context.deserialize(json, RespJRso.class);
 					//r.setArgs(args);
 					return r;
 				}

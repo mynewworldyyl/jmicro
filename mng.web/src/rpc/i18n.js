@@ -1,7 +1,6 @@
 import rpc from "./rpcbase";
 import cfg from "./config";
 import utils from "./utils";
-
 import ls from "./localStorage"
 
 function __actreq(args){
@@ -18,6 +17,7 @@ export default  {
   supportLangs : [],
 
   init : function(cb) {
+    if(this.supportLangs.length > 0) return
     this.defaultLanguage_ = this.getLan_(this.getLocal_());
     this.getFromServer_( cfg.mod,cb)
   },

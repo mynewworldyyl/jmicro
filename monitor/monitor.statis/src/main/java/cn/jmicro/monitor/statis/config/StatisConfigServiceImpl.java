@@ -56,7 +56,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 		List<StatisConfigJRso> ll = new ArrayList<>();
 		r.setData(ll);
 		
-		boolean isAdmin = PermissionManager.isCurAdmin();
+		boolean isAdmin = PermissionManager.isCurAdmin(Config.getClientId());
 		
 		for(String id : ids) {
 			String path = ROOT + "/" + id;
@@ -90,7 +90,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 		
 		StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 		
-		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+		if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to enable statis monitor config: " + lw.getId()+", target clientId: " + lw.getCreatedBy());
@@ -106,7 +106,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 			}
 		}
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			lw.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}else if(Utils.isEmpty(lw.getToParams())) {
 			lw.setToParams(StatisConfigJRso.DEFAULT_DB);
@@ -142,7 +142,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 		
 		StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 		
-		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+		if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to update statis config: " + lw.getId()+", clientId: " + lw.getCreatedBy());
@@ -157,7 +157,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 			return r;
 		}
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			
 			if(cfg.getToType() == StatisConfigJRso.TO_TYPE_CONSOLE ||
 					cfg.getToType() == StatisConfigJRso.TO_TYPE_FILE) {
@@ -204,7 +204,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 			String data = op.getData(path);
 			StatisConfigJRso lw = JsonUtils.getIns().fromJson(data, StatisConfigJRso.class);
 			
-			if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+			if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
 				r.setCode(RespJRso.CODE_NO_PERMISSION);
 				r.setData(false);
 				r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to delete statis config: " + lw.getId()+", target clientId: " + lw.getCreatedBy());
@@ -231,7 +231,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 		}
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			if(cfg.getToType() == StatisConfigJRso.TO_TYPE_CONSOLE ||
 					cfg.getToType() == StatisConfigJRso.TO_TYPE_FILE) {
 				r.setCode(RespJRso.CODE_FAIL);
@@ -241,7 +241,7 @@ public class StatisConfigServiceImpl implements IStatisConfigServiceJMSrv {
 			cfg.setClientId(ai.getClientId());
 		}
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			cfg.setToParams(StatisConfigJRso.DEFAULT_DB);
 		}else if(Utils.isEmpty(cfg.getToParams())) {
 			cfg.setToParams(StatisConfigJRso.DEFAULT_DB);

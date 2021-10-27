@@ -188,7 +188,7 @@
 
 const  cid = 'jmicroApp';
 
-  const  mainMenus = {'op':true,'oth':true,'dep':true,'srv':true,'cfg':true};
+const  mainMenus = {'op':true,'oth':true,'dep':true,'srv':true,'cfg':true};
 
 export default {
     name: 'App',

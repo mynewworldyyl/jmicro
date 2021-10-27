@@ -34,7 +34,6 @@ import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.config.Config;
@@ -48,12 +47,9 @@ import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.net.DumpManager;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IMessageReceiver;
-import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.net.RpcRequestJRso;
-import cn.jmicro.api.net.RpcResponseJRso;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.AccountManager;
@@ -353,10 +349,11 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		if(sm != null) {
 			if(sm.getMaxPacketSize() > 0 && msg.getLen() > sm.getMaxPacketSize()) {
-	    		ServerErrorJRso se = new ServerErrorJRso(MC.MT_PACKET_TOO_MAX,"Packet too max " + msg.getLen() + 
-	    				" limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId()+","+sm.getKey().getMethod());
-				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				String errMsg = "Packet too max " + msg.getLen() + 
+	    				" limit size: " + sm.getMaxPacketSize()+",insId: " + msg.getInsId()+","+sm.getKey().getMethod();
+	    		LG.log(MC.LOG_ERROR, TAG,errMsg);
 				MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1);
+				RespJRso<Object> se = new RespJRso<>(MC.MT_PACKET_TOO_MAX,errMsg);
 				resp2Client(se,s,msg,sm);
 				return false;
 			}
@@ -388,22 +385,24 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		if(sm != null) {
 			if(ai == null && sm.isNeedLogin()) {
-				ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
-				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
+				String errMsg = "JRPC check invalid login key!"+",insId: " + msg.getInsId();
+				LG.log(MC.LOG_ERROR, TAG, errMsg);
 				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 				resp2Client(se,s,msg,sm);
 				return false;
 			} 
 		
 			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
-				ServerErrorJRso se = new ServerErrorJRso(MC.MT_INVALID_LOGIN_INFO,"Invalid system login key: " + slk+",insId: " + msg.getInsId());
-				LG.log(MC.LOG_ERROR, TAG,se.toString());
+				String errMsg = "Invalid system login key: " + slk+",insId: " + msg.getInsId();
+				RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,errMsg);
+				LG.log(MC.LOG_ERROR, TAG,errMsg);
 				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
 				resp2Client(se,s,msg,sm);
 				return false;
 			}
 			
-			ServerErrorJRso se = pm.permissionCheck(sm,sm.getKey().getUsk().getClientId());
+			RespJRso<Object> se = pm.permissionCheck(sm, sm.getKey().getUsk().getClientId());
 			
 			if(se != null) {
 				resp2Client(se,s,msg,sm);
@@ -415,7 +414,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		return true;
 	}
 	
-	private void resp2Client(ServerErrorJRso se, ISession s,Message msg,ServiceMethodJRso sm) {
+	private void resp2Client(RespJRso<Object> rr, ISession s,Message msg,ServiceMethodJRso sm) {
 		if(!msg.isNeedResponse()){
 			submitItem();
 			return;
@@ -426,9 +425,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		
 		if(msg.isError()) {
-			msg.setPayload(ICodecFactory.encode(codecFactory,se,Message.PROTOCOL_JSON));
+			msg.setPayload(ICodecFactory.encode(codecFactory,rr,Message.PROTOCOL_JSON));
 		} else {
-			msg.setPayload(ICodecFactory.encode(codecFactory,se,msg.getDownProtocol()));
+			msg.setPayload(ICodecFactory.encode(codecFactory,rr,msg.getDownProtocol()));
 		}
 		
 		//请求类型码比响应类型码大1，
@@ -480,15 +479,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		
 		if(msg.isNeedResponse()) {
-			RpcResponseJRso resp = null;
+			RespJRso<Object> resp = null;
 			String errMsg = e == null?"from insId: " + msg.getInsId():e.getMessage()+",from insId: " + msg.getInsId();
 			if(e instanceof CommonException) {
 				CommonException ce = (CommonException)e;
-				resp = new RpcResponseJRso(msg.getMsgId(),new ServerErrorJRso(ce.getKey(),errMsg));
+				resp = new RespJRso<Object>(ce.getKey(),errMsg);
 			} else {
-				resp = new RpcResponseJRso(msg.getMsgId(),new ServerErrorJRso(RespJRso.CODE_FAIL,errMsg));
+				resp = new RespJRso<Object>(RespJRso.CODE_FAIL,errMsg);
 			}
-			resp.setSuccess(false);
+			
 			msg.setPayload(ICodecFactory.encode(codecFactory,resp,msg.getUpProtocol()));
 			msg.setType((byte)(msg.getType()+1));
 			msg.setUpSsl(false);
@@ -496,6 +495,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			msg.setSign(false);
 			msg.setSec(false);
 			msg.setSaltData(null);
+			msg.setError(true);
 			s.write(msg);
 		}
 	}

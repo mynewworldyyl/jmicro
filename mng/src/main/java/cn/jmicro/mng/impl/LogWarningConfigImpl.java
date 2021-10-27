@@ -13,6 +13,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.ILogMonitorServerJMSrv;
@@ -52,7 +53,7 @@ public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 			return r;
 		}
 		
-		boolean isAdmin = PermissionManager.isCurAdmin();
+		boolean isAdmin = PermissionManager.isCurAdmin(Config.getClientId());
 		
 		List<LogWarningConfigJRso> ll = new ArrayList<>();
 		r.setData(ll);
@@ -80,7 +81,7 @@ public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 		String data = op.getData(path);
 		LogWarningConfigJRso lw = JsonUtils.getIns().fromJson(data, LogWarningConfigJRso.class);
 		
-		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+		if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to update log warning config: " + lw.getId()+", clientId: " + lw.getClientId());
@@ -96,7 +97,7 @@ public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 		}
 		
 		if(LogWarningConfigJRso.TYPE_SAVE_DB == cfg.getType()) {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				cfg.setCfgParams(JMLogItemJRso.TABLE);
 			}else if(Utils.isEmpty(cfg.getCfgParams())) {
 				cfg.setCfgParams(JMLogItemJRso.TABLE);
@@ -136,7 +137,7 @@ public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 		String data = op.getData(path);
 		LogWarningConfigJRso lw = JsonUtils.getIns().fromJson(data, LogWarningConfigJRso.class);
 		
-		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
+		if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getCreatedBy()))) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to delete log warning config: " + lw.getId()+", target clientId: " + lw.getClientId());
@@ -164,7 +165,7 @@ public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 		}
 		
 		if(LogWarningConfigJRso.TYPE_SAVE_DB == cfg.getType()) {
-			if(!PermissionManager.isCurAdmin()) {
+			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				cfg.setCfgParams(JMLogItemJRso.TABLE);
 			}else if(Utils.isEmpty(cfg.getCfgParams())) {
 				cfg.setCfgParams(JMLogItemJRso.TABLE);
@@ -183,7 +184,7 @@ public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			cfg.setClientId(ai.getClientId());
 		}
 		

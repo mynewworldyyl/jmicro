@@ -45,7 +45,7 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 		
 		String path = ProfileManager.ROOT + "/" + ai.getClientId();
 		if(op.exist(path)) {
-			Set<String> modules = op.getChildren(path, false);
+			Set<String> modules = op.getChildren(path,false);
 			resp.setData(modules);
 			resp.setCode(0);
 		} else {
@@ -155,7 +155,7 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=2048)
-	public RespJRso<Boolean> updateKv(String module,KVJRso kv) {
+	public RespJRso<Boolean> updateKv(String module, KVJRso kv) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		RespJRso<Boolean> resp = new RespJRso<>();
 		pm.setVal(ai.getClientId(), module, kv.getKey(), kv.getVal());

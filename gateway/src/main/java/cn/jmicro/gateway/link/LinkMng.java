@@ -29,7 +29,6 @@ import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
@@ -198,7 +197,7 @@ public class LinkMng implements IMessageHandler {
 				Message.is(n.flag, Message.FLAG_FORCE_RESP_JSON)) {
 			//客户端要求强制转JSON
 			final Object resp = ICodecFactory.decode(this.codeFactory, msg.getPayload(),
-					RpcResponseJRso.class, msg.getUpProtocol());
+					RespJRso.class, msg.getUpProtocol());
 			if(resp != null) {
 				//二进制转JSON，web客户端无法识别带类型的二进制数据包
 				Object jsonPayload = ICodecFactory.encode(this.codeFactory, resp, Message.PROTOCOL_JSON);

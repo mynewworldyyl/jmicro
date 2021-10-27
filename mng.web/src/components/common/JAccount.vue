@@ -26,7 +26,7 @@
             <table>
                 <tr><td>{{'actName'|i18n}}</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>{{'Password'|i18n}}</td><td><input type="password"  v-model="pwd"/></td></tr>
-                <tr><td>{{'vcode'|i18n}}</td><td><input type="input"  v-model="vcode"/>
+                <tr v-if="vcodeId"><td>{{'vcode'|i18n}}</td><td><input type="input"  v-model="vcode"/>
                     <img :src="codeUrl" @click="getCode()">
                 </td></tr>
                 <tr>
@@ -136,6 +136,7 @@ export default {
 
     mounted(){
         let self = this;
+        rpc.login = self.login
         rpc.addActListener(cid,(type,ai)=>{
             if(type == Constants.LOGIN) {
                 self.actInfo = ai;
@@ -148,17 +149,14 @@ export default {
             }
         });
 
-        this.rememberPwd = localStorage.get("rememberPwd");
+        this.rememberPwd = localStorage.get(Constants.ACT_REM_PWD_KEY);
+        this.actName = localStorage.get(Constants.ACT_NAME_KEY);
+        this.pwd = localStorage.get(Constants.ACT_PWD_KEY);
 
-        this.actName = localStorage.get("actName");
-        this.pwd = localStorage.get("pwd");
-
-        /*if(this.rememberPwd || !this.actName || this.actName.endWith('guest_')) {
+        if(this.rememberPwd || !this.actName && this.actName.endWith('guest_')) {
             this.doLogin();
-        }*/
-
-        this. getCode();
-
+        }
+        //this. getCode();
     },
 
     methods: {
@@ -212,22 +210,22 @@ export default {
             if(this.actInfo) {
                 this.doLogout();
             } else {
-                this.getCode();
-               this.actName = localStorage.get("actName"),
-               this.pwd = localStorage.get("pwd"),
-               this.rememberPwd = localStorage.get("rememberPwd");
+               //this.getCode();
+               this.actName = localStorage.get(Constants.ACT_NAME_KEY),
+               this.pwd = localStorage.get(Constants.ACT_PWD_KEY),
+               this.rememberPwd = localStorage.get(Constants.ACT_REM_PWD_KEY);
                this.loginDialog = true;
             }
         },
 
         rememberPwdChange(){
-            localStorage.set("rememberPwd",this.rememberPwd);
+            localStorage.set(Constants.ACT_REM_PWD_KEY,this.rememberPwd);
             if(this.rememberPwd) {
-                localStorage.set("actName",this.actName);
-                localStorage.set("pwd",this.pwd);
+                localStorage.set(Constants.ACT_NAME_KEY,this.actName);
+                localStorage.set(Constants.ACT_PWD_KEY,this.pwd);
             }else {
-                localStorage.remove("pwd");
-                localStorage.remove("actName");
+                localStorage.remove(Constants.ACT_PWD_KEY);
+                localStorage.remove(Constants.ACT_NAME_KEY);
             }
         },
 
@@ -418,34 +416,110 @@ export default {
             });
         },
 
+        login(actName,pwd,vcode,vcodeId,cb){
+            if(rpc.isLogin() && cb) {
+                this.actInfo = rpc.actInfo
+                cb(this.actInfo,null);
+                return;
+            }
+
+            this.actInfo = null;
+
+            if(!actName) {
+                actName = localStorage.get(Constants.ACT_NAME_KEY);
+                let rememberPwd = localStorage.get(Constants.ACT_REM_PWD_KEY);
+                if(rememberPwd || actName /*|| actName.startWith("guest_")*/) {
+                    let pwd = localStorage.get(Constants.ACT_PWD_KEY);
+                    if(!pwd) {
+                        pwd="";
+                    }
+                }
+            }
+
+            if(!actName) {
+                //自动建立匿名账号
+                actName = localStorage.get(Constants.ACT_GUEST_NAME_KEY);
+                if(!actName) {
+                    actName = "";
+                }
+            }
+
+            if(!pwd) {
+                pwd = ""
+            }
+
+            let self = this
+            let req = rpc.cmreq(1526369786,[actName,pwd,vcode,vcodeId])
+            //req.serviceName = 'cn.jmicro.api.security.IAccountServiceJMSrv';
+            rpc.callRpc(req)
+                .then(( resp )=>{
+                    if(resp.code == 0) {
+                        rpc.setActInfo(resp.data)
+                        localStorage.set(Constants.ACT_NAME_KEY,self.actInfo.actName)
+                        self.codeUrl =null
+                        self.vcodeId = null
+                        let rememberPwd = localStorage.get(Constants.ACT_REM_PWD_KEY)
+                        if(rememberPwd || rpc.actInfo.actName.startWith("guest_")) {
+                            localStorage.set(Constants.ACT_PWD_KEY,pwd)
+                        }
+
+                        if(rpc.actInfo.actName.startWith("guest_")) {
+                            localStorage.set(Constants.ACT_GUEST_NAME_KEY,rpc.actInfo.actName)
+                        }
+
+                        if(cb)
+                            cb(rpc.actInfo,null)
+                    } else if( resp.code == 4) {
+                        let arr = err.msg.split('$@$')
+                        self.codeUrl = 'data:image/gif;base64,' + arr[0]
+                        self.vcodeId = arr[1]
+                    }else {
+                        if(cb) {
+                            cb(null,resp.msg)
+                        }
+                    }
+                }).catch((err)=>{
+                if(err && err.code == 4) {
+                    let arr = err.msg.split('$@$')
+                    self.codeUrl = 'data:image/gif;base64,' + arr[0]
+                    self.vcodeId = arr[1]
+                } else {
+                    console.log(err)
+                    if(cb) {
+                        cb(null,err)
+                    }
+                }
+            });
+        },
+
         doLogin(){
-            let self = this;
-            this.$refs.loginDialog.buttonLoading = false;
+            let self = this
+            this.$refs.loginDialog.buttonLoading = false
 
             if(!this.pwd) {
-               this.pwd = "";
+               this.pwd = ""
             }
 
             if(!this.actName) {
-                this.actName = localStorage.get("actName");
+                this.actName = localStorage.get(Constants.ACT_NAME_KEY)
             }
 
-            self.msg = '';
-            rpc.login(this.actName,this.pwd,this.vcode,this.vcodeId,(actInfo,err)=>{
-                this.vcode = null
-                this.vcodeId = null
-                this.codeUrl=null
+            self.msg = ''
+            self.login(this.actName,this.pwd,this.vcode,this.vcodeId,(actInfo,err)=>{
+                self.vcode = null
+                self.vcodeId = null
+                self.codeUrl=null
 
                 if(!err && actInfo) {
-                    self.actInfo = actInfo;
-                    self.isLogin = true;
-                    self.msg = '';
-                    self.loginDialog = false;
+                    self.actInfo = actInfo
+                    self.isLogin = true
+                    self.msg = ''
+                    self.loginDialog = false
                     //window.jm.vue.$emit('userLogin',actInfo);
                 } else {
-                    self.isLogin = false;
-                    self.msg = err || 'Login fail';
-                    this.getCode();
+                    self.isLogin = false
+                    self.msg = err || 'Login fail'
+                    self.getCode()
                 }
             });
         },

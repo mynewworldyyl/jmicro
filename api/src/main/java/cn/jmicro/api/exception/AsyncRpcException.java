@@ -16,9 +16,9 @@
  */
 package cn.jmicro.api.exception;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IResponse;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -43,7 +43,7 @@ public final class AsyncRpcException extends CommonException {
 		this.req = req;
 	}
 	
-	public AsyncRpcException(IRequest req,ServerErrorJRso se){
+	public AsyncRpcException(IRequest req,RespJRso se){
 		this(req,"code:"+se.getCode()+":msg"+se.getMsg());
 	}
 	

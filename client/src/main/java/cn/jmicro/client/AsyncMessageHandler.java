@@ -19,16 +19,16 @@ package cn.jmicro.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IAsyncCallback;
+import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcResponseJRso;
 import cn.jmicro.common.Constants;
 
 /**
@@ -63,8 +63,8 @@ public class AsyncMessageHandler implements IMessageHandler{
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void handleResponse(IClientSession session,Message msg){
-		RpcResponseJRso resp = ICodecFactory.decode(this.codecFactory,msg.getPayload(),RpcResponseJRso.class,msg.getUpProtocol());
-		resp.setMsg(msg);
+		RespJRso resp = ICodecFactory.decode(this.codecFactory,msg.getPayload(),RespJRso.class,msg.getUpProtocol());
+		resp.setPkgMsg(msg);
 		
 		//req.setMsg(msg);
 		String key = msg.getMsgId()+"";
@@ -114,7 +114,7 @@ public class AsyncMessageHandler implements IMessageHandler{
 			logger.error("Service [ " + key + "] not found!");
 			return;
 		}
-		callback.onResult(resp.getResult(),null,null);
+		callback.onResult(resp.getData(),null,null);
 		
 		/*try {
 			Class<?>[] pts = ServiceLoader.getMethodParamsType((Object[])resp.getResult());

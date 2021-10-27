@@ -891,10 +891,15 @@ public class SimpleObjectFactory implements IObjectFactory {
 				
 				final IAccountServiceJMSrv as0 = as;
 				Holder<Integer> loginCnt = new Holder<>(0);
-				TimerTicker.doInBaseTicker(60*8, "actLoginCheck", null, (k,a)->{
+				TimerTicker.doInBaseTicker(60*1, "actLoginCheck", null, (k,a)->{
 					RespJRso<Boolean> resp = null;
 					if(loginCnt.get() == 0 && !Utils.isEmpty(pi.getAi().getLoginKey())) {
-						resp = as0.hearbeat(pi.getAi().getLoginKey());//刷新系统账号，防止超时
+						try {
+							resp = as0.hearbeat(pi.getAi().getLoginKey());
+						} catch (Exception e) {
+							logger.error(e.getMessage());
+						}
+						//刷新系统账号，防止超时
 						if(resp != null && resp.getData()) {
 							return;
 						}
@@ -911,7 +916,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 					RespJRso<ActInfoJRso> lr = as0.loginWithClientToken(token);
 					if(lr != null && lr.getCode() == RespJRso.CODE_SUCCESS) {
 						pi.setAi(r.getData());
-						op.setData(p,JsonUtils.getIns().toJson(pi));
+						//op.setData(p,JsonUtils.getIns().toJson(pi));
 						loginCnt.set(0);
 						if(LG.isLoggable(MC.LOG_INFO)) {
 							String msg = "Relogin success: act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId();

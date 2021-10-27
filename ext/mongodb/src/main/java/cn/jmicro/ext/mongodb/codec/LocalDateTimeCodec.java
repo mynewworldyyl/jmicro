@@ -22,7 +22,7 @@ public class LocalDateTimeCodec implements Codec<LocalDateTime>{
 	@Override
 	public void encode(BsonWriter writer, LocalDateTime value, EncoderContext encoderContext) {
 		 try {
-	            writer.writeDateTime(value.toInstant(ZoneOffset.UTC).toEpochMilli());
+	            writer.writeInt64(value.toInstant(ZoneOffset.UTC).toEpochMilli());
 	        } catch (ArithmeticException e) {
 	            throw new CodecConfigurationException(format("Unsupported LocalDateTime value '%s' could not be converted to milliseconds: %s",
 	                    value, e.getMessage()), e);

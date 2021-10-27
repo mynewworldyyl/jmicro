@@ -3,10 +3,10 @@ import ApiRequest from "./request";
 import cons from "./constants";
 import config from "./config"
 import utils from "./utils"
-import i18n from "./i18n"
 
+import i18n from './i18n'
+import lc from "./localStorage"
 import {Message,Constants} from "./message"
-
 import transport from "./transport"
 
 //import socket from "./socket";
@@ -21,11 +21,13 @@ let mk2code = {
     "cn.jmicro.api.gateway.IBaseGatewayServiceJMSrv##apigateway##0.0.1##############1##fnvHash1a":fnvCode,
 };
 
-let errCode2Msg = {
+/*let errCode2Msg = {
     0x06 : "Service not available maybe not started",
-};
+};*/
 
 let reqId = 1
+
+let doLoginOutBefore = false
 
 function __actreq(method,args){
     let req = {};
@@ -41,7 +43,7 @@ export default {
      config,
      actInfo:null,
 
-     creq(sn,ns,v,method,args){
+    creq(sn,ns,v,method,args){
         let req = {};
         req.serviceName = sn;
         req.namespace = ns;
@@ -66,7 +68,7 @@ export default {
     },
 
     getCode(type) {
-        let req = __actreq('getCode',[type]);
+        let req = this.cmreq(-1494008743,[type]) //__actreq('getCode',[type]);
         return this.callRpc(req)
     },
 
@@ -78,76 +80,47 @@ export default {
     },
 
     isLogin() {
-        return this.actInfo != null;
+         if(!this.actInfo){
+             this.actInfo = lc.get(Constants.USER_INFO);
+         }
+         return this.actInfo != null && this.actInfo != '';
     },
 
     isAdmin(){
-        return this.actInfo != null && this.actInfo.isAdmin;
+        return this.isLogin()  && this.actInfo.isAdmin;
+    },
+
+    setActInfo(actInfo) {
+         if(!actInfo) {
+            throw 'invalid act info'
+         }
+        doLoginOutBefore = false
+        this.actInfo = actInfo;
+        lc.set(Constants.USER_INFO,actInfo)
+        this._notify(Constants.LOGIN)
+    },
+
+    unsetActInfo() {
+        doLoginOutBefore = true
+        this.actInfo = null;
+        lc.remove(Constants.USER_INFO)
+        this._notify(Constants.LOGOUT)
     },
 
     login(actName,pwd,vcode,vcodeId,cb){
-        if(this.actInfo && cb) {
-            cb(this.actInfo,null);
-            return;
-        }
-        this.actInfo = null;
-        if(!actName) {
-            //自动建立匿名账号
-            actName = localStorage.get("guestName");
-            if(!actName) {
-                actName = "";
-            }
-        }
-
-        if(!pwd) {
-            pwd = "";
-        }
-
-        let self = this;
-        let req = __actreq('login',[actName,pwd,vcode,vcodeId]);
-        //req.serviceName = 'cn.jmicro.api.security.IAccountServiceJMSrv';
-        this.callRpc(req)
-            .then(( resp )=>{
-                if(resp.code == 0) {
-                    self.actInfo = resp.data;
-                    localStorage.set("actName",self.actInfo.actName);
-
-                    let rememberPwd = localStorage.get("rememberPwd");
-                    if(rememberPwd || self.actInfo.actName.startWith("guest_")) {
-                        localStorage.set("pwd",pwd);
-                    }
-
-                    if(self.actInfo.actName.startWith("guest_")) {
-                        localStorage.set("guestName",self.actInfo.actName);
-                    }
-
-                    if(cb)
-                        cb(self.actInfo,null);
-
-                    self._notify(Constants.LOGIN);
-                } else {
-                    if(cb) {
-                        cb(null,resp.msg)
-                    }
-
-                }
-            }).catch((err)=>{
-            console.log(err)
-            if(cb) {
-                cb(null,err)
-            }
-        });
+         console.log('not support login, you need regist login method')
     },
 
     _notify : function(type) {
         for(let key in actListeners) {
             if(actListeners[key]) {
-                actListeners[key](type,this.actInfo);
+                actListeners[key](type,this.actInfo)
             }
         }
     },
 
     logout: function (cb){
+        doLoginOutBefore = true
         if(!this.actInfo) {
             if(cb) {
                 cb(true,null)
@@ -158,11 +131,10 @@ export default {
         self.callRpc(__actreq('logout',[]))
             .then(( resp )=>{
                 if(resp.data) {
-                    self.actInfo = null;
                     if(cb) {
                         cb(true,null)
                     }
-                    self._notify(Constants.LOGOUT);
+                    self.unsetActInfo()
                 }else {
                     if(cb) {
                         cb(false,'logout fail')
@@ -174,6 +146,33 @@ export default {
                 cb(false,err)
             }
         });
+    },
+
+    checkLogin() {
+         let self = this
+         return new Promise((reso,reje)=>{
+             if(!this.isLogin()) {
+                 reje()
+             }else {
+                 let req =  self.cmreq(-515329030,[self.actInfo.loginKey])
+                 self.callRpc(req)
+                 .then((res)=>{
+                    if(res.data) {
+                        reso()
+                    } else {
+                        doLoginOutBefore = true
+                        self.actInfo = null;
+                        lc.remove(Constants.USER_INFO)
+                        reje()
+                    }
+                 }).catch(err=>{
+                     doLoginOutBefore = true
+                     self.actInfo = null;
+                     lc.remove(Constants.USER_INFO)
+                     reje()
+                 })
+             }
+         })
     },
 
     init : function(opts,cb){
@@ -216,18 +215,29 @@ export default {
         }
 
         if( opts.actName &&  opts.actName.length > 0) {
-            localStorage.set("actName", opts.actName);
+            localStorage.set(Constants.ACT_NAME_KEY, opts.actName);
         }
 
         if( opts.pwd &&  opts.pwd.length > 0) {
-            localStorage.set("pwd", opts.pwd);
+            localStorage.set(Constants.ACT_PWD_KEY, opts.pwd);
         }
 
         let req = {};
         req.args = ["nettyhttp"];
         req.mcode=-1318264465
 
-        i18n.init(cb)
+         i18n.init()
+        //检测登录Token是否有效
+        this.checkLogin()
+            .then(()=>{
+                if(cb) {
+                    cb(true)
+                }
+            }).catch(()=>{
+                if(cb) {
+                    cb(false)
+                }
+            })
 
        /* this.callRpc(req)
             .then((data)=>{
@@ -347,9 +357,9 @@ export default {
                     methodCodeReq.type = Constants.MSG_TYPE_REQ_JRPC;
                     self.__callRpcWithTypeAndProtocol( methodCodeReq, Constants.PROTOCOL_JSON,
                         Constants.PROTOCOL_JSON, fnvCode )
-                        .then((methodCode)=>{
-                            mk2code[smSvnKey] = methodCode;
-                            self.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,methodCode)
+                        .then((res)=>{
+                            mk2code[smSvnKey] = res.data;
+                            self.__callRpcWithTypeAndProtocol(req,upProtocol,downProtocol,mk2code[smSvnKey])
                                 .then((resp)=>{
                                     reso(resp);
                                 }).catch((err)=>{
@@ -383,7 +393,7 @@ export default {
         return new Promise(function(reso,reje){
 
             if(typeof req.type == 'undefined' || req.type == null) {
-                req.type = Constants.MSG_TYPE_REQ_JRPC;
+                req.type = Constants.MSG_TYPE_REQ_JRPC
             }
 
             let msg =  self.createMsg(req.type)
@@ -394,7 +404,7 @@ export default {
             msg.setSmKeyCode(methodCode)
             msg.setForce2Json(true)
             if(config.includeMethod && req.method) {
-                msg.putExtra(Constants.EXTRA_KEY_METHOD,req.method, Constants.PREFIX_TYPE_STRING);
+                msg.putExtra(Constants.EXTRA_KEY_METHOD,req.method, Constants.PREFIX_TYPE_STRING)
             }
 
             //console.log(req.method+" => " + methodCode);
@@ -408,10 +418,10 @@ export default {
 
             if(self.actInfo) {
                 //req.params[Constants.TOKEN] = self.actInfo.loginKey
-                msg.putExtra(Constants.EXTRA_KEY_LOGIN_KEY,self.actInfo.loginKey,Constants.PREFIX_TYPE_STRING);
+                msg.putExtra(Constants.EXTRA_KEY_LOGIN_KEY,self.actInfo.loginKey,Constants.PREFIX_TYPE_STRING)
             }
 
-            let mn = req.method;
+            let mn = req.method
 
             req.serviceName = null
             req.namespace = null
@@ -435,55 +445,51 @@ export default {
                 }
                 msg.payload = r.encode(Constants.PROTOCOL_BIN)
             } else {
-                msg.payload = req;
+                msg.payload = req
             }
 
             if(req.needResponse) {
-                msg.setRespType(Constants.MSG_TYPE_PINGPONG);
+                msg.setRespType(Constants.MSG_TYPE_PINGPONG)
             }
             transport.send(msg,function(rstMsg,err){
                 if(!rstMsg || err) {
-                    reje(err);
-                    return;
+                    reje(err)
+                    return
                 }
                 if(!rstMsg.payload) {
-                    reje(rstMsg);
-                    return;
+                    reje(rstMsg)
+                    return
                 }
-                if(!rstMsg.payload.success) {
-                    console.log(mn + ", " + JSON.stringify(rstMsg.payload));
-                    let rst = rstMsg.payload.result
-                    let doFailure = true;
-                    if(rst && rst.errorCode != 0) {
-                        //alert(rst.msg);
-                        if(rst.errorCode == 0x00000004 || rst.errorCode == 0x004C || rst.errorCode == 76) {
-                            let actName = localStorage.get("actName");
-                            let rememberPwd = localStorage.get("rememberPwd");
-                            if(rememberPwd || !actName || actName.startWith("guest_")) {
-                                let pwd = localStorage.get("pwd");
-                                if(!pwd) {
-                                    pwd="";
+                if(rstMsg.isError()) {
+                    console.log('Method: ' + mn + ", mcode: " + methodCode + ',' + JSON.stringify(rstMsg.payload))
+                    let rst = rstMsg.payload
+                    let doFailure = true
+                    if(rst && rst.code != 0) {
+                        //alert(rst.msg)
+                        if(!doLoginOutBefore && (rst.code == 0x004C || rst.code == 76)) {
+                            self.actInfo = null
+                            self.login(null,null,null,0,(actInfo,err)=>{//做自动登录
+                                if(self.actInfo && !err) {
+                                    self.__callRpcWithTypeAndProtocol(req,req.type,upProtocol,downProtocol,methodCode)
+                                        .then(( r,err )=>{
+                                            if(r ) {
+                                                reso(r)
+                                            } else {
+                                                reje(err)
+                                            }
+                                        }).catch((err)=>{
+                                        console.log(err)
+                                        reje(err)
+                                    })
+                                }else {
+                                    reje(err || rst)
                                 }
-                                self.actInfo = null;
-                               self.login(actName,pwd,(actInfo,err)=>{
-                                    if( self.actInfo && !err) {
-                                        self.__callRpcWithTypeAndProtocol(req,req.type,upProtocol,downProtocol,methodCode)
-                                            .then(( r,err )=>{
-                                                if(r ) {
-                                                    reso(r);
-                                                } else {
-                                                    reje(err);
-                                                }
-                                            }).catch((err)=>{
-                                            console.log(err);
-                                            reje(err);
-                                        });
-                                    }else {
-                                        reje(err || rst);
-                                    }
-                                });
-                                doFailure = false;
-                            }
+                            })
+                            doFailure = false;
+                        }else if(rst.code == 4) {
+                            //需要验证码
+                            reje(rst)
+                            return
                         }
                     }
 
@@ -491,13 +497,12 @@ export default {
                         // reje(err || rst);
                         self.doReject(reje, err || rst);
                     }
-
                 } else {
-                    let rst = rstMsg.payload.result;
-                    if(rst != null && Object.prototype.hasOwnProperty.call(rst,'errorCode')
-                        && Object.prototype.hasOwnProperty.call(rst,'msg') ) {
+                    let rst = rstMsg.payload;
+                    //console.log(rst)
+                    if(rst && rst.code != 0) {
                         //reje(rst);
-                        self.doReject(reje,rstMsg);
+                        self.doReject(reje,rst);
                     }else {
                         reso(rst);
                     }
@@ -507,12 +512,13 @@ export default {
     },
 
     doReject : function(reje,rst) {
-        if(rst && Object.prototype.hasOwnProperty.call(rst,'errorCode')) {
-            if(errCode2Msg[rst.errorCode]) {
-                reje(errCode2Msg[rst.errorCode]);
+        if(rst && Object.prototype.hasOwnProperty.call(rst,'code')) {
+            /*if(errCode2Msg[rst.code]) {
+                reje(errCode2Msg[rst.code]);
             }else {
-                reje(rst.msg);
-            }
+                reje(rst);
+            }*/
+            reje(rst);
         }else {
             reje(rst);
         }

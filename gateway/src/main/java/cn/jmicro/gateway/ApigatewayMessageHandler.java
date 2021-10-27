@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -42,7 +43,6 @@ import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.ServerErrorJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.utils.TimeUtils;
@@ -127,7 +127,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		
 		ISession cs = sessionManager.getOrConnect(r.getInsName(), r.getIp(), r.getPort());
 		if(cs == null) {
-			respError(session,msg,ServerErrorJRso.SE_SERVICE_NOT_FOUND,"Connection refuse");
+			respError(session,msg,RespJRso.SE_SERVICE_NOT_FOUND,"Connection refuse");
 			return true;
 		}
 		
@@ -159,14 +159,14 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 	private MessageRouteRow findTarget(ISession session, Message msg) {
 		List<MessageRouteRow> mrrs = cmpRouter.doRoute(session, msg);
 		if(mrrs == null || mrrs.isEmpty()) {
-			respError(session,msg,ServerErrorJRso.SE_SERVICE_NOT_FOUND,"route target not found for msg:"+msg.toString());
+			respError(session,msg,RespJRso.SE_SERVICE_NOT_FOUND,"route target not found for msg:"+msg.toString());
 			return null;
 		}
 		
 		if(mrrs.size() > 1) {
 			MessageRouteRow mrr = this.selector.select(mrrs,session,msg);
 			if(mrr == null) {
-				respError(session,msg,ServerErrorJRso.SE_SERVICE_NOT_FOUND,"balance target not found for msg:"+msg.toString());
+				respError(session,msg,RespJRso.SE_SERVICE_NOT_FOUND,"balance target not found for msg:"+msg.toString());
 				return null;
 			}
 			return mrr;
@@ -181,7 +181,8 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		msg.setType((byte)(msg.getType()+1));
 		msg.setError(true);//响应错误响应消息
 		
-		ServerErrorJRso se = new ServerErrorJRso(code,errStr);
+		RespJRso<Object> se = new RespJRso<>(code,errStr);
+		
 		//错误信息下行全用json,不管客户端所需下行协议
 		msg.setDownProtocol(Message.PROTOCOL_JSON);
 		msg.setPayload(ICodecFactory.encode(codecFactory, se, Message.PROTOCOL_JSON));

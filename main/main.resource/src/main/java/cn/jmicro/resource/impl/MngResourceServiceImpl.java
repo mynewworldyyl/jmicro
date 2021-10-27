@@ -25,6 +25,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.PromiseImpl;
@@ -79,7 +80,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 			return r;
 		}
 		
-		boolean isAdmin = PermissionManager.isCurAdmin();
+		boolean isAdmin = PermissionManager.isCurAdmin(Config.getClientId());
 	
 		List<ResourceMonitorConfigJRso> ll = new ArrayList<>();
 		r.setData(ll);
@@ -115,7 +116,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 		
 		ResourceMonitorConfigJRso lw = JsonUtils.getIns().fromJson(data, ResourceMonitorConfigJRso.class);
 		
-		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getClientId()))) {
+		if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getClientId()))) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to enable resource monitor config: " + lw.getId()+", target clientId: " + lw.getClientId());
@@ -161,7 +162,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 		
 		ResourceMonitorConfigJRso lw = JsonUtils.getIns().fromJson(data, ResourceMonitorConfigJRso.class);
 		
-		if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getClientId()))) {
+		if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getClientId()))) {
 			r.setCode(RespJRso.CODE_NO_PERMISSION);
 			r.setData(false);
 			r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to update resource monitor config: " + lw.getId()+", target clientId: " + lw.getClientId());
@@ -176,7 +177,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 			return r;
 		}
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			lw.setClientId(JMicroContext.get().getAccount().getClientId());
 		}
 		
@@ -203,7 +204,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 		if(op.exist(path)) {
 			String data = op.getData(path);
 			ResourceMonitorConfigJRso lw = JsonUtils.getIns().fromJson(data, ResourceMonitorConfigJRso.class);
-			if(!(PermissionManager.isCurAdmin() || PermissionManager.checkAccountClientPermission(lw.getClientId()))) {
+			if(!(PermissionManager.isCurAdmin(Config.getClientId()) || PermissionManager.checkAccountClientPermission(lw.getClientId()))) {
 				r.setCode(RespJRso.CODE_NO_PERMISSION);
 				r.setData(false);
 				r.setMsg(JMicroContext.get().getAccount().getActName()+" have no permissoin to delete resource monitor config: " + lw.getId()+", target clientId: " + lw.getClientId());
@@ -230,7 +231,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			cfg.setClientId(ai.getClientId());
 		}
 		
@@ -347,7 +348,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 	private Document getLogCondtions(ResourceDataReqJRso req) {
 		Document match = new Document();;
 		
-		if(!PermissionManager.isCurAdmin()) {
+		if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 			 match.put("clientId", JMicroContext.get().getAccount().getClientId());
 		}
 		

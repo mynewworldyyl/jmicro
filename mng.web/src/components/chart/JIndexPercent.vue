@@ -136,7 +136,7 @@ export default {
             if(self.cache.started) {
                 statis.unsubscribeData(idKey,2,this.callback
                 ).then(rst =>{
-                    self.$Message.success(rst);
+                    self.$Message.success(rst.data);
                     self.cache.started = false;
                     self.btnTitle = 'Start';
                 }).catch(err =>{
@@ -145,7 +145,7 @@ export default {
             }else {
                 statis.subscribeData(idKey,2,this.callback)
                     .then(rst =>{
-                        self.$Message.success(rst);
+                        self.$Message.success(rst.data);
                         self.cache.started = true;
                         self.btnTitle = 'Stop';
                     }).catch(err =>{
