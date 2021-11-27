@@ -299,11 +299,11 @@
 				 <artifactId>jmicro.mng</artifactId>
 				  <version>${jmicro.version}</version>
 	        </dependency>
-	        <!--  <dependency>
+	        <dependency>
 				 <groupId>cn.jmicro</groupId>
-				 <artifactId>jmicro.limit</artifactId>
+				 <artifactId>jmicro.dataservice</artifactId>
 				 <version>${jmicro.version}</version>
-        	</dependency> -->
+        	</dependency> 
 	
 			 <dependency>
 			 <groupId>cn.jmicro</groupId>

@@ -108,7 +108,7 @@ export default {
     },
 
     login(actName,pwd,vcode,vcodeId,cb){
-         console.log('not support login, you need regist login method')
+         console.log('not support login, you need regist login method',actName,pwd,vcode,vcodeId,cb)
     },
 
     _notify : function(type) {
@@ -166,6 +166,7 @@ export default {
                         reje()
                     }
                  }).catch(err=>{
+                     console.log(err)
                      doLoginOutBefore = true
                      self.actInfo = null;
                      lc.remove(Constants.USER_INFO)
@@ -181,7 +182,7 @@ export default {
 
         if(useWs){
             if(window && window.WebSocket || utils.isWx()) {
-            /*    import('./socket.js')
+              /*import('./socket.js')
                     .then(so=>{
                         so.init()
                     })*/

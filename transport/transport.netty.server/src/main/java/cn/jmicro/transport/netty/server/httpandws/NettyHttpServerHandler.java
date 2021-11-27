@@ -28,7 +28,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.AttributeKey;
 
 @Component(lazy=false,side=Constants.SIDE_PROVIDER)
@@ -121,7 +121,11 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     			}*/
     		}
     	}else {
-    		logger.warn("Error Http Request");
+    		logger.warn("Buffer: "+msg);
+    		/*if(msg instanceof TextWebSocketFrame) {
+    			TextWebSocketFrame txt = (TextWebSocketFrame)msg;
+    			logger.warn("Buffer text: " + txt.text());
+    		}*/
     		ctx.fireChannelRead(msg);
     	}
     }

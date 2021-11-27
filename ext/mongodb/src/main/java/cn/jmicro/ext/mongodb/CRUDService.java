@@ -13,6 +13,7 @@ import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 
@@ -84,7 +85,7 @@ public class CRUDService<T extends PersistVo> {
 		Map<String,Object> filter = new HashMap<>();
 		//filter.put("deleted", false);
 		
-		List<QryDefJRso> ps = qry.getPs();
+		List<QryDefJRso> ps = qry.getQryPs();
 		
 		for(QryDefJRso qd : ps) {
 			if(qd.getV() == null) continue;//排除空值
@@ -129,8 +130,9 @@ public class CRUDService<T extends PersistVo> {
 		r.setTotal(cnt);
 		
 		if(cnt > 0) {
+			int order = Utils.isEmpty(qry.getOrder()) || "1".equals(qry.getOrder()) ? 1:-1;
 			List<T> list = this.os.query(table, filter, clazz,
-					qry.getPageSize(), qry.getCurPage()-1,null,qry.getSortName(),qry.getOrder());
+					qry.getSize(), qry.getCurPage()-1,null,qry.getSortName(),order);
 			r.setData(list);
 		}
 		

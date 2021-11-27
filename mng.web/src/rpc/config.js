@@ -19,7 +19,7 @@ export default {
     //ip:'jmicro.cn',
   /*  port:'',
     sport:'',*/
-    port:'8443',
+    port:'9090',
     sport:'9999',
     txtContext : '_txt_',
     binContext : '_bin_',

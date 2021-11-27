@@ -190,11 +190,11 @@
                 },
 
                qry : {
-                    pageSize:30,
+                    size:30,
                     curPage:1,
                     sortName:'createdTime',
-                    order:-1,//1:增序  -1：降序
-                    ps : []
+                    order:"-1",//1:增序  -1：降序
+                    qryPs : []
                },
 
                 ic:{},

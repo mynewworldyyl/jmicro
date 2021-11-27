@@ -46,13 +46,13 @@ public class I8NServiceImpl implements II8NServiceJMSrv {
 		resp.setCode(RespJRso.CODE_SUCCESS);
 		QueryJRso qry = new QueryJRso();
 		qry.setCurPage(0);
-		qry.setPageSize(Integer.MAX_VALUE);
+		qry.setSize(Integer.MAX_VALUE);
 		
 		QryDefJRso mf = new QryDefJRso();
 		mf.setFn("mod");
 		mf.setOpType(QryDefJRso.OP_EQ);
 		mf.setV(module);
-		qry.getPs().add(mf);
+		qry.getQryPs().add(mf);
 		
 		String[] ar = lang.split("-");
 		
@@ -60,21 +60,21 @@ public class I8NServiceImpl implements II8NServiceJMSrv {
 		mf.setFn("lan");
 		mf.setOpType(QryDefJRso.OP_EQ);
 		mf.setV(ar[0].trim().toLowerCase());
-		qry.getPs().add(mf);
+		qry.getQryPs().add(mf);
 		
 		if(ar.length >=2) {
 			mf = new QryDefJRso();
 			mf.setFn("country");
 			mf.setOpType(QryDefJRso.OP_EQ);
 			mf.setV(ar[1].trim().toLowerCase());
-			qry.getPs().add(mf);
+			qry.getQryPs().add(mf);
 		}
 		
 		mf = new QryDefJRso();
 		mf.setFn("clientId");
 		mf.setOpType(QryDefJRso.OP_EQ);
 		mf.setV(clientId);
-		qry.getPs().add(mf);
+		qry.getQryPs().add(mf);
 		
 		RespJRso<List<I18nJRso>> rr = crudSrv.query(I18nJRso.class, qry);
 		

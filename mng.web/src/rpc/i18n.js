@@ -1,3 +1,4 @@
+/* eslint-disable */
 import rpc from "./rpcbase";
 import cfg from "./config";
 import utils from "./utils";
@@ -85,7 +86,9 @@ export default  {
           }
         }
       }).catch(err => {
-      cb(err);
+        if(cb) {
+            cb(err);
+        }
       throw err;
     });
   },

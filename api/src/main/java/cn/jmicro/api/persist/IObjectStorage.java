@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cn.jmicro.common.Utils;
+
 /**
  * 
  * 
@@ -74,4 +76,16 @@ public interface IObjectStorage {
 	
 	Map<String,Object> getFields(String table,Map<String, Object> filter, String...fields);
 	
+	
+	public static int getOrderVal(String sort, int def) {
+		if(Utils.isEmpty(sort)) return def;
+		String lo = sort.toLowerCase();
+		if("asc".equals(lo)) return 1;
+		if("desc".equals(lo)) return 1;
+		try {
+			return Integer.parseInt(lo);
+		} catch (NumberFormatException e) {
+			return def;
+		}
+	}
 }

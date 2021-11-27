@@ -569,8 +569,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			
 			RespJRso resp = ICodecFactory.decode(this.codecFactory, respMsg.getPayload(),
 					RespJRso.class, respMsg.getDownProtocol());
-			
-			if(p.resultType() == RespJRso.class) {
+			//假调参数是Promise,则返回值一定是RespJRso
+			if(p.resultType() == RespJRso.class || p.resultType() == IPromise.class) {
 				p.setResult(resp);
 			} else {
 				p.setResult(resp.getData());

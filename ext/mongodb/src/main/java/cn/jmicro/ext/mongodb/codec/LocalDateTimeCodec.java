@@ -92,7 +92,14 @@ public class LocalDateTimeCodec implements Codec<LocalDateTime>{
 			 return Instant.ofEpochMilli(reader.readInt64()).atZone(ZoneOffset.UTC).toLocalDateTime();
 		} else if(currentType.equals(BsonType.STRING)) {
 			String str = reader.readString();
-			Date d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DD_HHMMSSSSST);
+			Date d = null;
+			if(str.endsWith("T")) {
+				d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DD_HHMMSSSSST);
+			} else if(str.contains("T")) {
+				d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DDTHHMMSSSSST);
+			} else {
+				d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DD_HHMMSS);
+			}
 			return Instant.ofEpochMilli(d.getTime()).atZone(ZoneOffset.UTC).toLocalDateTime();
 		} else {
             throw new CodecConfigurationException(format("Could not decode into %s, expected '%s' BsonType but got '%s'.",

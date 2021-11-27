@@ -67,8 +67,8 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	@Inject
 	private NettyHttpServerHandler httpHandler;
 
-	// @Cfg(value="/textWebsocketContextPath",defGlobal=true)
-	// private String textWebsocketContextPath = "/_txt_";
+	//@Cfg(value="/textWebsocketContextPath",defGlobal=true)
+	//private String textWebsocketContextPath = "/_txt_";
 
 	@Cfg(value = "/binaryWebsocketContextPath", defGlobal = true)
 	private String binaryWebsocketContextPath = "/_bin_";
@@ -94,7 +94,7 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	protected void initChannel(SocketChannel ch) throws Exception {
 		ChannelPipeline pipeline = ch.pipeline();
 
-		if (this.httpsEnable && ch.localAddress().getPort() == port) {
+		if(this.httpsEnable && ch.localAddress().getPort() == port) {
 			/*
 			 * if(sslEngine == null) { sslEngine = getSslContext().createSSLEngine();
 			 * sslEngine.setUseClientMode(false); sslEngine.setNeedClientAuth(false); }
@@ -109,8 +109,11 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 		// 将一个Http的消息组装成一个完成的HttpRequest或者HttpResponse
 		pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
 
+		//pipeline.addLast(new HttpRequestHandler("/ws"));
+		
 		pipeline.addLast("binWebSocketServerProtocolHandler",
 				new WebSocketServerProtocolHandler(binaryWebsocketContextPath, null, false, 65535));
+		
 		pipeline.addLast("binWebSocketWsHandler", binWsHandler);
 
 		/*
