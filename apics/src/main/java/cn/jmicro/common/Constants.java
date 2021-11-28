@@ -211,6 +211,12 @@ public interface Constants {
 	//应该删除此值
 	public static final String DIRECT_SERVICE_ITEM = "directServiceItem";
 	
+	public static final String DIRECT_SERVICE_ITEM_CLIENT_ID = "directServiceItemClientId";
+	
+	public static final String DIRECT_SERVICE_ITEM_INS_NAME = "directServiceItemInsName";
+	
+	public static final String DIRECT_SERVICE_ITEM_INS_PREFIX = "directServiceItemInsPrefix";
+	
 	public static final String ROUTER_TYPE = "routerKey";
 	
     public static final int TYPE_HTTP = 1;

@@ -253,6 +253,16 @@ public class JMicroContext  {
 		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
 		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
 		
+		Integer cid = msg.getExtra(Message.EXTRA_KEY_CLIENT_ID);
+		if(cid != null) {
+			context.setParam(Message.EXTRA_KEY_CLIENT_ID+"", cid);
+		} else {
+			ActInfoJRso sai = JMicroContext.get().getSysAccount();
+			if(sai != null) {
+				context.setParam(Message.EXTRA_KEY_CLIENT_ID+"", sai.getClientId());
+			}
+		}
+		
 		byte logLevel =  msg.getLogLevel();
 		
 		if(logLevel != MC.LOG_NO) {

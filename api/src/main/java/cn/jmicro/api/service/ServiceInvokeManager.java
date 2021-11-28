@@ -54,11 +54,10 @@ import cn.jmicro.common.util.JsonUtils;
 @Component
 public class ServiceInvokeManager {
 
+	private final static Logger logger = LoggerFactory.getLogger(ServiceInvokeManager.class);
 	private static final Class<?> TAG = ServiceInvokeManager.class;
 	
-	private Map<String,AbstractClientServiceProxyHolder> proxes = new HashMap<>();
-	
-	private final static Logger logger = LoggerFactory.getLogger(ServiceInvokeManager.class);
+	private Map<String,ServiceProxyHolder> proxes = new HashMap<>();
 	
 	@Inject
 	private IObjectFactory of = null;
@@ -68,12 +67,12 @@ public class ServiceInvokeManager {
 	
 	@SuppressWarnings("unchecked")
 	public <T> IPromise<T> call(String srvName,String ns,String ver,String method, 
-			Class<?> returnParamClazz, Class<?>[] paramsCls, Object[] args,AsyncConfigJRso ac) {
+			Class<?> returnParamClazz, Class<?>[] paramsCls, Object[] args) {
 		IPromise<T> promise = null;
 		
 		String key = UniqueServiceKeyJRso.serviceName(srvName,ns,ver);
 		
-		AbstractClientServiceProxyHolder proxy = getProxy(srvName,ns,ver);
+		ServiceProxyHolder proxy = getProxy(srvName,ns,ver);
 		if(proxy == null) {
 			PromiseImpl<T> p = new PromiseImpl<T>();
 			p.setFail(MC.MT_SERVICE_RROXY_NOT_FOUND,"Service not found: " +key);
@@ -81,7 +80,7 @@ public class ServiceInvokeManager {
 			return p;
 		}
 		
-		Method m = getSrvMethod(proxy.getClass(),method,returnParamClazz,paramsCls,args);
+		Method m = proxy.getSMethod(method,returnParamClazz,paramsCls,args);
 		
 		if(m == null) {
 			PromiseImpl<T> p = new PromiseImpl<T>();
@@ -93,9 +92,9 @@ public class ServiceInvokeManager {
 
 		final AsyncConfigJRso oldAc = JMicroContext.get().getParam(Constants.ASYNC_CONFIG,null);
 		
-		if(ac != null) {
+		/*if(ac != null) {
 			JMicroContext.get().setParam(Constants.ASYNC_CONFIG,ac);
-		}
+		}*/
 		
 		try {
 			
@@ -126,7 +125,7 @@ public class ServiceInvokeManager {
 				p.done();
 			}
 			
-			if(ac != null) {
+			/*if(ac != null) {
 				promise.then((rst,fail,cxt)->{
 					if(oldAc != null) {
 						JMicroContext.get().setParam(Constants.ASYNC_CONFIG,oldAc);
@@ -134,7 +133,7 @@ public class ServiceInvokeManager {
 						JMicroContext.get().removeParam(Constants.ASYNC_CONFIG);
 					}
 				});
-			}
+			}*/
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("onRequest:" +srvName + "." + m.getName()+ ",arg: "+ JsonUtils.getIns().toJson(args),e);
 			PromiseImpl<T> p = new PromiseImpl<T>();
@@ -151,14 +150,19 @@ public class ServiceInvokeManager {
 		return promise;
 	}
 	
-	public <T> IPromise<T> call(String srvName,String ns,String ver,String method,
-			Class<?> returnParamClazz,Class<?>[] paramsCls, Object[] args) {
-		return call( srvName, ns, ver, method, returnParamClazz,paramsCls, args,null);
-	}
+/*	public <T> IPromise<T> call(String srvName,String ns,String ver,String method,
+			Class<?> returnParamClazz,Class<?>[] paramsCls, Object[] args, Map<String,Object> opts) {
+		return call( srvName, ns, ver, method, returnParamClazz,paramsCls, args, Map<String,Object> opts);
+	}*/
 	
 	public <T> IPromise<T> call(UniqueServiceMethodKeyJRso mkey, Object[] args) {
 		return call(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),mkey.getMethod(),
-				mkey.getReturnParamClass(),mkey.getParameterClasses(),args,null);
+				mkey.getReturnParamClass(),mkey.getParameterClasses(),args);
+	}
+	
+	public <T> IPromise<T> call(int mcode, Object[] args) {
+		ServiceMethodJRso m = srvManager.getServiceMethodByHash(mcode);
+		return call(m,args);
 	}
 	
 	public <T> IPromise<T> call(ServiceMethodJRso sm, Object[] args) {
@@ -168,7 +172,7 @@ public class ServiceInvokeManager {
 	public <T> IPromise<T> call(String strSmKey, Object[] args) {
 		UniqueServiceMethodKeyJRso mkey = UniqueServiceMethodKeyJRso.fromKey(strSmKey);
 		return call(mkey.getServiceName(),mkey.getNamespace(),mkey.getVersion(),mkey.getMethod(),
-				mkey.getReturnParamClass(),mkey.getParameterClasses(),args,null);
+				mkey.getReturnParamClass(),mkey.getParameterClasses(),args);
 	}
 	
 	public <T> IPromise<T> callDirect(ServiceItemJRso si, ServiceMethodJRso sm, Object[] args) {
@@ -201,142 +205,54 @@ public class ServiceInvokeManager {
 		return p;
 	}
 	
-	public AbstractClientServiceProxyHolder getProxy(ServiceItemJRso si) {
+	
+	public ServiceProxyHolder getProxy(ServiceItemJRso si) {
 		if(si == null) {
 			String msg = "Cannot call service for NULL ServiceItem";
 			LG.log(MC.LOG_ERROR, TAG, msg);
 			//MT.nonRpcEvent(si.getKey().toKey(true, true, true),MC.MT_SERVICE_ITEM_NOT_FOUND);
 			throw new CommonException(msg);
 		}
-		
 		String key = si.getKey().toSnv();
+		ServiceProxyHolder h = proxes.get(key);
+		if(h != null) return h;
+		
 		
 		AbstractClientServiceProxyHolder p = null;
-		
-		if(!proxes.containsKey(key)) {
-			p = of.getRemoteServie(si, null);
-			if(p == null) {
-				String msg = "Fail to create remote service proxy: "+key;
-				LG.log(MC.LOG_ERROR, TAG, msg);
-				MT.nonRpcEvent(key,MC.MT_SERVICE_ITEM_NOT_FOUND);
-				throw new CommonException(msg);
-			}
-			proxes.put(key, p);
-		} else {
-			p = this.proxes.get(key);
+
+		p = of.getRemoteServie(si, null);
+		if(p == null) {
+			String msg = "Fail to create remote service proxy: "+key;
+			LG.log(MC.LOG_ERROR, TAG, msg);
+			MT.nonRpcEvent(key,MC.MT_SERVICE_ITEM_NOT_FOUND);
+			throw new CommonException(msg);
 		}
 		
-		return p;
+		h = new ServiceProxyHolder(p);
+		proxes.put(key, h);
+		return h;
 	}
 	
-	public AbstractClientServiceProxyHolder getProxy(String srvName,String ns,String ver) {
-		AbstractClientServiceProxyHolder p = null;
+	public ServiceProxyHolder getProxy(String srvName,String ns,String ver) {
 		String key = UniqueServiceKeyJRso.serviceName(srvName,ns,ver);
-		if(!proxes.containsKey(key)) {
-			p = of.getRemoteServie(srvName,ns,ver,null);
-			if(p == null) {
-				String msg = "Fail to create remote service proxy: "+key;
-				LG.log(MC.LOG_ERROR, TAG, msg);
-				MT.nonRpcEvent(key,MC.MT_SERVICE_ITEM_NOT_FOUND);
-				throw new CommonException(msg);
-			}
-			proxes.put(key, p);
-		} else {
-			p = this.proxes.get(key);
-		}
-		return p;
-	}
-	
-	public Method getSrvMethod(Class<?> srvCls, String methodName, Class<?> returnParamClazz,
-			Class<?>[] paramsCls, Object args[]) {
-		
-		Method m = null;
-		
-		if(((paramsCls == null || paramsCls.length ==0) && args.length > 0) || (paramsCls.length != args.length)) {
-			paramsCls = new Class<?>[args.length];
-			for(int i = 0; i < args.length; i++) {
-				Object ar = args[i];
-				if(ar == null) {
-					paramsCls[i] = Object.class;
-				} else {
-					paramsCls[i] = ar.getClass();
-				}
-			}
-		}
-		
-		if(returnParamClazz == null) {
-			String asyncMethod = methodName;
-			if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
-				asyncMethod = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
-			}
-			
-			try {
-				m = srvCls.getMethod(asyncMethod, paramsCls);
-				if(m != null) {
-					return m;
-				}
-				
-				for(Method m0 : srvCls.getMethods()){
-					if(m0.getName().equals(asyncMethod)) {
-						return m0;
+		ServiceProxyHolder h = proxes.get(key);
+		if(h == null) {
+			synchronized(key.intern()) {
+				h = proxes.get(key);
+				if(h == null) {
+					AbstractClientServiceProxyHolder p = of.getRemoteServie(srvName,ns,ver,null);
+					if(p == null) {
+						String msg = "Fail to create remote service proxy: "+key;
+						LG.log(MC.LOG_ERROR, TAG, msg);
+						MT.nonRpcEvent(key,MC.MT_SERVICE_ITEM_NOT_FOUND);
+						throw new CommonException(msg);
 					}
+					h = new ServiceProxyHolder(p);
+					proxes.put(key, h);
 				}
-				
-			} catch (NoSuchMethodException | SecurityException e) {
-				logger.warn(e.getMessage());
-			}
-			
-			try {
-				m = srvCls.getMethod(methodName, paramsCls);
-				if(m != null) {
-					return m;
-				}
-				
-				for(Method m0 : srvCls.getMethods()){
-					if(m0.getName().equals(asyncMethod)) {
-						return m0;
-					}
-				}
-			} catch (NoSuchMethodException | SecurityException e) {
-				logger.warn(e.getMessage());
-			}
-			
-		} else if(returnParamClazz == IPromise.class) {
-			//服务原生异步方法
-			try {
-				m = srvCls.getMethod(methodName, paramsCls);
-			} catch (NoSuchMethodException | SecurityException e) {
-				logger.warn(e.getMessage());
-			}
-			
-			for(Method m0 : srvCls.getMethods()){
-				if(m0.getName().equals(methodName) && IPromise.class.isAssignableFrom(m0.getReturnType()) ) {
-					return m0;
-				}
-			}
-			
-		} else {
-			if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
-				methodName = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
-			}
-			try {
-				m = srvCls.getMethod(methodName, paramsCls);
-			} catch (NoSuchMethodException | SecurityException e) {
-				logger.warn(e.getMessage());
 			}
 		}
-		
-		if(m != null) {
-			return m;
-		}
-		
-		for(Method m0 : srvCls.getMethods()){
-			if(m0.getName().equals(methodName)) {
-				return m0;
-			}
-		}
-		
-		return null;
+		return h;
 	}
 	
 	public void jready() {
@@ -348,6 +264,146 @@ public class ServiceInvokeManager {
 				}
 			}
 		});
+	}
+	
+	private class ServiceProxyHolder{
+		private String srvKey;
+		
+		private String insName;
+		private int clientId;
+		private String insNamePrefix;
+		
+		private AbstractClientServiceProxyHolder proxy;
+		
+		private Map<String,Method> methods = new HashMap<>();
+		
+		public ServiceProxyHolder(AbstractClientServiceProxyHolder p) {
+			this.proxy = p;
+			this.init(p.getItem());
+		}
+		
+		public void init(ServiceItemJRso si) {
+			if(si == null) return;
+
+			this.srvKey = si.serviceKey();
+			this.insName = si.getInsName();
+			this.clientId = si.getClientId();
+			
+			StringBuffer sb = new StringBuffer();
+			int len = this.insName.length();
+			for(int i = 0; i < len; i++ ) {
+				char c = this.insName.charAt(i);
+				if(Character.isDigit(c)) {
+					break;
+				}
+				sb.append(c);
+			}
+			this.insNamePrefix = sb.toString();
+		}
+		
+		public Method getSMethod(String methodName, Class<?> returnParamClazz,Class<?>[] paramsCls, Object args[]) {
+			Method m = this.methods.get(methodName);
+			if(m == null) {
+				m = getSrvMethod0(this.proxy.getClass(),methodName,returnParamClazz,paramsCls,args);
+				if(m != null) {
+					methods.put(methodName, m);
+				}
+			}
+			return m;
+		}
+		
+		private Method getSrvMethod0(Class<?> srvCls, String methodName, Class<?> returnParamClazz,
+				Class<?>[] paramsCls, Object args[]) {
+			
+			Method m = null;
+			
+			if(((paramsCls == null || paramsCls.length ==0) && args.length > 0) || (paramsCls.length != args.length)) {
+				paramsCls = new Class<?>[args.length];
+				for(int i = 0; i < args.length; i++) {
+					Object ar = args[i];
+					if(ar == null) {
+						paramsCls[i] = Object.class;
+					} else {
+						paramsCls[i] = ar.getClass();
+					}
+				}
+			}
+			
+			if(returnParamClazz == null) {
+				String asyncMethod = methodName;
+				if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
+					asyncMethod = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+				}
+				
+				try {
+					m = srvCls.getMethod(asyncMethod, paramsCls);
+					if(m != null) {
+						return m;
+					}
+					
+					for(Method m0 : srvCls.getMethods()){
+						if(m0.getName().equals(asyncMethod)) {
+							return m0;
+						}
+					}
+					
+				} catch (NoSuchMethodException | SecurityException e) {
+					logger.warn(e.getMessage());
+				}
+				
+				try {
+					m = srvCls.getMethod(asyncMethod, paramsCls);
+					if(m != null) {
+						return m;
+					}
+					
+					for(Method m0 : srvCls.getMethods()){
+						if(m0.getName().equals(asyncMethod)) {
+							return m0;
+						}
+					}
+				} catch (NoSuchMethodException | SecurityException e) {
+					logger.warn(e.getMessage());
+				}
+				
+			} else if(returnParamClazz == IPromise.class) {
+				//服务原生异步方法
+				try {
+					m = srvCls.getMethod(methodName, paramsCls);
+					if(m != null) return m;
+				} catch (NoSuchMethodException | SecurityException e) {
+					logger.warn(e.getMessage());
+				}
+				
+				for(Method m0 : srvCls.getMethods()){
+					if(m0.getName().equals(methodName) && IPromise.class.isAssignableFrom(m0.getReturnType()) ) {
+						return m0;
+					}
+				}
+				
+			} else {
+				if(!methodName.endsWith(AsyncClientProxy.ASYNC_METHOD_SUBFIX)) {
+					methodName = methodName + AsyncClientProxy.ASYNC_METHOD_SUBFIX;
+				}
+				try {
+					m = srvCls.getMethod(methodName, paramsCls);
+				} catch (NoSuchMethodException | SecurityException e) {
+					logger.warn(e.getMessage());
+				}
+			}
+			
+			if(m != null) {
+				return m;
+			}
+			
+			for(Method m0 : srvCls.getMethods()){
+				if(m0.getName().equals(methodName)) {
+					return m0;
+				}
+			}
+			
+			return null;
+		}
 	}
 	
 }

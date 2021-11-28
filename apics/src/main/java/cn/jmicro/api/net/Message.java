@@ -161,7 +161,7 @@ public final class Message {
 	
 	public static final Byte EXTRA_KEY_MSG_ID = -117;
 	
-	public static final Byte EXTRA_KEY_LOGIN_SYS= -116;
+	public static final Byte EXTRA_KEY_LOGIN_SYS = -116;
 	
 	public static final Byte EXTRA_KEY_ARG_HASH= -115;
 	
@@ -171,6 +171,8 @@ public final class Message {
 	public static final Byte EXTRA_KEY_EXT1 = 125;
 	public static final Byte EXTRA_KEY_EXT2 = 124;
 	public static final Byte EXTRA_KEY_EXT3 = 123;
+	
+	public static final Byte EXTRA_KEY_CLIENT_ID = 122;
 	
 	public static final byte MSG_TYPE_PINGPONG = 0;//默认请求响应模式
 	

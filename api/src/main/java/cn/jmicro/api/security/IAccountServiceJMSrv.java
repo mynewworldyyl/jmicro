@@ -5,18 +5,19 @@ import java.util.Set;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
 public interface IAccountServiceJMSrv {
 
-	RespJRso<ActInfoJRso> login(String actName, String pwd, String code,String codeId);
+	IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd, String code,String codeId);
 	
-	RespJRso<ActInfoJRso> loginWithId(int id,String pwd);
+	IPromise<RespJRso<ActInfoJRso>> loginWithId(int id,String pwd);
 	
-	RespJRso<ActInfoJRso> loginWithClientToken(String token);
+	IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(String token);
 	
-	RespJRso<ActInfoJRso>  loginByWeixin(String code, int shareUserId);
+	IPromise<RespJRso<ActInfoJRso>>  loginByWeixin(String code, int shareUserId);
 
 	RespJRso<Boolean> hearbeat(String loginKey);
 	
@@ -24,7 +25,7 @@ public interface IAccountServiceJMSrv {
 	
 	RespJRso<String> getCode(int type);
 	
-	RespJRso<ActInfoJRso> changeCurClientId(int clientId);
+	IPromise<RespJRso<ActInfoJRso>> changeCurClientId(int clientId);
 	
 	RespJRso<Map<Integer,String>> clientList();
 	

@@ -11,9 +11,11 @@ import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.internal.async.PromiseImpl;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.IAccountServiceJMSrv;
@@ -49,62 +51,71 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 	
 	@Override
-	public RespJRso<ActInfoJRso> login(String actName, String pwd,String code,String codeId) {
+	public IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd,String code,String codeId) {
 
-		RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>();
-		ActInfoJRso ai = accounts.get(actName);
-		if(ai == null) {
-			r.setCode(RespJRso.CODE_FAIL);
-			r.setMsg("Account invalid now!");
-			return r;
-		}
-		
-		if(ai.getPwd().equals(pwd)) {
-			String akey = key(ai.getActName());
-			
-			String oldLk = null;
-			if(cache.exist(akey)) {
-				oldLk = cache.get(akey);
+		return new PromiseImpl<RespJRso<ActInfoJRso>>((suc,fail)->{
+			RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>();
+			ActInfoJRso ai = accounts.get(actName);
+			if(ai == null) {
+				r.setCode(RespJRso.CODE_FAIL);
+				r.setMsg("Account invalid now!");
+				suc.success(r);
+				return;
 			}
 			
-			if(Utils.isEmpty(oldLk)) {
-				int seed = HashUtils.FNVHash1(TimeUtils.getCurTime() + "_" + this.idGenerator.getStringId(ActInfoJRso.class));
-				if(seed < 0) {
-					seed = -seed;
+			if(ai.getPwd().equals(pwd)) {
+				String akey = key(ai.getActName());
+				
+				String oldLk = null;
+				if(cache.exist(akey)) {
+					oldLk = cache.get(akey);
 				}
-				oldLk = key(""+ seed);
+				
+				if(Utils.isEmpty(oldLk)) {
+					int seed = HashUtils.FNVHash1(TimeUtils.getCurTime() + "_" + this.idGenerator.getStringId(ActInfoJRso.class));
+					if(seed < 0) {
+						seed = -seed;
+					}
+					oldLk = key(""+ seed);
+				}
+				
+				ai.setLastLoginTime(0);
+				ai.setLoginNum(0);
+				
+				long curTime = TimeUtils.getCurTime();
+				ai.setLoginKey(oldLk);
+				ai.setLastActiveTime(curTime);
+				ai.setAdmin(ai.getClientId() == Config.getClientId());
+				
+				cache.put(ai.getLoginKey(), ai,1800000);
+				cache.put(akey, oldLk,1800000);
+				cache.put(key(ai.getId()+""),oldLk,1800000);
+				
+				ai.setAdmin(ai.getClientId() == Config.getClientId());
+				r.setCode(RespJRso.CODE_SUCCESS);
+				r.setData(ai);
+				suc.success(r);
+				return;
+			} else {
+				r.setCode(RespJRso.CODE_FAIL);
+				r.setMsg("Account not exist or password error!");
+				suc.success(r);
+				return;
 			}
-			
-			ai.setLastLoginTime(0);
-			ai.setLoginNum(0);
-			
-			long curTime = TimeUtils.getCurTime();
-			ai.setLoginKey(oldLk);
-			ai.setLastActiveTime(curTime);
-			ai.setAdmin(ai.getClientId() == Config.getClientId());
-			
-			cache.put(ai.getLoginKey(), ai,1800000);
-			cache.put(akey, oldLk,1800000);
-			cache.put(key(ai.getId()+""),oldLk,1800000);
-			
-			ai.setAdmin(ai.getClientId() == Config.getClientId());
-			r.setCode(RespJRso.CODE_SUCCESS);
-			r.setData(ai);
-			return r;
-		} else {
-			r.setCode(RespJRso.CODE_FAIL);
-			r.setMsg("Account not exist or password error!");
-			return r;
-		}
+		});
+		
+
 	}
 
 	@Override
-	public RespJRso<ActInfoJRso> loginWithId(int id, String pwd) {
+	public IPromise<RespJRso<ActInfoJRso>> loginWithId(int id, String pwd) {
 		if(id2ActName.containsKey(id)) {
 			return login(this.id2ActName.get(id),pwd,"","");
 		} else {
-			RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>(RespJRso.CODE_FAIL,"Account not found!");
-			return r;
+			return new PromiseImpl<RespJRso<ActInfoJRso>>((suc,fail)->{
+				RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>(RespJRso.CODE_FAIL,"Account not found!");
+				suc.success(r);
+			});
 		}
 	}
 	
@@ -114,7 +125,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 
 	@Override
-	public RespJRso<ActInfoJRso> changeCurClientId(int clientId) {
+	public IPromise<RespJRso<ActInfoJRso>> changeCurClientId(int clientId) {
 		return null;
 	}
 
@@ -206,12 +217,12 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	};
 
 	@Override
-	public RespJRso<ActInfoJRso> loginWithClientToken(String token) {
+	public IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(String token) {
 		return null;
 	}
 
 	@Override
-	public RespJRso<ActInfoJRso> loginByWeixin(String code, int shareUserId) {
+	public IPromise<RespJRso<ActInfoJRso>> loginByWeixin(String code, int shareUserId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
