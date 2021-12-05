@@ -48,7 +48,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 /**
- * 实现缓存基本功能：
+ *  实现缓存基本功能：
  * 1. 缓存任意对象,提取时直接取得缓存对象,省去应用序列化和反序列化操作,采用JMICRO高效前缀类型序列化框架实现
  * 2. 有效避免缓存雪崩,随机超时时间
  * 3. 缓存自动刷新,设定定时刷新
@@ -134,9 +134,9 @@ public class RedisCacheImpl implements ICache {
 		
 		Jedis jedis = null;
 		try {
-			 if(logger.isInfoEnabled()) {
+			 /*if(logger.isInfoEnabled()) {
 				 logger.info("Put KEY: {}, LEN: {}",key,value.length);
-			 }
+			 }*/
 			 jedis = jeditPool.getResource();
 			 jedis.set(k, value);
 			 return true;
@@ -192,9 +192,9 @@ public class RedisCacheImpl implements ICache {
 			 jedis = jeditPool.getResource();
 			 byte[] val = jedis.get(k);
 			 
-			 if(logger.isInfoEnabled()) {
+			/* if(logger.isInfoEnabled()) {
 				 logger.info("Get KEY: {}, LEN: {}",key,(val == null?"Null":val.length));
-			 }
+			 }*/
 			 
 			if(val != null && val.length > 0) {
 				//命中缓存,理想情况下,大部份缓存都走到这里返回

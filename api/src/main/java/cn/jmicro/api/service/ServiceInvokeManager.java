@@ -110,7 +110,7 @@ public class ServiceInvokeManager {
 				logger.info("");
 			}*/
 			
-			Object result = m.invoke(proxy, args);
+			Object result = m.invoke(proxy.proxy, args);
 			if(!f) {
 				//正常的非public方法调用不到跑到这里，所以可以直接设置即可
 				m.setAccessible(f);
