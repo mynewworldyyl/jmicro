@@ -5,21 +5,21 @@ const   dicts = {};
 
 export default  {
 
-    __actreq :  function(method,args){
+    __actreq(method,args){
         return rpc.creq(this.sn,this.ns,this.v,method,args)
     },
 
-  init : function(/*cb*/) {
+  init(/*cb*/) {
     //jm.mng.comm.init(cb);
   },
 
-  hasPermission: function (per){
+  hasPermission(per){
       return rpc.callRpc(this.__actreq('hasPermission', [per]))
   },
 
-  getDicts: function (keys,qry,forceReflesh){
+  getDicts(keys,qry,forceReflesh){
     //let self = this;
-    return new Promise(function(reso,reje){
+    return new Promise((reso,reje)=>{
       let ds = {};
       let nokeys = [];
       let f = !!qry && qry.length > 0;
@@ -59,11 +59,10 @@ export default  {
     });
   },
 
-  data:{},
-  get: function (key){
+  get(key){
     return !this.data ? "undefined" : this.data[key];
   },
-  changeLang: function (lang,callback){
+  changeLang(lang,callback){
     let self = this;
       rpc.callRpc(this.__actreq('getI18NValues', [lang]))
       .then((data)=>{

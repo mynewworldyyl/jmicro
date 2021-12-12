@@ -59,7 +59,6 @@
     const cid = 'process';
 
     import choy from "@/rpcservice/choy"
-    import rpc from "@/rpc/rpcbase"
     import jmconfig from "@/rpcservice/jm"
     
     export default {
@@ -70,7 +69,7 @@
                 showAll:true,
                 processList:[],
                 isLogin : false,
-                actInfo:null,
+                actInfo:{},
 
                 drawer: {
                     drawerStatus:false,
@@ -125,13 +124,13 @@
             refresh(){
                 this.msg = null;
                 let self = this;
-                this.isLogin = rpc.isLogin();
-                this.actInfo = rpc.actInfo;
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     this.processList = [];
                     this.msg = 'Not login';
                     return;
                 }
+				this.actInfo = this.$jr.auth.actInfo;
                 choy.getProcessInstanceList(self.showAll).then((resp)=>{
                     if(resp.code != 0 || !resp.data || resp.data.length == 0 ) {
                         self.$Message.success(resp.msg || "No data to show");
@@ -172,9 +171,9 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":'process',
                     "menus":[{name:"ShowAll",label:"Show All",icon:"ios-cog",call: ()=>{
                                 self.showAll = !self.showAll;
@@ -184,11 +183,11 @@
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
             this.refresh();
         },

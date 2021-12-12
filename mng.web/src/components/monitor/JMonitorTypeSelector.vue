@@ -15,7 +15,6 @@
 <script>
 
     import moType from "@/rpcservice/moType"
-    import rpc from "@/rpc/rpcbase"
 
     export default {
         name: 'JMonitorTypeSelector',
@@ -41,9 +40,9 @@
 
             checkChange(cfg) {
                 if(cfg.check) {
-                    this.$emit("select",cfg)
+                    this.$bus.$emit("select",cfg)
                 } else {
-                    this.$emit("unselect",cfg)
+                    this.$bus.$emit("unselect",cfg)
                 }
             },
 

@@ -57,7 +57,7 @@
         mounted : function() {
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('serviceNodeSelect',(nodes) => {
+            this.$bus.$on('serviceNodeSelect',(nodes) => {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }

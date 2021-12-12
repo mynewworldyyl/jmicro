@@ -21,7 +21,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import conf from "@/rpcservice/conf"
     import cons from "@/rpcservice/jm"
 
@@ -46,7 +45,7 @@
         },
 
         created() {
-            window.jm.vue.$on('routerAdded',(r) => {
+            this.$bus.$on('routerAdded',(r) => {
                 if(!r) {
                     return;
                 }
@@ -59,21 +58,21 @@
         mounted(){
 
             let self = this;
-            self.isLogin = rpc.isLogin();
-            rpc.addActListener(cid,()=>{
-                self.isLogin = rpc.isLogin();
+            self.isLogin = this.$jr.auth.isLogin();
+            this.$jr.auth.addActListener(cid,()=>{
+                self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.refresh();
                 }
             });
 
-            window.jm.vue.$on('editorClosed',self.editorRemove);
+            this.$bus.$on('editorClosed',self.editorRemove);
 
         },
 
         beforeDestroy() {
-            window.jm.vue.$off('tabItemRemove',this.editorRemove);
-            rpc.removeActListener(GROUP);
+            this.$off('tabItemRemove',this.editorRemove);
+            this.$jr.auth.removeActListener(GROUP);
         },
 
         methods:{
@@ -82,17 +81,17 @@
                 if(GROUP != it.id) {
                     return;
                 }
-                window.jm.vue.$off('tabItemRemove',this.editorRemove);
-                rpc.removeActListener(cid);
+                this.$off('tabItemRemove',this.editorRemove);
+                this.$jr.auth.removeActListener(cid);
             },
 
 
             nodeSelect(evt){
-               window.jm.vue.$emit('routerNodeSelect',evt);
+               this.$bus.$emit('routerNodeSelect',evt);
             },
 
             refresh() {
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(this.isLogin) {
                     let self = this;
                     this.loadRouters((routerList)=>{

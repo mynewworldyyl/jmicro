@@ -130,13 +130,13 @@
             },
 
             delStatisIndex() {
-                this.$emit("delete");
+                this.$bus.$emit("delete");
             },
 
             okStatisIndex() {
                 //this.si.name = this.si.name0;
                 this.cancelStatisIndex();
-                //this.$emit("save");
+                //this.$bus.$emit("save");
             },
 
         },

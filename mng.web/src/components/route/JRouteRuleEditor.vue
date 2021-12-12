@@ -126,7 +126,6 @@
 <script>
 
     import {formatDate} from "../common/JFilters.js";
-    import rpc from "@/rpc/rpcbase"
     import cons from "@/rpc/constants"
 
     const cid = 'routeRuleEditor';
@@ -230,11 +229,11 @@
                     enable:false,
                     targetType:"instanceName",
                     targetVal:"",
-                    clientId:rpc.actInfo.id,
+                    clientId:this.$jr.auth.actInfo.id,
                     createdTime:new Date().getTime(),
                     updatedTime:new Date().getTime(),
-                    createdBy:rpc.actInfo.id,
-                    updatedBy:rpc.actInfo.id,
+                    createdBy:this.$jr.auth.actInfo.id,
+                    updatedBy:this.$jr.auth.actInfo.id,
                 }
             },
 
@@ -277,7 +276,7 @@
                 }
 
                 if(self.drawerModel == 2) {
-                    rpc.callRpcWithParams(sn,ns,v,'update',[self.rule])
+                    this.$jr.rpc.callRpcWithParams(sn,ns,v,'update',[self.rule])
                         .then((resp)=>{
                         if( resp.code == 0 ) {
                             self.errMsg = '';
@@ -290,7 +289,7 @@
                         window.console.log(err);
                     });
                 }else if(self.drawerModel == 1) {
-                    rpc.callRpcWithParams(sn,ns,v,'add',[self.rule])
+                    this.$jr.rpc.callRpcWithParams(sn,ns,v,'add',[self.rule])
                         .then((resp)=>{
                         if( resp.code == 0 ) {
                             self.routeList.push(resp.data);
@@ -309,7 +308,7 @@
 
             deleteRule(res){
                 let self = this;
-                rpc.callRpcWithParams(sn,ns,v,'delete',[res.forIns,res.uniqueId])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v,'delete',[res.forIns,res.uniqueId])
                     .then((resp)=>{
                     if(resp.code == 0 ) {
                         for(let i = 0; i < self.routeList.length; i++) {
@@ -333,13 +332,13 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = rpc.isLogin();
-                this.isAdmin= rpc.isAdmin();
+                this.isLogin = this.$jr.auth.isLogin();
+                this.isAdmin= this.$jr.rpcisAdmin();
                 if(!this.isLogin) {
                     this.routeList = [];
                     return;
                 }
-                rpc.callRpcWithParams(sn,ns,v,'query',[])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v,'query',[])
                     .then((resp)=>{
                     if(resp.code != 0 ) {
                         self.$Message.error(resp.msg);
@@ -366,19 +365,19 @@
 
             self.refresh();
 
-            rpc.addActListener(cid,self.refresh);
-            window.jm.vue.$emit("editorOpen",
+            this.$jr.auth.addActListener(cid,self.refresh);
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addRule},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
              });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
     }

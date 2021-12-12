@@ -38,7 +38,7 @@
 
         mounted:function() {
             let self = this;
-            window.jm.vue.$on('routerNodeSelect',(nodes) => {
+            this.$bus.$on('routerNodeSelect',(nodes) => {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }

@@ -188,7 +188,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import cons from "@/rpc/constants"
 
     const cid = 'serviceMethodList';
@@ -248,7 +247,7 @@
 
             refreshAuthList(){
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'getAuthByServiceMethodCode', [this.cm.haCode])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getAuthByServiceMethodCode', [this.cm.haCode])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.auth.errMsg = resp.msg;
@@ -275,7 +274,7 @@
                 }
                 this.auth.errMsg = '';
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'addAuthByClientId', [this.cm.haCode,this.auth.clientId])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'addAuthByClientId', [this.cm.haCode,this.auth.clientId])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.auth.errMsg = resp.msg;
@@ -295,7 +294,7 @@
                 }
                 this.auth.errMsg = '';
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'addAuthByAccount', [this.cm.haCode,this.auth.accountName])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'addAuthByAccount', [this.cm.haCode,this.auth.accountName])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.auth.errMsg = resp.msg;
@@ -316,7 +315,7 @@
 
             descAuthOk() {
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'updateAuthStatus',
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateAuthStatus',
                     [this.auth.auth.id,this.auth.status,this.auth.desc])
                     .then((resp) => {
                         if (resp.code != 0) {
@@ -410,10 +409,10 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
-                this.act = rpc.actInfo;
+                this.isLogin = this.$jr.auth.isLogin();
+                this.act = this.$jr.auth.actInfo;
                 let qry = this.queryParams;
-                rpc.callRpcWithParams(sn, ns, v, 'getMethodList', [qry,this.pageSize,this.curPage])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getMethodList', [qry,this.pageSize,this.curPage])
                     .then((resp) => {
                         if (resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -435,19 +434,19 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
             self.refresh();
         },

@@ -89,7 +89,6 @@
 <script>
 
     import cons from "@/rpc/constants"
-    import rpc from "@/rpc/rpcbase"
     
     const cid = 'warningConfig';
 
@@ -125,13 +124,13 @@
 
             add() {
                 this.updateMode=false;
-                this.cfg = {clientId:rpc.actInfo.id};
+                this.cfg = {clientId:this.$jr.auth.actInfo.id};
                 this.addWarningConfigDialog = true;
             },
 
             remove(id) {
                 let self = this;
-                rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -194,7 +193,7 @@
                 }
 
                 if(!this.updateMode) {
-                    rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
+                    this.$jr.rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -212,7 +211,7 @@
                         window.console.log(err);
                     });
                 }else {
-                    rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
+                    this.$jr.rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -234,14 +233,14 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
 
-                this.isAdmin = rpc.isAdmin();
+                this.isAdmin = this.$jr.rpcisAdmin();
 
-                rpc.callRpcWithParams(sn,ns,v, 'query', [])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v, 'query', [])
                 .then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -259,9 +258,9 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"Add",label:"Add",icon:"ios-cog",call:self.add},
@@ -270,17 +269,17 @@
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
             this.refresh();
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

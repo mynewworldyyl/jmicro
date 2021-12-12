@@ -60,7 +60,8 @@
                   <Menu-group :title="'Interface'|i18n">
                       <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
                       <Menu-item name="__serviceMethodList"><Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}</Menu-item>
-                  </Menu-group>
+					  <Menu-item name="__flow"><Icon type="ios-alert" />{{"flow"|i18n}}</Menu-item>
+				  </Menu-group>
               </Submenu>
 
               <Submenu name="oth">
@@ -169,7 +170,6 @@
 </template>
 
 <script>
-
     import JServiceList from './components/service/JServiceList.vue'
     import JConfigList from './components/config/JConfigList.vue'
     import JMonitorList from './components/monitor/JMonitorList.vue'
@@ -182,66 +182,56 @@
     import JLogList  from './components/log/JLogList.vue'
     import JUserProfileList from "./components/security/JUserProfileList";
     import rpc from "@/rpc/rpcbase";
+	import auth from "@/rpc/auth";
     import config from "@/rpc/config";
-
     let cache = null;
-
 const  cid = 'jmicroApp';
-
 const  mainMenus = {'op':true,'oth':true,'dep':true,'srv':true,'cfg':true};
-
 export default {
     name: 'App',
     mounted() {
-        //rpc.config.ip='';
-        config.sslEnable = false;
-        rpc.init({ useWs:false, mod:'shopApi' });
-        //jm.mng.init();
-        let self = this;
-
-        rpc.addActListener(cid,()=>{
-            self.isLogin = rpc.isLogin();
-            self.isAdmin = rpc.isAdmin();
-            if(self.activeEditorId) {
-                self.selectMenu(self.activeEditorId);
-            }
-        });
-
-        window.jm.vue.$on('editorOpen',function(opts) {
+		let self = this;
+		auth.addActListener(cid,()=>{
+		    self.isLogin = auth.isLogin();
+		    self.isAdmin = auth.isAdmin();
+		    if(self.activeEditorId) {
+		        self.selectMenu(self.activeEditorId);
+		    }
+		});
+		
+		rpc.init(
+		    {mod: 'jmng',useWs: true,clientId: 1},
+		    (isLogin) => {
+				
+			}
+		);
+		
+        this.$bus.$on('editorOpen',function(opts) {
             if(!opts.editorId) {
                 throw 'editorId is NULL';
             }
-
             if(!opts.menus) {
                 opts.menus = [];
             }
-
             self.activeEditorId = opts.editorId;
             self.menusMap[opts.editorId] = opts.menus;
             self.menusMapCommon[opts.editorId] = self.filterMenus(opts.editorId);
             self.selectMenu(opts.editorId);
-
         });
-
-        window.jm.vue.$on('menuChange',function(opts) {
+        this.$bus.$on('menuChange',function(opts) {
             if(!opts.editorId) {
                 throw 'editorId is NULL';
             }
-
             if(!opts.menus) {
                 opts.menus = [];
             }
-
             self.menusMap[opts.editorId] = opts.menus;
             self.menusMapCommon[opts.editorId] = self.filterMenus(opts.editorId);
-
             if(self.activeEditorId == opts.editorId) {
                 self.selectMenu(opts.editorId);
             }
-
         });
-
-        window.jm.vue.$on('editorClosed',function(editorId) {
+        this.$bus.$on('editorClosed',function(editorId) {
             delete self.menusMap[editorId];
             delete self.menusMapCommon[editorId];
             if(editorId == self.activeEditorId) {
@@ -249,21 +239,17 @@ export default {
                 self.activeEditorId  = null;
             }
         });
-
-        window.jm.vue.$on('editorActive',function(editorId) {
+        this.$bus.$on('editorActive',function(editorId) {
             self.activeEditorId = editorId;
             self.selectMenu(editorId);
         });
-
-        window.jm.vue.$on('editorDeactive',function(editorId) {
+        this.$bus.$on('editorDeactive',function(editorId) {
             if(self.activeEditorId == editorId) {
                 self.menus = [];
                 self.activeEditorId  = null;
             }
         });
-
     },
-
   components: {
       JUserProfileList,
         JServiceList,
@@ -276,93 +262,75 @@ export default {
         JNamedTypeList,
         JThreadPoolMonitorList,
         JLogList,
-
     },
-
     data() {
-
         if(!config.cache) {
              config.cache = {}
         }
-
         cache = config.cache;
-
         if(!cache.curSelectKey) {
             cache.curSelectKey = 'service';
         }
-
          cache['service']={
             key: 'service',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         cache['config']={
             key: 'config',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         cache['statis']={
             key: 'statis',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         cache['monitors']={
             key: 'monitors',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px'},
         };
-
         cache['monitorType']={
             key: 'monitorType',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px'},
         };
-
         cache['namedType']={
             key: 'namedType',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px'},
         };
-
         cache['monitorTypeServiceMethod']={
             key: 'monitorTypeServiceMethod',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px'},
         };
-
         cache['router']={
             key: 'router',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         cache['threadPool']={
             key: 'threadPool',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         cache['userProfile']={
             key: 'userProfile',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         cache['processLog']={
             key: 'processLog',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };
-
         /*cache['resourceMonitorView']={
             key: 'resourceMonitorView',
             drawerStatus:false,
             drawerBtnStyle:{left:'0px',},
         };*/
-
       return {
           curSelect: cache[cache.curSelectKey],
           cache: cache,
@@ -375,15 +343,12 @@ export default {
           menusMapCommon:{},
       };
     },
-
   methods:{
-
       openDrawer() {
           this.curSelect.drawerStatus = true;
           this.curSelect.drawerBtnStyle.zindex = 10000;
           this.curSelect.drawerBtnStyle.left = '0px';
       },
-
       toRouter(key) {
           if(mainMenus[key]) {
               return;
@@ -402,7 +367,7 @@ export default {
                   this.curSelect.drawerStatus = false;
                   this.curSelect.drawerBtnStyle.zindex = -10000;
                   this.curSelect.drawerBtnStyle.left = '-100px';
-                  window.jm.vue.$emit('openEditorSelect',key);
+                  this.$bus.$emit('openEditorSelect',key);
               }
           } else {
               let f = false;
@@ -418,14 +383,10 @@ export default {
                   this.$Message.error(key + " method not found!");
               }
           }
-
           /* this.$router.push('/'+key); */
       },
-
       doLoginOrLogout(){
-
       },
-
       selectMenu(editorId) {
           let self = this;
           if(self.isLogin) {
@@ -434,13 +395,11 @@ export default {
               self.menus = self.menusMapCommon[editorId];
           }
       },
-
       filterMenus(editorId) {
         let ms = this.menusMap[editorId];
         if(!ms) {
             return [];
         }
-
         let cms = [];
         for(let i = 0; i < ms.length; i++) {
             let m = ms[i];
@@ -450,13 +409,11 @@ export default {
         }
         return cms;
       }
-
   }
 }
 </script>
 
 <style>
-
 #app {
   font-family: A
   venir, Helvetica, Arial, sans-serif;
@@ -465,7 +422,6 @@ export default {
   text-align: center;
   color: #2c3e50;
 }
-
 .drawerBtnStatu{
     position: fixed;
     left: 0px;
@@ -478,7 +434,4 @@ export default {
     border-radius: 3px;
     z-index: 1000000;
 }
-
-
-
 </style>

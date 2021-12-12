@@ -64,8 +64,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
-
     const cid = 'JTopicView';
     const sn = 'cn.jmicro.ext.bbs.api.IBbsServiceJMSrv';
     const ns = 'bbs';
@@ -112,7 +110,7 @@
 
             deleteNote(noteId) {
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'deleteNote',[noteId]).then((resp)=>{
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'deleteNote',[noteId]).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.info(resp.msg);
                     }else {
@@ -134,7 +132,7 @@
             },
 
             editTopic() {
-                window.jm.vue.$emit("editTopic",this.topic.topic);
+                this.$bus.$emit("editTopic",this.topic.topic);
             },
 
             cancelNote(){
@@ -143,7 +141,7 @@
             },
 
             createNote() {
-                if(!rpc.isLogin()) {
+                if(!this.$jr.auth.isLogin()) {
                     this.$Message.info("未登录！");
                     return;
                 }
@@ -162,7 +160,7 @@
 
                 if(this.updateMode) {
                     let o = {id:this.node.id, content: this.node.content,topicId: this.node.topicId};
-                    rpc.callRpcWithParams(sn, ns, v, 'updateNote',[o]).then((resp)=>{
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateNote',[o]).then((resp)=>{
                         if(resp.code == 0) {
                             self.updateMode = false;
                             self.showInputBox = false;
@@ -173,7 +171,7 @@
                         window.console.log(err);
                     });
                 } else {
-                    rpc.callRpcWithParams(sn, ns, v, 'createNote',[this.note]).then((resp)=>{
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'createNote',[this.note]).then((resp)=>{
                         if(resp.code == 0) {
                             if(!self.topic.notes) {
                                 self.topic.notes = [];
@@ -206,18 +204,18 @@
 
         mounted () {
             let self = this;
-            this.act = rpc.actInfo;
-            rpc.addActListener(cid,self.doQuery);
+            this.act = this.$jr.auth.actInfo;
+            this.$jr.auth.addActListener(cid,self.doQuery);
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

@@ -30,7 +30,6 @@
 <script>
 
     import choy from "@/rpcservice/choy"
-    import rpc from "@/rpc/rpcbase"
 
     const cid = 'agent';
 
@@ -47,7 +46,7 @@
 
            async refresh(){
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     this.agentList =[];
                     return;
@@ -117,9 +116,9 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ShowAll",label:"Show All",icon:"ios-cog",call: ()=>{
                         self.showAll = !self.showAll; self.refresh(); }},
@@ -127,11 +126,11 @@
             });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
     }

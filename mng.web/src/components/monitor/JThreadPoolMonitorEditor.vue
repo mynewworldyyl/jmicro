@@ -28,7 +28,6 @@
 
 <script>
     import TreeNode from "../common/JTreeNode.js"
-    import rpc from "@/rpc/rpcbase"
     import threadPoolSrv from "@/rpcservice/threadPoolSrv"
     
     const cid  = 'JThreadPoolMonitorEditor';
@@ -65,7 +64,7 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     self.itemList = [];
                     return;
@@ -101,21 +100,21 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            rpc.addActListener(cid,()=>{
+            this.$jr.auth.addActListener(cid,()=>{
                 self.refresh();
             });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
             self.refresh();
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

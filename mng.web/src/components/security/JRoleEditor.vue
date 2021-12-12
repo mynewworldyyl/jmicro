@@ -80,7 +80,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import act from "@/rpcservice/act"
     import cons from "@/rpc/constants"
     import c from "./c"
@@ -159,7 +158,7 @@
                 let self = this;
                 self.errorMsg = '';
                 let method = self.updateModel ? 'updateRole':'addRole';
-                rpc.callRpcWithParams(sn, ns, v, method, [ this.role ])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, method, [ this.role ])
                     .then((resp)=>{
                     if(resp.code == 0 && resp.data) {
                         self.refresh();
@@ -226,7 +225,7 @@
 
                 if (adds.length > 0 || dels.length > 0) {
                     let self = this;
-                    rpc.callRpcWithParams(sn, ns, v, 'updateRolePermissions',
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateRolePermissions',
                         [this.role.roleId, adds, dels])
                         .then((resp) => {
                             if (resp.code == 0) {
@@ -276,7 +275,7 @@
                     this.actInfoDrawer.drawerStatus = true;
                 } else {
                     let self = this;
-                    rpc.callRpcWithParams(sn, ns, v, 'getRolePermissions', [ this.role.roleId ])
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getRolePermissions', [ this.role.roleId ])
                         .then((resp)=>{
                         if(resp.code == 0 && resp.data) {
                             self.role.permissionEntires = resp.data;
@@ -321,11 +320,11 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(this.isLogin) {
                     let params = this.getQueryConditions();
                     let self = this;
-                    rpc.callRpcWithParams(sn, ns, v, 'listRoles', [params,this.pageSize,this.curPage-1])
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listRoles', [params,this.pageSize,this.curPage-1])
                         .then((resp)=>{
                             if(resp.code == 0){
                                 if(resp.total == 0) {
@@ -354,25 +353,25 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             this.refresh();
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid, "menus":[
                     {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh},
                     {name:"AddRole",label:"Add",icon:"ios-cog",call:self.addRole}]
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

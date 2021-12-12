@@ -25,7 +25,6 @@
 </template>
 
 <script>
-    import rpc from "@/rpc/rpcbase"
     import profile from "@/rpcservice/profile"
     
     const cid = 'userProfile';
@@ -55,7 +54,7 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!self.isLogin) {
                     self.$Message.info("Not login");
                     self.item.val = [];
@@ -103,19 +102,19 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"Save",label:"Save",icon:"ios-cog",call: ()=>{ self.save();}},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
             this.refresh();
         },
     }

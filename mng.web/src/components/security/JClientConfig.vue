@@ -90,7 +90,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
 /*    import comm from "@/rpcservice/comm"
     import utils from "@/rpc/utils"*/
     import cons from "@/rpc/constants"
@@ -181,7 +180,7 @@
                     title: '警告',
                     content: '<p>刷新令牌将使原来令牌失效，需要用新令牌替换旧令牌，然后重启系统生效，请谨慎操作！</p>',
                     onOk: () => {
-                        rpc.getCode(2).then((resp) => {//取邮件验证码
+                        this.$jr.rpcgetCode(2).then((resp) => {//取邮件验证码
                             if (resp.code != 0) {
                                 this.$Notice.warning({
                                     title: 'Error',
@@ -206,7 +205,7 @@
 
             resendToken() {
                 this.vcode = null;
-                rpc.getCode(2).then((resp) => {//取邮件验证码
+                this.$jr.rpcgetCode(2).then((resp) => {//取邮件验证码
                     if (resp.code != 0) {
                         this.$Notice.warning({
                             title: 'Error',
@@ -297,8 +296,8 @@
 
             refresh() {
                 let self = this;
-                this.actInfo = rpc.actInfo
-                this.isLogin = rpc.isLogin()
+                this.actInfo = this.$jr.auth.actInfo
+                this.isLogin = this.$jr.auth.isLogin()
                 if(this.isLogin) {
                     let params = this.getQueryConditions();
                     let self = this;
@@ -322,7 +321,7 @@
 
             callRemote(method,args,sucCb,failCb) {
                // let self = this;
-                rpc.callRpcWithParams(sn, ns, v, method, args)
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, method, args)
                     .then((resp) => {
                     if (resp.code == 0 ) {
                         if(sucCb) {
@@ -354,12 +353,12 @@
         mounted () {
 
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,()=>{
+            this.$jr.auth.addActListener(cid,()=>{
                 this.refresh();
             });
             let self = this;
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"Add",label:"Add",icon:"ios-cog",call:self.addClient},
@@ -368,17 +367,17 @@
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
             this.refresh();
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

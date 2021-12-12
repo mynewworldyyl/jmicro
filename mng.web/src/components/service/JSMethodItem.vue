@@ -246,7 +246,6 @@
     import TreeNode from  "./JServiceList.vue"
 
     import srv from "@/rpcservice/srv"
-    import rpc from "@/rpc/rpcbase"
     
     const cid = 'JMethodItem';
 export default {
@@ -261,18 +260,18 @@ export default {
         this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
         let self = this;
 
-        this.isLogin = rpc.isLogin();
+        this.isLogin = this.$jr.auth.isLogin();
 
-        rpc.addActListener(cid,()=>{
-            self.isLogin = rpc.isLogin();
+        this.$jr.auth.addActListener(cid,()=>{
+            self.isLogin = this.$jr.auth.isLogin();
         });
 
         let ec = function() {
-            rpc.removeActListener(cid);
-            window.jm.vue.$off('editorClosed',ec);
+            this.$jr.auth.removeActListener(cid);
+            this.$off('editorClosed',ec);
         }
 
-        window.jm.vue.$on('editorClosed',ec);
+        this.$bus.$on('editorClosed',ec);
 
     },
 
@@ -323,7 +322,7 @@ export default {
 
         callRpc(method,args) {
             let self = this;
-            rpc.callRpcWithParams(method.key.usk.serviceName, method.key.usk.namespace,
+            this.$jr.rpc.callRpcWithParams(method.key.usk.serviceName, method.key.usk.namespace,
                 method.key.usk.version, method.key.method, args)
                 .then(rst=>{
                     //rst = window.jm.utils.parseJson(rst);

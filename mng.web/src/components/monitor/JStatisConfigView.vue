@@ -237,7 +237,6 @@
 
     import JStatisIndex from './JStatisIndex.vue'
     import {Constants} from "@/rpc/message"
-    import rpc from "@/rpc/rpcbase"
     import comm from "@/rpcservice/comm"
     
     const UNIT_SE = "S";
@@ -468,7 +467,7 @@
 
             remove(id) {
                 let self = this;
-                rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v, 'delete', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -487,7 +486,7 @@
 
             enable(id) {
                 let self = this;
-                rpc.callRpcWithParams(sn,ns,v, 'enable', [id])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v, 'enable', [id])
                     .then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
@@ -687,7 +686,7 @@
                 }
 
                 if(!this.updateMode) {
-                    rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
+                    this.$jr.rpc.callRpcWithParams(sn,ns,v, 'add', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -700,7 +699,7 @@
                             window.console.log(err);
                     });
                 } else {
-                    rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
+                    this.$jr.rpc.callRpcWithParams(sn,ns,v, 'update', [self.cfg])
                         .then((resp)=>{
                             if(resp.code != 0) {
                                 self.$Message.success(resp.msg);
@@ -716,12 +715,12 @@
             refresh() {
                 this.errMsg = '';
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
 
-                rpc.callRpcWithParams(sn,ns,v, 'query', [])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v, 'query', [])
                 .then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -796,10 +795,10 @@
         mounted () {
             this.errMsg = '';
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             let self = this;
             this.getServiceNames();
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"Add",label:"Add",icon:"ios-cog",call:self.add},
@@ -808,17 +807,17 @@
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
             this.refresh();
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

@@ -25,7 +25,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import JDataOutput from "@/rpc/dataoutput";
     import {Constants} from "@/rpc/message"
 
@@ -264,8 +263,8 @@ export default {
         },
 
         callRemote(mcode,args) {
-            let req = rpc.cmreq(mcode,args)
-            return rpc.callRpc(req,Constants.PROTOCOL_BIN,Constants.PROTOCOL_JSON)
+            let req = this.$jr.rpc.cmreq(mcode,args)
+            return this.$jr.rpc.callRpc(req,Constants.PROTOCOL_BIN,Constants.PROTOCOL_JSON)
         },
 
         getSizeVal(size) {

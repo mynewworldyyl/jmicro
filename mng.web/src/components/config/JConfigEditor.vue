@@ -69,7 +69,7 @@
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('configNodeSelect',function(nodes) {
+            this.$bus.$on('configNodeSelect',function(nodes) {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }

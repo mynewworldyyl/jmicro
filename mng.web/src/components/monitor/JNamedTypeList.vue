@@ -29,7 +29,6 @@
 <script>
 
     import moType from "@/rpcservice/moType"
-    import rpc from "@/rpc/rpcbase"
     
     import TreeNode from '../common/JTreeNode.js'
 
@@ -63,25 +62,25 @@
         mounted(){
 
             let self = this;
-            rpc.addActListener(cid,()=>{
-                self.isLogin = rpc.isLogin();
+            this.$jr.auth.addActListener(cid,()=>{
+                self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.loadNamedTypeList();
                 }
             });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         methods:{
 
             nodeSelect(evt){
-               window.jm.vue.$emit(this.evtName,evt);
+               this.$bus.$emit(this.evtName,evt);
             },
 
             onAddOk(){

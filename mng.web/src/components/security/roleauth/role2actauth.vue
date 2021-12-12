@@ -40,7 +40,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import cons from "@/rpc/constants"
 
     import st from "../c"
@@ -91,7 +90,7 @@
                     return
                 }
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'listRoleByRoleId', [this.role.roleId])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listRoleByRoleId', [this.role.roleId])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.errMsg = resp.msg;
@@ -117,7 +116,7 @@
                 }
                 this.errMsg = '';
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'addRoleActId', [this.role.roleId,this.actId])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'addRoleActId', [this.role.roleId,this.actId])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.errMsg = resp.msg;
@@ -137,7 +136,7 @@
                 }
                 this.errMsg = '';
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'addRoleActName', [this.role.roleId,this.accountName])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'addRoleActName', [this.role.roleId,this.accountName])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.errMsg = resp.msg;
@@ -158,7 +157,7 @@
 
             descAuthOk(authId,status) {
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'updateRoleActStatus',
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateRoleActStatus',
                     [authId, status, this.desc])
                     .then((resp) => {
                         if (resp.code != 0) {

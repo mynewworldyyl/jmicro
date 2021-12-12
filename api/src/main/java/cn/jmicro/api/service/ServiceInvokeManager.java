@@ -67,7 +67,7 @@ public class ServiceInvokeManager {
 	
 	@SuppressWarnings("unchecked")
 	public <T> IPromise<T> call(String srvName,String ns,String ver,String method, 
-			Class<?> returnParamClazz, Class<?>[] paramsCls, Object[] args) {
+			Class<?> returnParamClazz, Class<?>[] paramsCls, Object...args) {
 		IPromise<T> promise = null;
 		
 		String key = UniqueServiceKeyJRso.serviceName(srvName,ns,ver);

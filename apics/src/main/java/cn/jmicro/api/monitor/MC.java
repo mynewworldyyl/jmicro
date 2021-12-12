@@ -287,13 +287,13 @@ public final class MC {
 	public static final short MT_APP_LOG = 0x004A;
 	
 	@MCA("服务器错误")
-	public static final short MT_SERVER_ERROR = 0x004B;
+	public static final short MT_SERVER_ERROR = 0x004B;//75
 	
 	@MCA("无效登陆信息")
-	public static final short MT_INVALID_LOGIN_INFO = 0x004C;
+	public static final short MT_INVALID_LOGIN_INFO = 0x004C;//76
 	
 	@MCA("服务代理实例未找到")
-	public static final short MT_SERVICE_RROXY_NOT_FOUND = 0x004D;
+	public static final short MT_SERVICE_RROXY_NOT_FOUND = 0x004D;//77
 	
 	@MCA(value="线程池终止", group=Constants.EXECUTOR_POOL, desc="")
 	public static final short EP_TERMINAL = 0x004E;

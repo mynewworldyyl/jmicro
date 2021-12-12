@@ -58,7 +58,6 @@
 
 <script>
     import ps from "@/rpc/pubsub"
-    import rpc from "@/rpc/rpcbase"
     import i18n from "@/rpc/i18n"
 
     const cid="testingPubsub";
@@ -203,17 +202,17 @@
 
         mounted () {
             let self = this;
-            self.isLogin = rpc.isLogin();
-            rpc.addActListener(cid,()=>{
-                self.isLogin = rpc.isLogin();
+            self.isLogin = this.$jr.auth.isLogin();
+            this.$jr.auth.addActListener(cid,()=>{
+                self.isLogin = this.$jr.auth.isLogin();
             });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy () {

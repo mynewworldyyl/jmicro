@@ -20,7 +20,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import profile from "@/rpcservice/profile"
     import TreeNode from "../common/JTreeNode.js"
     import {Constants} from "@/rpc/message"
@@ -42,13 +41,13 @@
 
         mounted(){
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.accountListener);
-            window.jm.vue.$on('tabItemRemove',this.editorRemove);
+            this.$jr.auth.addActListener(cid,this.accountListener);
+            this.$bus.$on('tabItemRemove',this.editorRemove);
         },
 
         beforeDestroy() {
-            window.jm.vue.$off('tabItemRemove',this.editorRemove);
-            rpc.removeActListener(GROUP);
+            this.$off('tabItemRemove',this.editorRemove);
+            this.$jr.auth.removeActListener(GROUP);
         },
 
         methods:{
@@ -57,12 +56,12 @@
                 if(GROUP != it.id) {
                     return;
                 }
-                window.jm.vue.$off('tabItemRemove',this.editorRemove);
-                rpc.removeActListener(cid);
+                this.$off('tabItemRemove',this.editorRemove);
+                this.$jr.auth.removeActListener(cid);
             },
 
             nodeSelect(evt){
-               window.jm.vue.$emit('userProfileSelect',evt);
+               this.$bus.$emit('userProfileSelect',evt);
             },
 
             accountListener(type) {

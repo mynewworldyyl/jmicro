@@ -42,7 +42,6 @@
 <script>
 
     import ps from "@/rpc/pubsub"
-    import rpc from "@/rpc/rpcbase"
     import psDataSrv from "@/rpcservice/psDataSrv"
 
     const cid = 'JPubsubItemView';
@@ -108,7 +107,7 @@
             },
 
             doQuery() {
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -130,7 +129,7 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -189,15 +188,15 @@
 
         mounted () {
             let self = this;
-            rpc.addActListener(cid,self.doQuery);
+            this.$jr.auth.addActListener(cid,self.doQuery);
             self.doQuery();
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
@@ -205,8 +204,8 @@
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
-            //window.jm.vue.$off('editorClosed',ec);
+            this.$jr.auth.removeActListener(cid);
+            //this.$off('editorClosed',ec);
         },
 
         filters: {

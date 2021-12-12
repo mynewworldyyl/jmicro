@@ -79,7 +79,6 @@
 <script>
 
     //import treeTable from '../treetable/LinkLogTreeTable.vue'
-    import rpc from "@/rpc/rpcbase"
     import act from "@/rpcservice/act"
     import cons from "@/rpc/constants"
     import c from "./c"
@@ -162,7 +161,7 @@
                     this.roleInfoDrawer.drawerStatus = true;
                 } else {
                     let self = this;
-                    rpc.callRpcWithParams(act.sn, act.ns, act.v, 'getAllRoleList', [])
+                    this.$jr.rpc.callRpcWithParams(act.sn, act.ns, act.v, 'getAllRoleList', [])
                         .then((resp) => {
                             if (resp.code == 0 && resp.total > 0) {
                                 this.allRoleList = resp.data.map((item)=>{
@@ -229,7 +228,7 @@
                     let sn = 'cn.jmicro.security.api.IServiceMethodListServiceJMSrv';
                     let ns = cons.NS_SECURITY;
                     let v = '0.0.1';
-                    rpc.callRpcWithParams(sn, ns, v, 'updateActPermissions',
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateActPermissions',
                         [this.role.id, adds, dels])
                         .then((resp) => {
                             if (resp.code == 0) {
@@ -340,8 +339,8 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
-                if(rpc.isAdmin()) {
+                this.isLogin = this.$jr.auth.isLogin();
+                if(this.$jr.rpcisAdmin()) {
                     let params = this.getQueryConditions();
                     act.getAccountList(params,this.pageSize,this.curPage-1).then((resp)=>{
                         if(resp.code != 0) {
@@ -365,23 +364,23 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(cid,this.refresh);
             this.refresh();
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid, "menus":[{name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
         filters: {

@@ -18,7 +18,6 @@
     import JMonitorEditor from "./JMonitorEditor.vue"
 
     import moType from "@/rpcservice/moType"
-    import rpc from "@/rpc/rpcbase"
     import config from "@/rpc/config"
     
     export default {
@@ -51,7 +50,7 @@
         mounted:function() {
             let self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('monitorNodeSelect',(nodes) => {
+            this.$bus.$on('monitorNodeSelect',(nodes) => {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }

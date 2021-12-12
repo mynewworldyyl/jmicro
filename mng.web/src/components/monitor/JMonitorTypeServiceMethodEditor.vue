@@ -25,7 +25,6 @@
 <script>
 
     import moType from "@/rpcservice/moType"
-    import rpc from "@/rpc/rpcbase"
     
     const cid  = 'JMonitorTypeServiceMethod';
     export default {
@@ -54,7 +53,7 @@
             refresh(){
                 let self = this;
                 this.errMsg = '';
-                this.isAdmin = rpc.isAdmin();
+                this.isAdmin = this.$jr.rpcisAdmin();
                 moType.getAllConfigsByGroup(['deflt']).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -181,19 +180,19 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            rpc.addActListener(this.item.id,this.refresh);
+            this.$jr.auth.addActListener(this.item.id,this.refresh);
             this.refresh();
 
             let menus = [{name:"Refresh",label:"refresh",icon:"ios-cog",call:self.refresh},
                 { name:"SelectAll", label:"Select All", icon:"ios-cog",call : ()=>{self.selectAll(true);}, needAdmin:true },
                 { name:"UnselectAll", label: "Unselect All", icon : "ios-cog",call : ()=>{self.selectAll(false);}, needAdmin:true },
                 { name:"Update", label:"Update", icon:"ios-cog",call : ()=>{self.update();}, needAdmin:true }];
-            window.jm.vue.$emit("editorOpen", {"editorId":this.item.id, "menus":menus});
+            this.$bus.$emit("editorOpen", {"editorId":this.item.id, "menus":menus});
 
         },
 
         beforeDestroy() {
-            rpc.removeActListener(this.item.id);
+            this.$jr.auth.removeActListener(this.item.id);
         },
 
     }

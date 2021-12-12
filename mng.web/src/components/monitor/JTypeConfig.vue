@@ -52,8 +52,6 @@
 <script>
 
     const cid = 'typeConfig';
-
-    import rpc from "@/rpc/rpcbase"
     import moType from "@/rpcservice/moType"
     
     export default {
@@ -97,7 +95,7 @@
 
             refresh(){
                 let self = this;
-                this.isAdmin = rpc.isAdmin();
+                this.isAdmin = this.$jr.rpcisAdmin();
 
                 moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
@@ -188,21 +186,21 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            rpc.addActListener(cid,self.refresh);
+            this.$jr.auth.addActListener(cid,self.refresh);
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
             self.refresh();
 
             let menus = [{name:"REFRESH",label:"REFRESH",icon:"ios-cog",call:self.refresh},
                 { name:"ADD", label:"ADD", icon:"ios-cog",call : self.addDeploy, needAdmin:true }];
-            window.jm.vue.$emit("editorOpen", {"editorId":cid, "menus":menus});
+            this.$bus.$emit("editorOpen", {"editorId":cid, "menus":menus});
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
     }
 </script>

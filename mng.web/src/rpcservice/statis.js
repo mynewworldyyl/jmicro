@@ -13,7 +13,7 @@ let statis = {
     let self = this;
     let topic = mkey+'##'+(t*1000);
     //先订阅主题
-    return new Promise(function(reso,reje){
+    return new Promise((reso,reje)=>{
       ps.subscribe(topic,null,callback)
         .then(id =>{
           if(id < 0) {

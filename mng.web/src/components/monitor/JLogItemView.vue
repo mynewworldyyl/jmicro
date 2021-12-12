@@ -234,7 +234,6 @@
     import logSrv from "@/rpcservice/logSrv"
     import comm from "@/rpcservice/comm"
     import jmconfig from "@/rpcservice/jm"
-    import rpc from "@/rpc/rpcbase"
 
     const cid = 'logItemView';
 
@@ -435,7 +434,7 @@
 
             doQuery() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -457,7 +456,7 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -482,7 +481,7 @@
                         window.console.log(err);
                     });
                 } else {
-                    rpc.call(rpc.creq(logSrv.sn,
+                    this.$jr.rpccall(this.$jr.rpccreq(logSrv.sn,
                         logSrv.ns, logSrv.v, 'queryFlatLog',
                         [params,this.pageSize,this.curPage-1]))
                     .then((resp)=>{
@@ -543,7 +542,7 @@
 
             q() {
                 let self = this;
-                self.isLogin = rpc.isLogin();
+                self.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -578,26 +577,26 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.q);
+            this.$jr.auth.addActListener(cid,this.q);
             let self = this;
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.q}]
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
             self.q();
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
         filters: {

@@ -146,7 +146,6 @@
 
     import rep from "@/rpcservice/repository"
     import {Constants} from "@/rpc/message"
-    import rpc from "@/rpc/rpcbase"
     import jmconfig from "@/rpcservice/jm"
     
     const cid = 'repository';
@@ -746,8 +745,8 @@
             refresh(){
                 let self = this;
                 this.errMsg = "";
-                this.isLogin = rpc.isLogin();
-                this.actInfo = rpc.actInfo;
+                this.isLogin = this.$jr.auth.isLogin();
+                this.actInfo = this.$jr.auth.actInfo;
 
                 if(!this.isLogin) {
                     this.resList = [];
@@ -770,7 +769,7 @@
             },
 
             getDicts(){
-                this.actInfo = rpc.actInfo;
+                this.actInfo = this.$jr.auth.actInfo;
                 self.errMsg = "";
                 if(this.actInfo && this.actInfo.isAdmin) {
                     let self = this;
@@ -789,7 +788,7 @@
 
             clearInvalidResourceFile() {
                 let self = this;
-                rpc.callRpcWithParams(rep.sn, rep.ns,
+                this.$jr.rpc.callRpcWithParams(rep.sn, rep.ns,
                     rep.v, 'clearInvalidResourceFile', [])
                     .then((resp)=>{
                         if(resp.code == 0){
@@ -804,7 +803,7 @@
 
             clearInvalidDbFile() {
                 let self = this;
-                rpc.callRpcWithParams(rep.sn, rep.ns,
+                this.$jr.rpc.callRpcWithParams(rep.sn, rep.ns,
                     rep.v, 'clearInvalidDbFile', [])
                     .then((resp)=>{
                         if(resp.code == 0){
@@ -820,8 +819,8 @@
 
         mounted () {
             let self = this;
-            this.isLogin = rpc.isLogin();
-            this.actInfo = rpc.actInfo;
+            this.isLogin = this.$jr.auth.isLogin();
+            this.actInfo = this.$jr.auth.actInfo;
 
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
 
@@ -840,33 +839,33 @@
                 menus.push(clearDbFileMenu);
             }
 
-            rpc.addActListener(cid,function(type,ai){
+            this.$jr.auth.addActListener(cid,function(type,ai){
                 self.refresh();
                 if(type == Constants.LOGOUT) {
                     if(menus.length == 4){
                         menus.splice(2,1);
                         menus.splice(2,1);
-                        window.jm.vue.$emit("menuChange", {"editorId":cid, "menus":menus});
+                        this.$bus.$emit("menuChange", {"editorId":cid, "menus":menus});
                     }
                 }else if(type == Constants.LOGIN) {
                     if(ai.isAdmin){
                         menus.push(clearFileMenu);
                         menus.push(clearDbFileMenu);
-                        window.jm.vue.$emit("menuChange", {"editorId":cid, "menus":menus});
+                        this.$bus.$emit("menuChange", {"editorId":cid, "menus":menus});
                     }
                 }
             });
 
-            window.jm.vue.$emit("editorOpen", {"editorId":cid, "menus":menus});
+            this.$bus.$emit("editorOpen", {"editorId":cid, "menus":menus});
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
             this.getDicts();
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
             this.refresh();
         },

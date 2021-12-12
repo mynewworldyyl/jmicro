@@ -71,7 +71,7 @@
             },
             isDesc(nelVal, oldVal) {
                 console.log(oldVal);
-                this.$emit('orderByCost')
+                this.$bus.$emit('orderByCost')
             }
         },
         computed: {
@@ -107,15 +107,15 @@
                 })*/
             },
             viewDetail(m) {
-                this.$emit('viewDetail', m)
+                this.$bus.$emit('viewDetail', m)
             },
             callMethod(m) {
-                this.$emit('callMethod', m)
+                this.$bus.$emit('callMethod', m)
             },
             // 展开
             handlerExpand(m) {
                 m.isExpand = !m.isExpand;
-                this.$emit('handlerExpand', m)
+                this.$bus.$emit('handlerExpand', m)
             }
         },
 

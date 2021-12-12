@@ -20,7 +20,6 @@
 <script>
 
     import TreeNode from "../common/JTreeNode.js"
-    import rpc from "@/rpc/rpcbase"
     import threadPoolSrv from "@/rpcservice/threadPoolSrv"
     const GROUP = 'threadPool';
 
@@ -45,14 +44,14 @@
 
         mounted(){
             let self = this;
-            rpc.addActListener(cid,()=>{
-                self.isLogin = rpc.isLogin();
+            this.$jr.auth.addActListener(cid,()=>{
+                self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.loadServerList();
                 }
             });
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
@@ -60,18 +59,18 @@
 
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
 
         methods:{
 
             nodeSelect(evt){
-               window.jm.vue.$emit('threadPoolSelect',evt);
+               this.$bus.$emit('threadPoolSelect',evt);
             },
 
             loadServerList() {

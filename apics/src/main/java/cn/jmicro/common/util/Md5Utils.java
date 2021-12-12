@@ -37,6 +37,7 @@ public class Md5Utils {
     }
 
     public static String getMd5(String str) {
+    	if(str == null) str = "";
         byte[] bs = md5.digest(str.getBytes());
         StringBuilder sb = new StringBuilder(40);
         for(byte x : bs) {

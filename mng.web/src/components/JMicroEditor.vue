@@ -45,6 +45,7 @@
                         <JRoleEditor v-else-if="item.group == 'role'" :item="item"></JRoleEditor>
                         <JClientConfig v-else-if="item.group == 'clientConfig'" :item="item"></JClientConfig>
                         <JUserProfileEditor v-else-if="item.group == 'userProfile'" :item="item"></JUserProfileEditor>
+						<floweditor v-else-if="item.group == 'flow'" :item="item"></floweditor>
 
                         <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                         <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -80,7 +81,6 @@
     import TreeNode from "./common/JTreeNode.js"
     import JBottomBar from './common/JBottomBar.vue'
     import config from "@/rpc/config"
-    import rpc from "@/rpc/rpcbase"
 
     //import JServiceItem from './service/JServiceItem.vue'
     /*import JMethodItem from './service/JSMethodItem.vue'
@@ -169,7 +169,7 @@
             JNamedTypeEditor : () => import('./monitor/JNamedTypeEditor.vue'),
             JThreadPoolMonitorEditor : () => import('./monitor/JThreadPoolMonitorEditor.vue'),
             JRouteRuleEditor : () => import('./route/JRouteRuleEditor.vue'),
-
+			floweditor : () => import('./flow/floweditor.vue'),
         },
 
         data () {
@@ -209,9 +209,9 @@
 
             this.mountServiceSelect('logFileSelect');
 
-            //window.jm.vue.$emit('openEditorSelect','topicList');
+            //this.$bus.$emit('openEditorSelect','topicList');
 
-            window.jm.vue.$on("scroptto",(to) => {
+            this.$bus.$on("scroptto",(to) => {
                 this.$nextTick(() => {
                     let c = self.$el.querySelector(".editorBody");
                     //c.scrollTop = to
@@ -243,7 +243,7 @@
             mountMonitorTypeKeySelect(evt){
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on(evt,(nodes) => {
+                this.$bus.$on(evt,(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -288,7 +288,7 @@
             mountMonitorsSelect(){
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on('monitorNodeSelect',(nodes) => {
+                this.$bus.$on('monitorNodeSelect',(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -331,7 +331,7 @@
 
             mountRouterSelect(){
                 let self = this;
-                window.jm.vue.$on('routerNodeSelect',(nodes) => {
+                this.$bus.$on('routerNodeSelect',(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -366,7 +366,7 @@
 
             mountStatisSelect(){
                 let self = this;
-                window.jm.vue.$on('statisNodeSelect',(nodes) => {
+                this.$bus.$on('statisNodeSelect',(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -410,7 +410,7 @@
             mountConfigSelect(evtName,groupName){
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on(evtName,function(nodes) {
+                this.$bus.$on(evtName,function(nodes) {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -450,7 +450,7 @@
             mountServiceSelect(evt) {
                 let self = this;
                 //console.log(window.jm.utils.isBrowser('ie'));
-                window.jm.vue.$on(evt,(nodes) => {
+                this.$bus.$on(evt,(nodes) => {
                     if(!nodes || nodes.length ==0) {
                         return;
                     }
@@ -486,15 +486,15 @@
             },
 
             handleTabActive(id) {
-                window.jm.vue.$emit('editorActive',id);
+                this.$bus.$emit('editorActive',id);
             },
 
             handleTabDeactive(id) {
-                window.jm.vue.$emit('editorDeactive',id);
+                this.$bus.$emit('editorDeactive',id);
             },
 
             handleTabOpen(id) {
-                window.jm.vue.$emit("editorOpen",
+                this.$bus.$emit("editorOpen",
                     {
                         "editorId":id,
                         "menus":[]
@@ -518,9 +518,9 @@
                         this.handleTabActive(this.items[i+1].id);
                     }
 
-                    rpc.removeActListener(it.id);
-                    this.$emit('tabItemRemove',it.id);
-                    this.$emit('editorClosed',it.id);
+                    this.$jr.auth.removeActListener(it.id);
+                    this.$bus.$emit('tabItemRemove',it.id);
+                    this.$bus.$emit('editorClosed',it.id);
 
                     this.items.splice(i,1);
 
@@ -538,7 +538,7 @@
 
             mountShellSelect(){
                 let self = this;
-                window.jm.vue.$on('openEditorSelect',function(editorId) {
+                this.$bus.$on('openEditorSelect',function(editorId) {
 
                     if(!!self.selectNode && self.selectNode.group == editorId) {
                         return;

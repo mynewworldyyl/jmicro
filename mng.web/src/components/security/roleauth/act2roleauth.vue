@@ -41,7 +41,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     //import {Constants} from "@/rpc/message"
     import cons from "@/rpc/constants"
 
@@ -90,7 +89,7 @@
                     return
                 }
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'listRoleByActId', [this.act.id])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listRoleByActId', [this.act.id])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.errMsg = resp.msg;
@@ -105,7 +104,7 @@
 
             refreshRoleList(actRoleList){
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'listRoles', [{},1000,0])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listRoles', [{},1000,0])
                     .then((resp) => {
                         this.authList = [];
                         if (resp.code != 0) {
@@ -134,7 +133,7 @@
             selectRole(roleId){
                 this.errMsg = '';
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'addRoleActId', [roleId,this.act.id])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'addRoleActId', [roleId,this.act.id])
                     .then((resp) => {
                         if (resp.code != 0) {
                             this.errMsg = resp.msg;
@@ -148,7 +147,7 @@
 
             descAuthOk(authId,status) {
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'updateRoleActStatus',
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateRoleActStatus',
                     [authId, status, this.desc])
                     .then((resp) => {
                         if (resp.code != 0) {

@@ -10,29 +10,29 @@ const v = '0.0.1'*/
 
 export default {
 
-     __actreq :  function(method,args){
+     __actreq(method,args){
          return rpc.creq(this.sn,this.ns,this.v,method,args)
   },
 
-  getAllLogFileEntry : function() {
+  getAllLogFileEntry() {
     return rpc.callRpc(this.__actreq('getAllLogFileEntry', []));
   },
 
-  startLogMonitor : function(processId,logFilePath,agentId,offsetFromLastLine) {
+  startLogMonitor(processId,logFilePath,agentId,offsetFromLastLine) {
       return rpc.callRpc(this.__actreq('startLogMonitor', [processId,logFilePath,
           agentId, offsetFromLastLine]));
   },
 
-  stopLogMonitor : function(processId,logFilePath,agentId) {
+  stopLogMonitor(processId,logFilePath,agentId) {
       return rpc.callRpc(this.__actreq('stopLogMonitor', [processId,logFilePath,
           agentId]));
   },
 
-  subscribeLog: function (processId, logFilePath, agentId, offsetFromLastLine, callback){
+  subscribeLog(processId, logFilePath, agentId, offsetFromLastLine, callback){
     let self = this;
     let topic="/"+processId+"/logs/"+logFilePath;
     //先订阅主题
-    return new Promise(function(reso,reje){
+    return new Promise((reso,reje)=>{
       ps.subscribe(topic,{},callback)
         .then(id =>{
           if(id < 0) {
@@ -60,7 +60,7 @@ export default {
     });
   },
 
-  unsubscribeLog : function(processId, logFilePath, agentId, callback){
+  unsubscribeLog(processId, logFilePath, agentId, callback){
     let self = this;
     return new Promise((reso,reje)=>{
       let topic ="/"+processId+'/logs/'+logFilePath;

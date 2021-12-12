@@ -56,7 +56,7 @@
         mounted:function() {
             var self = this;
             //console.log(window.jm.utils.isBrowser('ie'));
-            window.jm.vue.$on('statisNodeSelect',(nodes) => {
+            this.$bus.$on('statisNodeSelect',(nodes) => {
                 if(!nodes || nodes.length ==0) {
                     return;
                 }

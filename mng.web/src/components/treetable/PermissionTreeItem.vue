@@ -99,10 +99,10 @@
                 recurFunc(this.trees, this.trees)
             },
             handlerExpand(m) {
-                this.$emit('handlerExpand', m)
+                this.$bus.$emit('handlerExpand', m)
             },
             callMethod(m) {
-                this.$emit('callMethod', m)
+                this.$bus.$emit('callMethod', m)
                 // this.getParentNode(m)
                 // console.log(this.parentNodeModel)
                 // if (this.parentNodeModel.hasOwnProperty('children')) {
@@ -114,7 +114,7 @@
                 // }
             },
             viewDetail(m) {
-                this.$emit('viewDetail', m)
+                this.$bus.$emit('viewDetail', m)
             }
         },
         filters: {

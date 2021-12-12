@@ -1,3 +1,4 @@
+/* eslint-disable */
 import Vue from 'vue'
 import App from './App.vue'
 import VueRouter from 'vue-router'
@@ -6,7 +7,7 @@ import iView from 'view-design'
 import 'view-design/dist/styles/iview.css'
 
 import JMicroEditor from  './components/JMicroEditor.vue'
-import i18n from  '@/rpc/i18n'
+import rpc from  '@/rpc/rpcbase'
 
 import * as filters from './components/common/JFilters'
 Object.keys(filters).forEach(key => {
@@ -24,9 +25,16 @@ import JStatis from './components/statis/JStatis.vue'
 import JMonitor from './components/monitor/JMonitor.vue'
 */
 
+import Element from 'element-ui'
+Vue.use(Element)
+
 Vue.use(iView)
 //Vue.use(window.jm)
 Vue.config.productionTip = false
+
+import jr from "./rpc/index.js"
+import './plugins/element.js'
+Vue.use(jr)
 
 Vue.use(VueRouter)
 const routes = [
@@ -44,16 +52,29 @@ const router = new VueRouter({
     routes // short for `routes: routes`
 })
 
-//window.vue = window.jm.vue;
+rpc.init({
+		mod: 'jmng',useWs: true,clientId: 1,
+		loginPage:'/pages/auth/accountLogin/accountLogin'
+	},
+	(isLogin) => {
+		console.log("login rst: " + isLogin)
+		let vue = new Vue({
+			  beforeCreate(){
+				  Vue.prototype.$bus = this
+				  console.log("set event bus to:",this)
+				},
+			  render: h => h(App),
+			  router,
+		 });
+		 vue.$mount('#app')
+	}
+);
+
+
+
+//window.vue = this;
 //window.vue.jm = window.jm;
-i18n.init(()=>{
-    window.jm={};
-    window.jm.vue = new Vue({
-        render: h => h(App),
-        router,
-    });
-    window.jm.vue.$mount('#app')
-});
+
 
 
 

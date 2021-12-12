@@ -21,7 +21,6 @@
 
     import TreeNode from '../common/JTreeNode.js'
     import moType from "@/rpcservice/moType"
-    import rpc from "@/rpc/rpcbase"
     
     const GROUP = 'monitorTye';
 
@@ -49,26 +48,26 @@
 
         mounted(){
             let self = this;
-            rpc.addActListener(cid,()=>{
-                self.isLogin = rpc.isLogin();
+            this.$jr.auth.addActListener(cid,()=>{
+                self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.loadMonitors();
                 }
             });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
 
         methods:{
 
             nodeSelect(evt){
-               window.jm.vue.$emit(this.evtName,evt);
+               this.$bus.$emit(this.evtName,evt);
             },
 
             loadMonitors() {

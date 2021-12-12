@@ -19,7 +19,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import moType from "@/rpcservice/moType"
 
     const cid  = 'JMonitorTypeKeyList';
@@ -55,7 +54,7 @@
 
             refresh(){
                 let self = this;
-                this.isAdmin = rpc.isAdmin();
+                this.isAdmin = this.$jr.rpcisAdmin();
                 this.errMsg = '';
                 moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {
@@ -175,7 +174,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            rpc.addActListener(this.item.id,this.refresh);
+            this.$jr.auth.addActListener(this.item.id,this.refresh);
             this.refresh();
 
             let menus = [{name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh},
@@ -183,11 +182,11 @@
             { name:"UnselectAll", label: "Unselect All", icon : "ios-cog",call : ()=>{self.selectAll(false);}, needAdmin:true },
             { name:"Update", label:"Update", icon:"ios-cog",call : ()=>{self.update();}, needAdmin:true }];
 
-            window.jm.vue.$emit("editorOpen", {"editorId":this.item.id, "menus":menus});
+            this.$bus.$emit("editorOpen", {"editorId":this.item.id, "menus":menus});
         },
 
         beforeDestroy() {
-            rpc.removeActListener(this.item.id);
+            this.$jr.auth.removeActListener(this.item.id);
         },
 
     }

@@ -152,7 +152,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import lc from "@/rpc/localStorage"
     const cid = 'i18nConfig';
 
@@ -378,8 +377,8 @@
 
             refresh() {
                 let self = this;
-                this.actInfo = rpc.actInfo
-                this.isLogin = rpc.isLogin()
+                this.actInfo = this.$jr.auth.actInfo
+                this.isLogin = this.$jr.auth.isLogin()
                 if(this.isLogin) {
                     let qry = this.getQueryConditions();
                     let self = this;
@@ -406,8 +405,8 @@
 
             callRemote(mcode,args,sucCb,failCb) {
                // let self = this
-                let req = rpc.cmreq(mcode,args)
-                rpc.callRpc(req)
+                let req = this.$jr.rpc.cmreq(mcode,args)
+                this.$jr.rpc.callRpc(req)
                     .then((resp) => {
                     if (resp.code == 0 ) {
                         if(sucCb) {
@@ -456,12 +455,12 @@
         mounted () {
 
             //this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,()=>{
+            this.$jr.auth.addActListener(cid,()=>{
                 this.refresh();
             });
             let self = this;
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"Add",label:"Add",icon:"ios-cog",call:self.add},
                         {name:"Import",label:"Import",icon:"ios-cog",call:self.import0},
@@ -469,17 +468,17 @@
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
             this.refresh();
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

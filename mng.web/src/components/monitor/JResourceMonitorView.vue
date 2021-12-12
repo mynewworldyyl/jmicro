@@ -109,7 +109,6 @@
 
     import JResourceItem from '../common/JResourceItem.vue'
     import {Constants} from "@/rpc/message"
-    import rpc from "@/rpc/rpcbase"
     import comm from "@/rpcservice/comm"
     
     const cid = 'resourceMonitorView';
@@ -170,7 +169,7 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     this.msg = 'not login!';
                     return;
@@ -181,7 +180,7 @@
                     return;
                 }
 
-                rpc.callRpcWithParams(sn,ns,v, 'getInstanceResourceData', [params])
+                this.$jr.rpc.callRpcWithParams(sn,ns,v, 'getInstanceResourceData', [params])
                     .then((resp)=>{
                         if(resp.code == 0 ) {
                             //window.console.log(resp.data);
@@ -244,22 +243,22 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.q);
+            this.$jr.auth.addActListener(cid,this.q);
             let self = this;
-            this.isLogin = rpc.isLogin();
+            this.isLogin = this.$jr.auth.isLogin();
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
             self.getDicts();
             //self.refresh();
@@ -267,7 +266,7 @@
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
         filters: {

@@ -123,7 +123,7 @@ export default {
         },
 
         start() {
-            //let mkey = 'org.jmicro.example.api.rpc.ISimpleRpc##simpleRpc##0.0.1##exampleProdiver0##192.168.56.1##63211##hello##Ljava/lang/String;';
+            //let mkey = 'org.jmicro.example.api.this.$jr.rpcISimpleRpc##simpleRpc##0.0.1##exampleProdiver0##192.168.56.1##63211##hello##Ljava/lang/String;';
             let self = this;
 
             let idKey = this.node.id;

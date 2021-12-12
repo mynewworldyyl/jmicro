@@ -203,7 +203,7 @@
                     });
                 } else {
                     //创建新路由
-                    rpc.getId(cons.RULE_ID).then((id)=>{
+                    this.$jr.rpcgetId(cons.RULE_ID).then((id)=>{
                         let path = cons.ROUTER_ROOT + '/' + id;
                         self.createRouter.uniqueId = id;
                         let val = JSON.stringify(self.createRouter);

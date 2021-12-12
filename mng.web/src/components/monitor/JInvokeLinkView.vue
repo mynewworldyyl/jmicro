@@ -190,7 +190,6 @@
     import JLinkDetailView from './JLinkDetailView.vue'
 
     import logSrv from "@/rpcservice/logSrv"
-    import rpc from "@/rpc/rpcbase"
     
     const cid = 'invokeLinkView';
 
@@ -259,7 +258,7 @@
             refresh() {
                 let self = this;
                 let params = this.getQueryConditions();
-                this.$emit("refreshLinkItemList");
+                this.$bus.$emit("refreshLinkItemList");
                 this.logList = [];
 
                 logSrv.count(params).then((resp)=>{
@@ -278,7 +277,7 @@
 
             doQuery() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     return;
                 }
@@ -349,7 +348,7 @@
 
             refreshDict() {
                 let self = this;
-                self.isLogin = rpc.isLogin();
+                self.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     self.selOptions = [];
                     return;
@@ -370,9 +369,9 @@
         mounted () {
             let self = this;
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            rpc.addActListener(cid,this.refreshDict);
+            this.$jr.auth.addActListener(cid,this.refreshDict);
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[
                         {name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refreshDict}
@@ -380,17 +379,17 @@
                 });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
             self.refresh();
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
+            this.$jr.auth.removeActListener(cid);
         },
 
     }

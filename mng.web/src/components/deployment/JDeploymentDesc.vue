@@ -88,7 +88,6 @@
 
     import rep from "@/rpcservice/repository"
     import choy from "@/rpcservice/choy"
-    import rpc from "@/rpc/rpcbase"
     import jmconfig from "@/rpcservice/jm"
     
     const cid = 'deploymentDesc';
@@ -228,7 +227,7 @@
                     args:'',
                     status:'1',
                     desc:'',
-                    clientId:rpc.actInfo.id,
+                    clientId:this.$jr.auth.actInfo.id,
                     createdTime:new Date().getTime(),
                     updatedTime:new Date().getTime(),
                 }
@@ -307,7 +306,7 @@
 
             refresh(){
                 let self = this;
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(!this.isLogin) {
                     this.deployList = [];
                     return;
@@ -330,7 +329,7 @@
 
             getJarFiles() {
                 let self = this;
-                rpc.callRpcWithParams(rpc.sn, rpc.ns, rpc.v, 'getResourceListForDeployment', [{}])
+                this.$jr.rpc.callRpcWithParams(this.$jr.rpcsn, this.$jr.rpcns, this.$jr.rpcv, 'getResourceListForDeployment', [{}])
                     .then((resp)=>{
                         if(resp.code == 0){
                             self.jarFiles = resp.data;
@@ -352,19 +351,19 @@
             self.refresh();
             self.getJarFiles();
 
-            rpc.addActListener(cid,self.refresh);
-            window.jm.vue.$emit("editorOpen",
+            this.$jr.auth.addActListener(cid,self.refresh);
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
              });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
     }

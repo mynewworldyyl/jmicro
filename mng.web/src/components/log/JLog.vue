@@ -31,7 +31,7 @@
                         //let c = document.querySelector(".editorBody");
                         //c.style.height = self.$el.scrollHeight;
                         //c.scrollTop = this.$el.scrollHeight;
-                        window.jm.vue.$emit("scroptto",self.$el.scrollHeight);
+                        this.$bus.$emit("scroptto",self.$el.scrollHeight);
                     })
                 }
             }
@@ -42,7 +42,7 @@
                 //let c = document.querySelector(".editorBody");
                 //c.style.height = this.$el.scrollHeight;
                 //c.scrollTop = this.$el.scrollHeight;
-                window.jm.vue.$emit("scroptto",this.$el.scrollHeight);
+                this.$bus.$emit("scroptto",this.$el.scrollHeight);
             }
         },
 
@@ -63,7 +63,7 @@
                 if(this.item.id != it.id) {
                    return;
                 }
-                window.jm.vue.$off('tabItemRemove',this.editorRemove);
+                this.$off('tabItemRemove',this.editorRemove);
                 this.changeLogStatus(true);
             },
 
@@ -109,9 +109,9 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            window.jm.vue.$on('tabItemRemove',this.editorRemove);
+            this.$bus.$on('tabItemRemove',this.editorRemove);
             this.changeLogStatus();
-            window.jm.vue.$emit("editorOpen", {"editorId":self.item.id, "menus":[self.autoSl,self.stopLg]});
+            this.$bus.$emit("editorOpen", {"editorId":self.item.id, "menus":[self.autoSl,self.stopLg]});
         },
 
         beforeDestroy() {

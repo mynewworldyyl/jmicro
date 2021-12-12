@@ -78,7 +78,7 @@
 
                 let n = nodes[0];
                 if(n.type == 'file') {
-                    window.jm.vue.$emit('logFileSelect',nodes);
+                    this.$bus.$emit('logFileSelect',nodes);
                 }
 
             },

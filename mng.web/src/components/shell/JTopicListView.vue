@@ -59,7 +59,6 @@
 
 <script>
 
-    import rpc from "@/rpc/rpcbase"
     import JTopicView from './JTopicView.vue'
     //import JCreateTopicView from "./JCreateTopicView.vue";
     //import { quillEditor } from "vue-quill-editor";
@@ -120,7 +119,7 @@
                     this.createTopicDialog = true;
                 } else {
                     let self = this;
-                    rpc.callRpcWithParams(sn, ns, v, 'getTopic',[topic.id]).then((resp)=>{
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getTopic',[topic.id]).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                         }else {
@@ -144,7 +143,7 @@
 
             deleteTopic(topicId) {
                 let self = this;
-                rpc.callRpcWithParams(sn, ns, v, 'deleteTopic',[topicId]).then((resp)=>{
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'deleteTopic',[topicId]).then((resp)=>{
                     if(resp.code == 0) {
                         self.refresh();
                     }else {
@@ -176,7 +175,7 @@
                 if(this.updateMode) {
                     let o = {id: this.topic.id,content:this.topic.content,title:this.topic.title,
                         topicType:this.topic.topicType};
-                    rpc.callRpcWithParams(sn, ns, v, 'updateTopic',[o]).then((resp)=>{
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateTopic',[o]).then((resp)=>{
                         if(resp.code == 0) {
                             self.createTopicDialog = false;
                             self.refresh();
@@ -187,7 +186,7 @@
                         window.console.log(err);
                     });
                 }else {
-                    rpc.callRpcWithParams(sn, ns, v, 'createTopic',[this.topic]).then((resp)=>{
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'createTopic',[this.topic]).then((resp)=>{
                         if(resp.code == 0) {
                             self.createTopicDialog = false;
                             self.refresh();
@@ -208,7 +207,7 @@
                     this.detail.drawerBtnStyle.right = '0px';
                 }else {
                     let self = this;
-                    rpc.callRpcWithParams(sn, ns, v, 'getTopic',[mi.id]).then((resp)=>{
+                    this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getTopic',[mi.id]).then((resp)=>{
                         if(resp.code != 0) {
                             self.$Message.success(resp.msg);
                         }else {
@@ -238,11 +237,11 @@
             },
 
             doQuery() {
-                this.isLogin = rpc.isLogin();
-                this.act = rpc.actInfo;
+                this.isLogin = this.$jr.auth.isLogin();
+                this.act = this.$jr.auth.actInfo;
                 let self = this;
                 let params = this.getQueryConditions();
-                rpc.callRpcWithParams(sn, ns, v, 'countTopic',[params]).then((resp)=>{
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'countTopic',[params]).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
                         return;
@@ -258,11 +257,11 @@
 
             refresh() {
                 let self = this;
-                this.isLogin = rpc.isLogin();
-                this.act = rpc.actInfo;
+                this.isLogin = this.$jr.auth.isLogin();
+                this.act = this.$jr.auth.actInfo;
 
                 let params = this.getQueryConditions();
-                rpc.callRpcWithParams(sn, ns, v, 'topicList', [params,this.pageSize, this.curPage])
+                this.$jr.rpc.callRpcWithParams(sn, ns, v, 'topicList', [params,this.pageSize, this.curPage])
                  .then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);
@@ -316,7 +315,7 @@
             },
 
             onEditorReady() {
-                this.$emit("contentChange",this.topic);
+                this.$bus.$emit("contentChange",this.topic);
             },
 
         },
@@ -324,18 +323,18 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            window.jm.vue.$on("editTopic",this.editTopic);
-            rpc.addActListener(cid,self.doQuery);
+            this.$bus.$on("editTopic",this.editTopic);
+            this.$jr.auth.addActListener(cid,self.doQuery);
             self.doQuery();
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
-                window.jm.vue.$off('editTopic',this.editTopic);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
+                this.$off('editTopic',this.editTopic);
             }
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
-            window.jm.vue.$emit("editorOpen",
+            this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh},
                         {name:"CreateTopic",label:"CreateTopic",icon:"ios-cog",call:self.createTopic}]
@@ -344,8 +343,8 @@
         },
 
         beforeDestroy() {
-            rpc.removeActListener(cid);
-            //window.jm.vue.$off('editorClosed',ec);
+            this.$jr.auth.removeActListener(cid);
+            //this.$off('editorClosed',ec);
         },
 
     }

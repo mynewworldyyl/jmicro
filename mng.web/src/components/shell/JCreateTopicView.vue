@@ -74,7 +74,7 @@
             },
 
             onEditorReady() {
-                this.$emit("contentChange",this.topic);
+                this.$bus.$emit("contentChange",this.topic);
             },
 
         },

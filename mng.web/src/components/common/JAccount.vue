@@ -18,8 +18,7 @@
         </span>
 
         <span v-if="actInfo != null && actInfo.clientIds && actInfo.clientIds.length > 1" class="accountBtn"
-              href="javascript:void(0);" @click="changeClient()">
-            切换
+              href="javascript:void(0);" @click="changeClient()">切换
         </span>
 
         <Modal v-model="loginDialog" :loading="true" width="360" @on-ok="doLogin()" ref="loginDialog">
@@ -86,8 +85,7 @@
 </template>
 
 <script>
-
-    import rpc from "@/rpc/rpcbase";
+	
     import {Constants} from "@/rpc/message";
     import localStorage from "@/rpc/localStorage";
     import act from "@/rpcservice/act";
@@ -126,7 +124,7 @@ export default {
             vcodeId:null,
             codeUrl:null,
 
-            actInfo : null,
+            actInfo : {},
             isLogin:false,
             msg:'',
 
@@ -136,8 +134,21 @@ export default {
 
     mounted(){
         let self = this;
-        rpc.login = self.login
-        rpc.addActListener(cid,(type,ai)=>{
+
+		this.$jr.auth.toLoginCb = (vcode,vcodeId)=>{
+			if(vcode) {
+				this.vcode = vcode
+				this.vcodeId = vcodeId
+			}
+			
+			if(this.actInfo) {
+				this.doLogout();
+			}
+			
+			this.doLoginOrLogout()
+		}
+		
+        this.$jr.auth.addActListener(cid,(type,ai)=>{
             if(type == Constants.LOGIN) {
                 self.actInfo = ai;
                 self.isLogin = true;
@@ -153,24 +164,24 @@ export default {
         this.actName = localStorage.get(Constants.ACT_NAME_KEY);
         this.pwd = localStorage.get(Constants.ACT_PWD_KEY);
 
-        if(this.rememberPwd || !this.actName && this.actName.endWith('guest_')) {
+        if(this.rememberPwd || this.actName && this.actName.endWith('guest_')) {
             this.doLogin();
         }
-        //this. getCode();
+
     },
 
     methods: {
 
         doChangeClient(){
-            let req = rpc.creq(act.sn,act.ns,act.v,'changeCurClientId',[this.selectClientId])
-            rpc.callRpc(req)
+            //let req = this.$jr.this.$jr.rpccreq(act.sn,act.ns,act.v,'changeCurClientId',[this.selectClientId])
+            this.$jr.rpc.callRpcWithParams(act.sn,act.ns,act.v,'changeCurClientId',[this.selectClientId])
                 .then(( resp )=>{
                     if(resp && resp.code == 0) {
-                        rpc.actInfo = resp.data
+                        this.$jr.auth.actInfo = resp.data
                         this.actInfo = resp.data
                         this.clientListDialog = false
                         this.selectClientId = this.actInfo.clientId+""
-                        rpc._notify(Constants.LOGIN);
+                        this.$jr.rpc_notify(Constants.LOGIN);
                     } else {
                         console.log(resp);
                     }
@@ -180,8 +191,8 @@ export default {
         },
 
         changeClient(){
-            let req = rpc.creq(act.sn,act.ns,act.v,'clientList',[])
-            rpc.callRpc(req)
+            //let req = this.$jr.rpccreq(act.sn,act.ns,act.v,'clientList',[])
+            this.$jr.rpc.callRpcWithParams(act.sn,act.ns,act.v,'clientList',[])
                 .then(( resp )=>{
                     if(resp && resp.code == 0) {
                         this.selectClientId = this.actInfo.clientId+""
@@ -196,7 +207,7 @@ export default {
         },
 
         getCode(){
-            rpc.getCode(1).then(resp => { // 生成验证码图片
+            this.$jr.auth.getCode(1).then(resp => { // 生成验证码图片
                 if(resp.code == 0) {
                     this.codeUrl = 'data:image/gif;base64,' + resp.data
                     this.vcodeId = resp.msg
@@ -417,8 +428,8 @@ export default {
         },
 
         login(actName,pwd,vcode,vcodeId,cb){
-            if(rpc.isLogin() && cb) {
-                this.actInfo = rpc.actInfo
+            if(this.$jr.auth.isLogin() && cb) {
+                this.actInfo = this.$jr.auth.actInfo
                 cb(this.actInfo,null);
                 return;
             }
@@ -447,30 +458,32 @@ export default {
             if(!pwd) {
                 pwd = ""
             }
+			
+			this.$jr.auth.login(actName,pwd,vcode,vcodeId)
 
             let self = this
-            let req = rpc.cmreq(1526369786,[actName,pwd,vcode,vcodeId])
+            let req = this.$jr.rpc.cmreq(1526369786,[actName,pwd,vcode,vcodeId])
             //req.serviceName = 'cn.jmicro.api.security.IAccountServiceJMSrv';
-            rpc.callRpc(req)
+            this.$jr.rpc.callRpc(req)
                 .then(( resp )=>{
                     if(resp.code == 0) {
-                        rpc.setActInfo(resp.data)
+                        this.$jr.auth.setActInfo(resp.data)
                         localStorage.set(Constants.ACT_NAME_KEY,self.actInfo.actName)
                         self.codeUrl =null
                         self.vcodeId = null
                         let rememberPwd = localStorage.get(Constants.ACT_REM_PWD_KEY)
-                        if(rememberPwd || rpc.actInfo.actName.startWith("guest_")) {
+                        if(rememberPwd || this.$jr.auth.actInfo.actName.startWith("guest_")) {
                             localStorage.set(Constants.ACT_PWD_KEY,pwd)
                         }
 
-                        if(rpc.actInfo.actName.startWith("guest_")) {
-                            localStorage.set(Constants.ACT_GUEST_NAME_KEY,rpc.actInfo.actName)
+                        if(this.$jr.auth.actInfo.actName.startWith("guest_")) {
+                            localStorage.set(Constants.ACT_GUEST_NAME_KEY,this.$jr.auth.actInfo.actName)
                         }
 
                         if(cb)
-                            cb(rpc.actInfo,null)
+                            cb(this.$jr.auth.actInfo,null)
                     } else if( resp.code == 4) {
-                        let arr = err.msg.split('$@$')
+                        let arr = resp.msg.split('$@$')
                         self.codeUrl = 'data:image/gif;base64,' + arr[0]
                         self.vcodeId = arr[1]
                     }else {
@@ -515,7 +528,7 @@ export default {
                     self.isLogin = true
                     self.msg = ''
                     self.loginDialog = false
-                    //window.jm.vue.$emit('userLogin',actInfo);
+                    //this.$bus.$emit('userLogin',actInfo);
                 } else {
                     self.isLogin = false
                     self.msg = err || 'Login fail'
@@ -526,12 +539,12 @@ export default {
 
         doLogout(){
             let self = this;
-            rpc.logout((sus,err)=>{
+            this.$jr.auth.logout((sus,err)=>{
                 if(!err && sus) {
                     self.actInfo = null;
                     self.msg = '';
                     self.isLogin = false;
-                    //window.jm.vue.$emit('userLogout');
+                    //this.$bus.$emit('userLogout');
                 } else {
                     self.msg = 'Login fail';
                 }

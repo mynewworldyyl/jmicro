@@ -20,7 +20,6 @@ cn.jmicro.api.mng.IConfi<template>
 
     import TreeNode from  "../common/JTreeNode.js"
 
-    import rpc from "@/rpc/rpcbase"
     import conf from "@/rpcservice/conf"
     import jmconfig from "@/rpcservice/jm"
     
@@ -34,19 +33,19 @@ cn.jmicro.api.mng.IConfi<template>
         mounted(){
 
             let self = this;
-            rpc.addActListener(cid,()=>{
-                self.isLogin = rpc.isLogin();
+            this.$jr.auth.addActListener(cid,()=>{
+                self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.refresh();
                 }
             });
 
             let ec = function() {
-                rpc.removeActListener(cid);
-                window.jm.vue.$off('editorClosed',ec);
+                this.$jr.auth.removeActListener(cid);
+                this.$off('editorClosed',ec);
             }
 
-            window.jm.vue.$on('editorClosed',ec);
+            this.$bus.$on('editorClosed',ec);
 
         },
 
@@ -54,14 +53,14 @@ cn.jmicro.api.mng.IConfi<template>
             if(GROUP != it.id) {
                 return;
             }
-            window.jm.vue.$off('editorClosed',this.editorRemove);
-            rpc.removeActListener(cid);
+            this.$off('editorClosed',this.editorRemove);
+            this.$jr.auth.removeActListener(cid);
         },
 
         methods:{
 
             refresh() {
-                this.isLogin = rpc.isLogin();
+                this.isLogin = this.$jr.auth.isLogin();
                 if(this.isLogin) {
                     let self = this;
                     this.__getChildren(null,jmconfig.ROOT,function(data){
@@ -71,7 +70,7 @@ cn.jmicro.api.mng.IConfi<template>
             },
 
             nodeSelect(evt){
-               window.jm.vue.$emit('configNodeSelect',evt);
+               this.$bus.$emit('configNodeSelect',evt);
             },
 
             loadChildren(item,cb){
