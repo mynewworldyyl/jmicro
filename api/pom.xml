@@ -38,7 +38,12 @@
 		    <version>3.6.200-v20130402-1505</version>
 		    <scope>provided</scope>
 		</dependency>
-		  
+		
+		<dependency>
+			<groupId>org.mongodb</groupId>
+		  	<artifactId>bson</artifactId>
+		  	<version>3.10.1</version>
+		</dependency>
 
     </dependencies>
 </project>

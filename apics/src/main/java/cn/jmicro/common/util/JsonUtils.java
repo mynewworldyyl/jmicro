@@ -80,8 +80,6 @@ public class JsonUtils {
 		//builder.registerTypeAdapter(MsgHeader.class, new MessageHeaderAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
 		
-	
-		
 		return builder;
 	}
 	

@@ -46,6 +46,7 @@
                         <JClientConfig v-else-if="item.group == 'clientConfig'" :item="item"></JClientConfig>
                         <JUserProfileEditor v-else-if="item.group == 'userProfile'" :item="item"></JUserProfileEditor>
 						<floweditor v-else-if="item.group == 'flow'" :item="item"></floweditor>
+						<JApproveInfoEditor v-else-if="item.group == 'flowApproveInfo'" :item="item"></JApproveInfoEditor>
 
                         <JRepository v-else-if="item.group == 'repository'" :item="item"></JRepository>
                         <JHost v-else-if="item.group == 'host'" :item="item"></JHost>
@@ -67,7 +68,8 @@
                         <JResourceConfigView v-else-if="item.group == 'resourceConfig'" :item="item"></JResourceConfigView>
                         <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
                         <JServiceMethodList v-else-if="item.group == 'serviceMethodList'" :item="item"></JServiceMethodList>
-
+						<JInterfaceDefEditor v-else-if="item.group == 'interfaceDef'" :item="item"></JInterfaceDefEditor>
+						<InterfaceParamList v-else-if="item.group == 'interfaceParamList'" :item="item"></InterfaceParamList>
                         <JBottomBar></JBottomBar>
                     </div>
                 </TabPane>
@@ -170,6 +172,10 @@
             JThreadPoolMonitorEditor : () => import('./monitor/JThreadPoolMonitorEditor.vue'),
             JRouteRuleEditor : () => import('./route/JRouteRuleEditor.vue'),
 			floweditor : () => import('./flow/floweditor.vue'),
+			JApproveInfoEditor : () => import('./flow/JApproveInfoEditor.vue'),
+			JInterfaceDefEditor : () => import('./ds/JInterfaceDefEditor.vue'),
+			InterfaceParamList : () => import('./ds/InterfaceParamList.vue'),
+			
         },
 
         data () {

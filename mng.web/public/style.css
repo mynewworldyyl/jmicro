@@ -9,6 +9,10 @@
     margin:0px;
     padding: 0px;
   }
+  
+.el-col {
+  min-height: 1px
+}
 
 html {
     overflow-y: hidden;

@@ -575,6 +575,9 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 	
 	private Document getCondtions(Map<String, Object> queryConditions) {
+		if(queryConditions instanceof Document) {
+			return (Document)queryConditions;
+		}
 		Document match = Document.parse(JsonUtils.getIns().toJson(queryConditions));
 		/*for(String key : queryConditions.keySet()) {
 			match.put(key, queryConditions.get(key));

@@ -22,10 +22,6 @@
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.mng</artifactId>
 		</dependency>
-		<dependency>
-			 <groupId>cn.jmicro</groupId>
-			 <artifactId>jmicro.dataservice</artifactId>
-       	</dependency> 
 	    <dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.test</artifactId>

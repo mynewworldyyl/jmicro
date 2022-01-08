@@ -12,6 +12,7 @@ import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -35,6 +36,14 @@ public class JMicroBaseTestCase {
 		//of = EnterMain.getObjectFactoryAndStart(getArgs());
 		registry = of.get(IRegistry.class);
 		srvMng = of.get(ServiceManager.class, false);
+	}
+	
+	protected void setAccount(Integer aid,String name,Integer roldId) {
+		ActInfoJRso ai = new ActInfoJRso();
+		ai.setId(aid);
+		ai.getRoles().add(roldId);
+		ai.setActName(name);
+		JMicroContext.get().setAccount(ai);
 	}
 	
 	//-DinstanceName=ServiceComsumer -DclientId=0 -DadminClientId=0  
@@ -132,7 +141,6 @@ public class JMicroBaseTestCase {
 		try {
 			Thread.sleep((long)(1000*wainTimeInSeconds));
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

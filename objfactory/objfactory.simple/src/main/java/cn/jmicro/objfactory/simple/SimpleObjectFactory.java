@@ -624,7 +624,6 @@ public class SimpleObjectFactory implements IObjectFactory {
 				}
 			});
 			
-			
 			//将自己也保存到实例列表里面
 			this.cacheObj(this.getClass(), this, null);
 			
@@ -1750,7 +1749,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 	}
 
 	public Object createDynamicService(Class<?> cls) {
-		//String wayd(String msg);
+		 //String wayd(String msg);
 		 ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		 JmicroClassPool cp = ClassGenerator.getClassPool(cl);
 		 try {

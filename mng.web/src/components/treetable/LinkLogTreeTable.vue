@@ -56,12 +56,14 @@
         components: {
             treeItem: () => import('./LinkLogTreeItem.vue')
         },
+		
         data() {
             return {
                 isDesc: false,
                 treeDataSource: []
             }
         },
+		
         watch: {
             'list': {
                 handler() {
@@ -71,11 +73,13 @@
             },
             isDesc(nelVal, oldVal) {
                 console.log(oldVal);
-                this.$bus.$emit('orderByCost')
+                this.$emit('orderByCost')
             }
         },
+		
         computed: {
         },
+		
         methods: {
             initTreeData() {
                 //console.log('处理前的:', JSON.parse(JSON.stringify(this.list)))
@@ -106,16 +110,19 @@
                     scrollInertia: 0
                 })*/
             },
+			
             viewDetail(m) {
-                this.$bus.$emit('viewDetail', m)
+                this.$emit('viewDetail', m)
             },
+			
             callMethod(m) {
-                this.$bus.$emit('callMethod', m)
+                this.$emit('callMethod', m)
             },
+			
             // 展开
             handlerExpand(m) {
                 m.isExpand = !m.isExpand;
-                this.$bus.$emit('handlerExpand', m)
+                this.$emit('handlerExpand', m)
             }
         },
 

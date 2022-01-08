@@ -1,19 +1,69 @@
 package cn.jmicro.api;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class ContextSupport {
+import javax.script.ScriptEngine;
 
-	protected final Map<String,Object> curCxt = new HashMap<String,Object>();
+public class ParamSupport {
+
+	private final Set<FlowParamJRso> curCxt;
+	
+	public ParamSupport(Set<FlowParamJRso> cxt) {
+		if(cxt == null) {
+			this.curCxt = new HashSet<FlowParamJRso>();
+		} else {
+			this.curCxt = cxt;
+		}
+	}
+	
+	public Set<FlowParamJRso> cxt() {
+		return curCxt;
+	}
 	
 	public boolean exists(String key){
-		return this.curCxt.containsKey(key);
+		return this.curCxt.contains(new FlowParamJRso(key));
+	}
+	
+	public void mergeContext2ScriptEngine(ScriptEngine se) {
+		if(curCxt != null && !curCxt.isEmpty()) {
+			for(FlowParamJRso e : curCxt) {
+				se.put(e.getName(), e.getVal());
+			}
+		}
+	}
+	
+	public Map<String,Object> getInputMap(Map<String,Object> c) {
+		if(c == null) {
+			c = new HashMap<>();
+		}else {
+			c.clear();
+		}
+		
+		if(curCxt != null && !curCxt.isEmpty()) {
+			for(FlowParamJRso e : curCxt) {
+				c.put(e.getName(), e.getVal());
+			}
+		}
+		return c;
+	}
+	
+	private FlowParamJRso get(String key) {
+		if(key == null) key = "";
+		for(FlowParamJRso e : curCxt) {
+			if(key.equals(e.getName())) return e;
+		}
+		return null;
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <T> T getParam(String key, T defautl){
-		T v = (T)this.curCxt.get(key);
+		FlowParamJRso fp = get(key);
+		if(fp == null) return defautl;
+		
+		T v = (T)fp.getVal();
 		if(v == null){
 			return defautl;
 		}
@@ -21,11 +71,24 @@ public class ContextSupport {
 	}
 	
 	public void removeParam(String key){
-	    this.curCxt.remove(key);
+	    this.curCxt.remove(new FlowParamJRso(key));
 	}
 	
 	public <T> void setParam(String key,T val){
-		this.curCxt.put(key,val);
+		FlowParamJRso p = get(key);
+		if(p != null) {
+			p.setVal(val);
+			if(p.getClazz() == null && val != null) {
+				p.setClazz(val.getClass().getName());
+			}
+		} else {
+			p = new FlowParamJRso(key);
+			p.setVal(val);
+			if(val != null) {
+				p.setClazz(val.getClass().getName());
+			}
+			this.curCxt.add(p);
+		}
 	}
 	
 	public void setInt(String key,int defautl){
@@ -90,5 +153,13 @@ public class ContextSupport {
 	
 	public Object getObject(String key,Object defautl){
 		return this.getParam(key,defautl);
+	}
+
+	public void putAll(Map<String, Object> rst) {
+		if(rst != null && !rst.isEmpty()) {
+			rst.forEach((k,v)->{
+				setParam(k,v);
+			});
+		}
 	}
 }

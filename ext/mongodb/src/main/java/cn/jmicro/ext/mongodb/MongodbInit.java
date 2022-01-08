@@ -71,8 +71,9 @@ public class MongodbInit implements IPostFactoryListener{
         //获取数据库对象
         MongoDatabase mdb = client.getDatabase(dbname);
         
+        JMicroCodecProvider p = new JMicroCodecProvider();
         CodecRegistry pojoCodecRegistry = fromRegistries(
-        		fromProviders(new JMicroCodecProvider()),
+        		fromProviders(p),
         		MongoClientSettings.getDefaultCodecRegistry(),
                 fromProviders(PojoCodecProvider.builder().automatic(true).build()));
         mdb = mdb.withCodecRegistry(pojoCodecRegistry);
@@ -82,6 +83,7 @@ public class MongodbInit implements IPostFactoryListener{
         of.regist(MongoClient.class, client);
         of.regist(MongoDatabase.class, mdb);
         of.regist(DB.class, db);
+        of.regist(JMicroCodecProvider.class,p);
         
         logger.info("Mongodb connected successfully!");
 		

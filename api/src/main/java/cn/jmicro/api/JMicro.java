@@ -45,8 +45,7 @@ public class JMicro {
 			Thread.sleep(Long.MAX_VALUE);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
-		}
-		;
+		};
 	}
 
 	public static Object getObjectFactoryAndStart(String[] args) {
