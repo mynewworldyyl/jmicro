@@ -170,8 +170,8 @@ public abstract class AbstractSession implements ISession{
      	}
     	
      	while(true) {
-     		 long startTime = TimeUtils.getCurTime();
-     		 Message message = null;
+     		  long startTime = TimeUtils.getCurTime();
+     		  Message message = null;
               try {
             	  
             	  try {

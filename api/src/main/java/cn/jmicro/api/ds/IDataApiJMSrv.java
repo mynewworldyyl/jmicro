@@ -1,5 +1,8 @@
 package cn.jmicro.api.ds;
 
+import java.util.List;
+
+import cn.jmicro.api.QueryJRso;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -21,4 +24,6 @@ public interface IDataApiJMSrv {
 	 * @return
 	 */
 	IPromise<RespJRso<String>> queryByReqId(String reqId);
+	
+	IPromise<RespJRso<List<DsQueryCacheJRso>>> listHistory(QueryJRso qry);
 }

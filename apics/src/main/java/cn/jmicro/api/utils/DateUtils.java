@@ -48,6 +48,8 @@ import cn.jmicro.common.CommonException;
 * @since 4.3
 */
 public final class DateUtils {
+	
+	 public static final long DAY_LONG = 24*60*59*1000;
 
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSSSSST = "yyyy-MM-dd HH:mm:ss.SSS'T'";
 	 

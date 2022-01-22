@@ -44,16 +44,21 @@ public class TimerTicker {
 	private boolean openDebug = false;
 	
 	public static final long BASE_TIME_TICK = 1000;
+	public static final long MIN_TIME_TICK = 99;
+	
+	public static TimerTicker getDefault(Long ticker,Long delay) {
+		return getTimer(defaultTimers,ticker,delay);
+	}
 	
 	public static TimerTicker getDefault(Long ticker) {
-		return getTimer(defaultTimers,ticker);
+		return getTimer(defaultTimers,ticker,0L);
 	}
 	
 	public static TimerTicker getBaseTimer() {
 		if(defaultTimers.containsKey(BASE_TIME_TICK)) {
 			return defaultTimers.get(BASE_TIME_TICK);
 		} else {
-			defaultTimers.put(BASE_TIME_TICK, new TimerTicker(BASE_TIME_TICK));
+			defaultTimers.put(BASE_TIME_TICK, new TimerTicker(BASE_TIME_TICK,0));
 			return defaultTimers.get(BASE_TIME_TICK);
 		}
 	}
@@ -75,11 +80,20 @@ public class TimerTicker {
 	}
 	
 	
+	public static TimerTicker getTimer(Map<Long,TimerTicker> timers,Long ticker,Long delay) {
+		if(timers.containsKey(ticker)) {
+			return timers.get(ticker);
+		} else {
+			timers.put(ticker, new TimerTicker(ticker,delay));
+			return timers.get(ticker);
+		}
+	}
+	
 	public static TimerTicker getTimer(Map<Long,TimerTicker> timers,Long ticker) {
 		if(timers.containsKey(ticker)) {
 			return timers.get(ticker);
 		} else {
-			timers.put(ticker, new TimerTicker(ticker));
+			timers.put(ticker, new TimerTicker(ticker,0));
 			return timers.get(ticker);
 		}
 	}
@@ -94,9 +108,9 @@ public class TimerTicker {
 	long lastRunTime = 0;
 	long lastCostTime = 0;
 	
-	public TimerTicker(long ticker) {
+	public TimerTicker(long ticker,long delay) {
 		this.ticker = ticker;
-		if(ticker < 99) {
+		if(ticker < MIN_TIME_TICK) {
 			//logger.warn("Ticker:" + ticker);
 			throw new CommonException("Ticker have to big to: " + 99+", but got: "+ticker);
 		}
@@ -141,7 +155,7 @@ public class TimerTicker {
 				}
 				
 			}
-		}, 0, ticker);
+		}, delay, ticker);
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
