@@ -56,15 +56,21 @@
                       <Menu-item  name="__role"><Icon type="ios-alert" />{{"Role"|i18n}}</Menu-item>
                       <Menu-item  name="__clientConfig"><Icon type="ios-alert" />{{"Client"|i18n}}</Menu-item>
                       <Menu-item name="__userProfile"><Icon type="ios-alert" />{{"Profile"|i18n}}</Menu-item>
-					  <Menu-item name="__interfaceDef"><Icon type="ios-alert" />{{"InterfaceDef"|i18n}}</Menu-item>
-					  <Menu-item name="__interfaceParamList"><Icon type="ios-alert" />{{"interfaceParamList"|i18n}}</Menu-item>
-                  </Menu-group>
+					</Menu-group>
                   <Menu-group :title="'Interface'|i18n">
                       <Menu-item name="__publicKeyList"><Icon type="ios-cog"></Icon>{{"publicKeyList"|i18n}}</Menu-item>
                       <Menu-item name="__serviceMethodList"><Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}</Menu-item>
 					  <Menu-item name="__flow"><Icon type="ios-alert" />{{"flow"|i18n}}</Menu-item>
 					  <Menu-item name="__flowApproveInfo"><Icon type="ios-alert" />{{"FlowApproveInfo"|i18n}}</Menu-item>
 				  </Menu-group>
+				  
+				  <Menu-group :title="'DataService'|i18n">
+				    <Menu-item name="__interfaceDef"><Icon type="ios-alert" />{{"InterfaceDef"|i18n}}</Menu-item>
+				   	<Menu-item name="__interfaceParamList"><Icon type="ios-alert" />{{"InterfaceParamList"|i18n}}</Menu-item>
+				   	<Menu-item name="__interfaceUsedHistory"><Icon type="ios-alert" />{{"InterfaceUsedHistory"|i18n}}</Menu-item>
+					<Menu-item name="__dayCostList"><Icon type="ios-alert" />{{"DayCostList"|i18n}}</Menu-item>
+				  </Menu-group>
+				  
               </Submenu>
 
               <Submenu name="oth">

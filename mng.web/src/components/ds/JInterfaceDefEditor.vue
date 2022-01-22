@@ -4,23 +4,26 @@
         <div v-if="isLogin && roleList && roleList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead>
-					<tr><td>{{'apiId'|i18n}}</td><td>{{'Desc'|i18n}}</td>
-                    <td>{{'Method'|i18n}}</td><td>{{'ReqEnc'|i18n}}</td><td>{{'RespEnc'|i18n}}</td>
+					<tr><td>{{'apiId'|i18n}}</td><td>{{'Name'|i18n}}</td>
+                    <td>{{'Method'|i18n}}</td><td>{{'ReqEnc'|i18n}}</td>
 					<td>{{'SuccessCode'|i18n}}</td><td>{{'SuccessKey'|i18n}}</td><td>{{'FailMessageKey'|i18n}}</td>
-					<td>{{'ExtParams'|i18n}}</td><td>{{'TokenApiCode'|i18n}}</td>
+					<td>{{'TokenApiCode'|i18n}}</td>
+					<td>{{'priceUnit'|i18n}}</td><td>{{'price'|i18n}}</td><td>{{'freeCnt'|i18n}}</td>
 					<td>{{'CreatedBy'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
                     <td>{{"Operation"|i18n}}</td></tr>
                 </thead>
                 <tr v-for="c in roleList" :key="'ide' + c.id">
-                    <td>{{c.apiId}}</td><td>{{c.desc}}</td>
-					 <td>{{c.method}}</td> <td>{{c.reqEnc}}</td><td>{{c.respEnc}}</td>
+                    <td>{{c.apiId}}</td><td class="descCol">{{c.name}}</td>
+					 <td>{{c.method}}</td> <td>{{c.reqEnc}}</td>
 					  <td>{{c.successCode}}</td> <td>{{c.successKey}}</td> <td>{{c.failMessageKey}}</td>
-					  <td>{{c.extParams}}</td><td>{{c.tokenApiCode}}</td>
+					  <td>{{c.tokenApiCode}}</td>
+					  <td>{{c.priceUnit}}</td> <td>{{c.price}}</td> <td>{{c.freeCnt}}</td>
                     <td>{{c.updatedBy}}</td><td>{{c.createdTime | formatDate(1)}}</td>
                     <td>
                         <a  @click="viewDef(c)">{{"View"|i18n}}</a>&nbsp;
                         <a  @click="updateDef(c)">{{"Update"|i18n}}</a>&nbsp;
-						 <a  @click="deleteDef(c.id)">{{"Delete"|i18n}}</a>
+						<a  @click="deleteDef(c.id)">{{"Delete"|i18n}}</a>
+						<a  @click="testDef(c)">{{"Test"|i18n}}</a>
                     </td>
                 </tr>
             </table>
@@ -52,7 +55,71 @@
 				
               <div>{{errorMsg}}</div>
         </Drawer>
+		
+		<!--  测试接口 -->
+		<Drawer ref="testDef"  v-model="testDefDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
+		    :draggable="true" :scrollable="true" width="80">
+		
+		<div class="testBtnContainer">
+			<el-button size="mini" @click="doTest()">{{'Send'|i18n}}</el-button>
+		</div>
+		
+		<div v-if="form && form.id && form.reqs && form.reqs.length" class="paramContainer">
+			<el-row v-for="p in form.reqs">
+				<el-col class="title" :span="3"><span>{{p.name|i18n}}</span>
+				<span v-if="p.isRequired">*</span>
+				</el-col>
+				<el-col :span="21">
+					<el-input v-model="testParam[p.key]" v-if="p.type=='string'" type="textarea" :autosize="{minRows: 1, maxRows: 10}"></el-input>
+					<el-input v-model="testParam[p.key]" v-else-if="p.type=='boolean'" type="checkbox"></el-input>
+					<el-input v-model="testParam[p.key]" v-else></el-input>
+				</el-col>
+			</el-row>
+		</div>
+		
+		<RespView v-if="testResp.resp" :resp="testResp.resp"></RespView>
 
+		</Drawer>
+
+	<div v-if="isLogin"  :style="queryDrawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openQueryDrawer()"></div>
+	
+	<Drawer v-if="isLogin"   v-model="queryDrawer.drawerStatus" :closable="false" placement="left" :transfer="true"
+	         :draggable="true" :scrollable="true" width="50">
+	    <table id="queryTable">
+	        <tr>
+	        	<td>startTime</td>
+	            <td>
+	        		 <el-date-picker v-model="queryParams.ps.startTime" type="date" placeholder="选择日期"
+	        		       value-format="yyyy-MM-dd">
+	        		    </el-date-picker>
+	             </td>
+	        	 <td>endTime</td>
+	            <td>
+	        		<el-date-picker v-model="queryParams.ps.endTime" type="date" placeholder="选择日期"
+	        		     value-format="yyyy-MM-dd">
+	        		   </el-date-picker>
+	            </td>
+	        </tr>
+	        	
+	        <tr>
+	            <td>ActId</td><td> <Input  v-model="queryParams.ps.actId"/></td>
+	            <td>ClientId</td><td> <Input  v-model="queryParams.ps.clientId"/></td>
+	        </tr>
+	        <tr>
+	            <td>Code</td><td> <Input  v-model="queryParams.ps.code"/></td>
+	        	<td>Name</td><td> <Input  v-model="queryParams.ps.name"/></td>
+	        </tr>
+			
+			<tr>
+			    <td>Desc</td><td> <Input  v-model="queryParams.ps.desc"/></td>
+				<td>ApiId</td><td> <Input  v-model="queryParams.ps.apiId"/></td>
+			</tr>
+	        <tr>
+	            <td><i-button @click="doQuery()">{{"Query"|i18n}}</i-button></td><td></td>
+	        </tr>
+	    </table>
+	</Drawer>
+	
 
     </div>
 </template>
@@ -63,7 +130,8 @@
  import defCons from "./cons.js"
  import ParamList from "./ParamList.vue"
  import InterfaceDef from "./InterfaceDef.vue"
- 
+  import RespView from "./RespView.vue"
+  
  const cid = 'interfaceDef'
  
  const sn = defCons.sn;
@@ -73,7 +141,7 @@
     export default {
         name: cid,
         components: {
-			ParamList,InterfaceDef
+			ParamList,InterfaceDef,RespView
         },
         data() {
             return {
@@ -81,7 +149,7 @@
                 isLogin:false,
                 roleList: [],
 
-				queryParams:{size:10,curPage:1,},
+				queryParams:{size:10,curPage:1,ps:{}},
 				totalNum:0,
 
                 updateModel:false,
@@ -93,10 +161,51 @@
                     drawerStatus : false,
                     drawerBtnStyle : {left:'0px',zindex:1000},
                 },
+				
+				testDefDrawer: {
+					drawerStatus : false,
+					drawerBtnStyle : {left:'0px',zindex:1000},
+				},
+				
+				queryDrawer: {
+				    drawerStatus:false,
+				    drawerBtnStyle:{left:'0px',zindex:1000},
+				},
+				
+				testParam:{},
+				testResp:{}
             }
         },
 
         methods: {
+			
+			doQuery() {
+				this.queryParams.curPage = 1
+			    this.refresh();
+			},
+			
+			openQueryDrawer() {
+			    this.queryDrawer.drawerStatus = true;
+			    this.queryDrawer.drawerBtnStyle.zindex = 10000;
+			    this.queryDrawer.drawerBtnStyle.left = '0px';
+			},
+			
+			doTest(){
+				//console.log(this.testParam)
+				let qry = {jsonParam: JSON.stringify(this.testParam),apiId:this.form.apiId}
+				let st = new Date().getTime();
+				this.$jr.rpc.callRpcWithParams("cn.jmicro.api.ds.IDataApiJMSrv", ns, v, 'getData', [qry])
+				    .then((resp)=>{
+				        this.testResp = resp
+						this.testResp.cost = new Date().getTime() - st
+				    }).catch((err)=>{
+						this.$notify.error({
+							title: '错误',
+							message: err
+						});
+				});
+			},
+			
 			saveSuccess() {
 				this.defInfoDrawer.drawerStatus = false;
 				this.form = {}
@@ -126,6 +235,25 @@
 				});
 			},
 			
+			async testDef(c){
+				let resp = await this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getDefDetail', [c.id])
+				if(resp && resp.code == 0){
+					this.testParam = {}
+				    this.form = resp.data
+				    this.testDefDrawer.drawerStatus = true
+				} else if(!resp) {
+				   this.$notify.error({
+				   		title: '错误',
+				   		message: resp.msg
+				   	});
+				}else {
+					this.$notify.error({
+							title: '错误',
+							message: '获取明细失败'
+						});
+				}
+			},
+			
 			updateDef(c){
 				this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getDefDetail', [c.id])
 				    .then((resp)=>{
@@ -146,7 +274,6 @@
 								message: resp.msg
 							});
 				});
-				
 			},
 			
 			deleteDef(defId){
@@ -253,4 +380,15 @@
         min-height: 500px;
     }
 
+	.descCol{
+		overflow: hidden;
+		text-overflow: ellipsis;
+		flex-wrap: nowrap;
+	}
+	
+	.title {
+		font-weight: bold;
+	}
+	
+	
 </style>

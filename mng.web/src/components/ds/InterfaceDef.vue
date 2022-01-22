@@ -21,9 +21,9 @@
 			<el-col :span="9">
 				<el-input v-model="form.apiId" :disabled="!updateModel"></el-input>
 			</el-col>
-			<el-col class="label"  :span="3">{{'Desc'|i18n}}</el-col>
+			<el-col class="label"  :span="3">{{'Name'|i18n}}</el-col>
 			<el-col :span="9">
-				<el-input v-model="form.desc" :disabled="!updateModel"></el-input>
+				<el-input v-model="form.name" :disabled="!updateModel"></el-input>
 			</el-col>
 		</el-row>
 		<el-row>
@@ -106,6 +106,28 @@
 			<el-col  class="label" :span="3">{{'TokenApiCode'|i18n}}</el-col>
 			<el-col :span="9">
 				<el-input v-model="form.tokenApiCode" :disabled="!updateModel"></el-input>
+			</el-col>
+		</el-row>
+		
+		<el-row>
+			<el-col class="label"  :span="3">{{'priceUnit'|i18n}}</el-col>
+			<el-col :span="9">
+				<el-input v-model="form.priceUnit" :disabled="!updateModel"></el-input>
+			</el-col>
+			<el-col  class="label" :span="3">{{'price'|i18n}}</el-col>
+			<el-col :span="9">
+				<el-input v-model="form.price" :disabled="!updateModel"></el-input>
+			</el-col>
+		</el-row>
+		
+		<el-row>
+			<el-col  class="label" :span="3">{{'freeCnt'|i18n}}</el-col>
+			<el-col :span="9">
+				<el-input v-model="form.freeCnt" :disabled="!updateModel"></el-input>
+			</el-col>
+			<el-col class="label"  :span="3">{{'Desc'|i18n}}</el-col>
+			<el-col :span="9">
+				<el-input type="textarea" autosize v-model="form.desc" :disabled="!updateModel"></el-input>
 			</el-col>
 		</el-row>
 	</div>

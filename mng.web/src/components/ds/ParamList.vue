@@ -7,27 +7,24 @@
 			</el-col>
 		</el-row>
 		<el-row>
-			<el-col :span="4">{{"name"|i18n}}</el-col>
+			<el-col :span="3">{{"name"|i18n}}</el-col>
+			<el-col :span="4">{{"Key"|i18n}}</el-col>
 			<el-col :span="2">{{"type"|i18n}}</el-col>
-			<!-- <el-col :span="3">{{"belongTo"|i18n}}</el-col> -->
 			<el-col :span="3">{{"isRequired"|i18n}}</el-col>
 			<el-col :span="3">{{"defVal"|i18n}}</el-col>
 			<el-col :span="6">{{"val"|i18n}}</el-col>
-			<!-- <el-col :span="3">{{"desc"|i18n}}</el-col>-->
 			<el-col v-if="!viewDetail" :span="3">{{"Operation"|i18n}}</el-col>
 		</el-row>
 		
 		<div v-if="plist && plist.length > 0">
 			<el-row v-for="p in plist" :key="'h_'+p.name">
-				<el-col :span="4">{{p.name}}</el-col>
+				<el-col :span="3">{{p.name}}</el-col>
+				<el-col :span="4">{{p.key}}</el-col>
 				<el-col :span="2">{{p.type}}</el-col>
-				<!-- <el-col :span="3">{{p.belongTo}}</el-col>  -->
 				<el-col :span="3">{{p.isRequired}}</el-col>
 				<el-col :span="3">{{p.defVal}}</el-col>
 				<el-col :span="6">{{p.val}}</el-col>
-			<!--	<el-col class="descCol" :title="p.desc" :span="3">{{p.desc}}</el-col> -->
 				<el-col v-if="!viewDetail" :span="3">
-					<!-- <a @click="addOUpdateParam(p)">{{'Update'|i18n}}</a>&nbsp; -->
 					<a @click="deleteParam(p)">{{'Delete'|i18n}}</a>
 				</el-col>
 			</el-row>
@@ -42,6 +39,7 @@
 		
 		<el-row>
 			<el-col :span="4">{{"name"|i18n}}</el-col>
+			<el-col :span="4">{{"key"|i18n}}</el-col>
 			<el-col :span="3">{{"type"|i18n}}</el-col>
 			<!-- <el-col :span="3">{{"belongTo"|i18n}}</el-col> -->
 			<el-col :span="3">{{"isRequired"|i18n}}</el-col>
@@ -52,8 +50,9 @@
 		</el-row>
 		
 		<div v-if="splist && splist.length > 0">
-			<el-row v-for="p in splist" :key="'sh_'+p.name">
+			<el-row v-for="p in splist" :key="'sh_'+p.key">
 				<el-col :span="4">{{p.name}}</el-col>
+				<el-col :span="4">{{p.key}}</el-col>
 				<el-col :span="3">{{p.type}}</el-col>
 			<!--	<el-col :span="3">{{p.belongTo}}</el-col>    -->
 				<el-col :span="3">{{p.isRequired}}</el-col>

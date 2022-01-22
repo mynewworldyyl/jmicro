@@ -70,7 +70,10 @@
                         <JServiceMethodList v-else-if="item.group == 'serviceMethodList'" :item="item"></JServiceMethodList>
 						<JInterfaceDefEditor v-else-if="item.group == 'interfaceDef'" :item="item"></JInterfaceDefEditor>
 						<InterfaceParamList v-else-if="item.group == 'interfaceParamList'" :item="item"></InterfaceParamList>
-                        <JBottomBar></JBottomBar>
+                        <InterfaceUsedHistory v-else-if="item.group == 'interfaceUsedHistory'" :item="item"></InterfaceUsedHistory>
+						<DayCostList v-else-if="item.group == 'dayCostList'" :item="item"></DayCostList>
+						
+						<JBottomBar></JBottomBar>
                     </div>
                 </TabPane>
             </Tabs>
@@ -175,7 +178,8 @@
 			JApproveInfoEditor : () => import('./flow/JApproveInfoEditor.vue'),
 			JInterfaceDefEditor : () => import('./ds/JInterfaceDefEditor.vue'),
 			InterfaceParamList : () => import('./ds/InterfaceParamList.vue'),
-			
+			InterfaceUsedHistory : () => import('./ds/InterfaceUsedHistory.vue'),
+			DayCostList : () => import('./ds/DayCostList.vue'),
         },
 
         data () {

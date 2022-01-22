@@ -69,3 +69,16 @@ html {
     font-size: large;
 }
 
+.drawerJinvokeBtnStatu{
+	position: fixed;
+	left: 0px;
+	top: 30%;
+	bottom: 30%;
+	height: 39%;
+	width: 1px;
+	border-left: 1px solid lightgray;
+	background-color: lightgray;
+	border-radius: 3px;
+	z-index: 1000000;
+}
+

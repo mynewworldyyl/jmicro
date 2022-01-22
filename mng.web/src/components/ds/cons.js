@@ -5,7 +5,7 @@ export default {
 	 STATUS_BACK : 4, //审批驳回
 	 statusMap : {'1':'待审批','2':'通过','3':'拒绝','4':'驳回'},
 	 
-	 sn : 'cn.jmicro.ext.dataservice.mng.IApiDefJMSrv',
+	 sn : 'cn.jmicro.ext.dataservice.api.IApiDefJMSrv',
 	 ns : "ds",
 	 v : '0.0.1',
 }

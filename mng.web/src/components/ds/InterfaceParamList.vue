@@ -1,33 +1,23 @@
 <template>
 	<div class="InterfaceParamList">
-		<el-row>
-			<el-col :span="2">{{"tags"|i18n}}</el-col>
-			<el-col :span="3">{{"name"|i18n}}</el-col>
-			<el-col :span="3">{{"type"|i18n}}</el-col>
-			<el-col :span="3">{{"belongTo"|i18n}}</el-col>
-			<el-col :span="3">{{"isRequired"|i18n}}</el-col>
-			<el-col :span="3">{{"defVal"|i18n}}</el-col>
-			<el-col :span="4">{{"val"|i18n}}</el-col>
-			<el-col v-if="model != 3" :span="3">{{"Operation"|i18n}}</el-col>
-		</el-row>
-		
-		<div v-if="plist && plist.length > 0">
-			<el-row v-for="p in plist" :key="'h_'+p.id">
-				<el-col :span="2">{{p.tags}}</el-col>
-				<el-col :span="3">{{p.name}}</el-col>
-				<el-col :span="3">{{p.type}}</el-col>
-				<el-col :span="3">{{p.belongTo}}</el-col>
-				<el-col :span="3">{{p.isRequired}}</el-col>
-				<el-col :span="3">{{p.defVal}}</el-col>
-				<el-col class="valCol" :span="4">{{p.val}}</el-col>
-				
-				<el-col :span="3">
-					<a @click="viewParam(p)">{{'View'|i18n}}</a>&nbsp;
-					<a @click="updateParam(p)">{{'Update'|i18n}}</a>&nbsp;
-					<a @click="deleteParam(p)">{{'Delete'|i18n}}</a>
-				</el-col>
-			</el-row>
-		</div>
+		<table v-if="plist && plist.length > 0" class="configItemTalbe" width="99%">
+		    <thead>
+				<tr><td>{{"tags"|i18n}}</td><td>{{'key'|i18n}}</td>
+		        <td>{{'name'|i18n}}</td><td>{{'type'|i18n}}</td><td>{{'belongTo'|i18n}}</td>
+				<td>{{'isRequired'|i18n}}</td><td>{{'defVal'|i18n}}</td><td>{{'val'|i18n}}</td>
+		        <td>{{"Operation"|i18n}}</td></tr>
+		    </thead>
+		    <tr v-for="c in plist" :key="'h_'+c.id">
+		        <td>{{c.tags}}</td><td class="descCol">{{c.key}}</td>
+				 <td>{{c.name}}</td> <td>{{c.type}}</td><td>{{c.belongTo}}</td>
+				  <td>{{c.isRequired}}</td> <td>{{c.defVal}}</td> <td class="valCol">{{c.val}}</td>
+		        <td>
+		           <a @click="viewParam(c)">{{'View'|i18n}}</a>&nbsp;
+		           <a @click="updateParam(c)">{{'Update'|i18n}}</a>&nbsp;
+		           <a @click="deleteParam(c)">{{'Delete'|i18n}}</a>
+		        </td>
+		    </tr>
+		</table>
 		
 		<div v-if="isLogin && plist && plist.length > 0" style="position:relative;text-align:center;">
 		    <Page ref="pager" :total="totalNum" :page-size="queryParams.size" :current="queryParams.curPage"
@@ -48,6 +38,10 @@
 		 <el-row>
 			<el-col :span="6">{{"Name"|i18n}}</el-col>
 			<el-col><el-input v-model="p.name" :disabled="model==3" /></el-col>
+		 </el-row>
+		 <el-row>
+			<el-col :span="6">{{"Key"|i18n}}</el-col>
+			<el-col><el-input v-model="p.key" :disabled="model==3" /></el-col>
 		 </el-row>
 		 <el-row>
 			<el-col :span="6">{{"Type"|i18n}}</el-col>
@@ -91,10 +85,55 @@
 		 </el-row>
 		 <el-row>
 			<el-button size="mini" @click="defInfoDrawer.drawerStatus = false">取消</el-button>
-			<el-button size="mini" type="primary" @click="doAddOrUpdateParam">确定</el-button>
+			<el-button  :disabled="model==3" size="mini" type="primary" @click="doAddOrUpdateParam">确定</el-button>
 		 </el-row>
 	</Drawer>
 
+	<div v-if="isLogin"  :style="queryDrawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openQueryDrawer()"></div>
+	
+	<Drawer v-if="isLogin"   v-model="queryDrawer.drawerStatus" :closable="false" placement="left" :transfer="true"
+	         :draggable="true" :scrollable="true" width="50">
+	    <table id="queryTable">
+	        <tr>
+	            <td>ActId</td><td> <Input  v-model="queryParams.ps.createdBy"/></td>
+	            <td>ClientId</td><td> <Input  v-model="queryParams.ps.clientId"/></td>
+	        </tr>
+			<tr>
+			    <td>Tags</td><td> <Input  v-model="queryParams.ps.tags"/></td>
+			    <td>Name</td><td> <Input  v-model="queryParams.ps.name"/></td>
+			</tr>
+			<tr>
+			    <td>Desc</td><td> <Input  v-model="queryParams.ps.desc"/></td>
+			    <td></td><td></td>
+			</tr>
+			<tr>
+			    <td>BelongTo</td><td> 
+					<el-select v-model="queryParams.ps.belongTo" placeholder="请选择">
+					<el-option label="全部" value=""></el-option>
+				    <el-option label="默认参数" value="reqParam"></el-option>
+					<el-option label="请求参数" value="req"></el-option>
+					<el-option label="头部参数" value="header"></el-option>
+					<el-option label="配置参数" value="config"></el-option>
+				  </el-select>
+				</td>
+				</td>
+				<td>Type</td><td> 
+					<el-select v-model="queryParams.ps.type" placeholder="请选择">
+					<el-option label="全部" value=""></el-option>
+				    <el-option label="字符串" value="string"></el-option>
+					<el-option label="整数" value="integer"></el-option>
+					<el-option label="布尔值" value="boolean"></el-option>
+					<el-option label="浮点数" value="float"></el-option>
+				  </el-select>
+				</td>
+			</tr>
+			
+	        <tr>
+	            <td><i-button @click="doQuery()">QUERY</i-button></td><td></td>
+	        </tr>
+	    </table>
+	</Drawer>
+	
 	</div>
 </template>
 
@@ -120,17 +159,34 @@
 				isLogin:false,
 				plist: [],
 				
-				queryParams:{size:10,curPage:1,},
+				queryParams:{size:10,curPage:1,ps:{belongTo:"",type:""}},
 				totalNum:0,
 				
 				defInfoDrawer: {
 				    drawerStatus : false,
 				    drawerBtnStyle : {left:'0px',zindex:1000},
 				},
+				
+				queryDrawer: {
+				    drawerStatus:false,
+				    drawerBtnStyle:{left:'0px',zindex:1000},
+				},
+				
 			}
 		},
 
 		methods: {
+			
+			doQuery() {
+				this.queryParams.curPage = 1
+			    this.refresh();
+			},
+			
+			openQueryDrawer() {
+			    this.queryDrawer.drawerStatus = true;
+			    this.queryDrawer.drawerBtnStyle.zindex = 10000;
+			    this.queryDrawer.drawerBtnStyle.left = '0px';
+			},
 			
 			viewParam(c){
 				this.model = 3;
@@ -230,6 +286,14 @@
 					});
 					return false
 				}
+				
+				if (!p.key) {
+					this.$notify.error({
+					 title: '错误',
+						message: '参数键值不能为空'
+					});
+					return false
+				}
 
 				if (!p.belongTo) {
 					this.$notify.error({
@@ -246,24 +310,7 @@
 					});
 					return false
 				}
-
-				/*
-				if (this.plist && this.plist.length > 0) {
-					let cnt = 0;
-					this.plist.forEach(e => {
-						if (p.name == e.name) {
-							cnt++;
-						}
-					})
-					if (this.model==1 && cnt >1 || !this.model==2 && cnt >0) {
-						this.$notify.error({
-							title: '错误',
-							message: '参数名已经存在'
-						});
-						return false
-					}
-				}
-				*/
+				
 				return true
 			},
 			
@@ -291,8 +338,7 @@
 			                        console.log("success");
 			                    }else {
 			                        this.plist = resp.data;
-			                        this.queryParams.size = resp.total;
-			                        this.queryParams.curPage = 1;
+			                        this.totalNum = resp.total;
 			                    }
 			                } else {
 			                    window.console.log(resp.msg);
@@ -343,6 +389,7 @@
 		border-top: 1px dotted lightgray;
 		margin-top: 6px;
 		padding-top: 10px;
+		text-align: left;
 	}
 	
 	.title{
