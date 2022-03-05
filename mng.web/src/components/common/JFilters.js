@@ -37,7 +37,9 @@ let i18n = function(key,defaultVal,params) {
     return i18n0.get(key,defaultVal,params);
 }
 
+
+
 export {
     formatDate,
-    i18n
+    i18n,
 }

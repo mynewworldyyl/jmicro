@@ -17,6 +17,7 @@
 package cn.jmicro.api.cache;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
 
 import cn.jmicro.common.Constants;
 
@@ -56,6 +57,8 @@ public interface ICache {
 	 */
 	<T> boolean put(String key,T val,long expire);
 	
+	<T> boolean setNx(String key,T val);
+	
 	/**
 	 *  超时时间 = expire + randomVal, randomVal是一个限机数最大值，真实生成的值在0到randomVal之间
 	 *  设置数据超时时间为一个指定区间的值，以防止缓存雪崩效应
@@ -65,7 +68,7 @@ public interface ICache {
 	 * @param randomVal max random value with millisecond
 	 * @return
 	 */
-	<T> boolean put(String key,T val,long expire,int randomVal);
+	<T> boolean put(String key, T val, long expire, int randomVal);
 	
 	/**
 	 * 
@@ -97,4 +100,19 @@ public interface ICache {
 	 * @param ref
 	 */
 	void setReflesher(String key, ICacheRefresher ref);
+	
+	
+	/*********************Map start**************************/
+	boolean hput(String key, Map<String,Object> hdata);
+	
+	boolean hdel(String key, String fname);
+	
+	<T> T hget(String key, String fname);
+	
+	boolean hexist(String key, String fname);
+
+	<T> boolean hput(String key, String fname, T val);
+	
+	/**********************Map end*************************/
+	
 }

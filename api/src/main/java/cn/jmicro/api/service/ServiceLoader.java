@@ -148,6 +148,9 @@ public class ServiceLoader{
 					Iterator<Class<?>> ite = waitings.iterator();
 					while(ite.hasNext()) {
 						Class<?> c = ite.next();
+						if(c.getName().equals("cn.jmicro.shop.wx.web.CartController")) {
+							logger.debug("CartController");
+						}
 						if(this.exportOne(c, false)) {
 							ite.remove();
 							logger.info("Export service success: " + c.getName());

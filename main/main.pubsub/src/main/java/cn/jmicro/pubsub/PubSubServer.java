@@ -129,7 +129,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	@Inject
 	private PubsubMessageStatis sta;
 	
-	private SubcriberManager subManager;
+	private SubscriberManager subManager;
 	
 	private ResendManager resendManager;
 	
@@ -152,9 +152,9 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 		 Utils.getIns().waitForShutdown();
 	}
 	
-	public void init() {
+	private void init() {
 
-		subManager = new SubcriberManager(of,this.openDebug);
+		subManager = new SubscriberManager(of,this.openDebug);
 		
 		this.resendManager = new ResendManager(of,this.openDebug,maxFailItemCount,doResendInterval);
 		resendManager.setSubManager(this.subManager);
@@ -188,7 +188,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	}
 	
 	public void jready() {
-		
+		this.init();
 		Thread checkThread = new Thread(this::doCheck,"JMicro-"+Config.getInstanceName()+"-PubSubServer");
 		checkThread.setDaemon(true);
 		checkThread.start();

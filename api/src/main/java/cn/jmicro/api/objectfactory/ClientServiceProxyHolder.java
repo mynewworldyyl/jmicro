@@ -125,7 +125,7 @@ public class ClientServiceProxyHolder implements IServiceListener{
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> T invoke(String originMethod,final Object rpcContext, Object... args) {
+	public <T> T invoke(String originMethod, final Object rpcContext, Object... args) {
 
 		Map<String,Object> curCxt = backupAndResetContext();
 		

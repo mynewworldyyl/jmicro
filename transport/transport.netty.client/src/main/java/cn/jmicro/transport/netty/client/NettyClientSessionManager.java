@@ -146,7 +146,8 @@ public class NettyClientSessionManager implements IClientSessionManager{
 			logger.error("Session KEY is NULL when close session");
 			return;
 		}
-		logger.warn("Close sesson:"+skey);
+		
+		logger.warn("Close sesson:" + skey);
 		//阻止新的请求使用此会话
 		sessions.remove(skey);
 		if(!session.isClose() && session.waitingClose()) {

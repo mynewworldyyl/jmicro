@@ -162,6 +162,7 @@ public class ServiceManager {
 		
 		logger.info("add listener");
 		op.addChildrenListener(parent, (type,parent,child)-> {
+			child = subPath(child);
 			if(IListener.ADD == type) {
 				if(openDebug) {
 					logger.debug("Service add,path:{}",child);
@@ -515,6 +516,7 @@ public class ServiceManager {
 	}
 	
 	private String path(String path) {
+		if(path.startsWith(parent)) return path;
 		return parent+"/"+path;
 	}
 
@@ -983,6 +985,8 @@ public class ServiceManager {
 			return;
 		}
 		
+		child = subPath(child);
+		
 		ServiceItemJRso srvItem = this.path2SrvItems.get(child);
 		
 		if(srvItem == null) {
@@ -998,6 +1002,11 @@ public class ServiceManager {
 		
 	}
 	
+	private String subPath(String child) {
+		if(!child.startsWith(parent)) return child;
+		return child.substring(parent.length()+1);
+	}
+
 	private ServiceItemJRso fromJson(String data){
 		return JsonUtils.getIns().fromJson(data, ServiceItemJRso.class);
 	}

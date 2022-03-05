@@ -14,6 +14,12 @@ Object.keys(filters).forEach(key => {
     Vue.filter(key, filters[key])
 })
 
+import perm from  './components/directive/perm.js'
+import role from  './components/directive/role.js'
+
+Vue.directive('perm', perm)
+Vue.directive('role', role)
+
 /*
 import JService from './components/service/JService.vue'
 import JConfig from './components/config/JConfig.vue'

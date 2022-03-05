@@ -42,7 +42,7 @@ class ResendManager {
 	
 	private long doResendInterval = 1000;
 	
-	private SubcriberManager subManager;
+	private SubscriberManager subManager;
 	
 	private ExecutorService executor = null;
 	
@@ -226,7 +226,7 @@ class ResendManager {
 		}
 	}
 
-	public void setSubManager(SubcriberManager subManager) {
+	public void setSubManager(SubscriberManager subManager) {
 		this.subManager = subManager;
 	}
 

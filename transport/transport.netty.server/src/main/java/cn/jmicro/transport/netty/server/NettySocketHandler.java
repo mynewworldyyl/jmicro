@@ -94,7 +94,6 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	}
     	
     	//logger.info("ed0:  "+System.currentTimeMillis());
-    	
     	//byte[] arr = bb.array();
     	
     	ByteBuffer b = ByteBuffer.allocate(bb.readableBytes());
@@ -105,7 +104,6 @@ public class NettySocketHandler extends ChannelInboundHandlerAdapter {
     	NettyServerSession session = ctx.channel().attr(sessionKey).get();
     	
     	//logger.info("ed1:  "+System.currentTimeMillis());
-    	
     	//logger.info("ed2:  "+System.currentTimeMillis());
     	
     	session.receive(b);

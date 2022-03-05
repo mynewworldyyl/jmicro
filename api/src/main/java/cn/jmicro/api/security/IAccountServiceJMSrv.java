@@ -29,6 +29,29 @@ public interface IAccountServiceJMSrv {
 	
 	RespJRso<Map<Integer,String>> clientList();
 	
+	/**
+	 * 绑定手机号
+	 * @param mobile
+	 * @return
+	 */
+	IPromise<RespJRso<Boolean>>  bindMobile(String mobile,String vcode);
+	
+	/**
+	 * 绑定手机邮箱
+	 * @param mobile
+	 * @return
+	 */
+	IPromise<RespJRso<Boolean>>  bindMail(String mail,String vcode);
+	
+	/**
+	 * 实名认证
+	 * @param name
+	 * @param idNo
+	 * @param faceImage
+	 * @return
+	 */
+	IPromise<RespJRso<Boolean>>  realNameVerify(String name, String idNo,String faceImage,String vcode);
+	
 	public default String key(String subfix) {
 		return JMicroContext.CACHE_LOGIN_KEY + subfix;
 	}

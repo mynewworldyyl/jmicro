@@ -1,5 +1,7 @@
 package cn.jmicro.api.security;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +16,7 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.Md5Utils;
 import cn.jmicro.common.util.StringUtils;
@@ -29,7 +32,7 @@ public class AccountManager {
 	public static final String EmailDir = Config.getRaftBasePath(Config.AccountDir) + "/emails";
 	public static final String MobileDir = Config.getRaftBasePath(Config.AccountDir) + "/mobiles";
 	
-	private static final long expired = 10*60*1000;
+	public static final long expired = 10*60*1000;
 	
 	private static final long updateExpired = expired >> 1;
 	
@@ -111,7 +114,7 @@ public class AccountManager {
 	}
 	
 	private String key(String subfix) {
-		return JMicroContext.CACHE_LOGIN_KEY+subfix;
+		return JMicroContext.CACHE_LOGIN_KEY + subfix;
 	}
 	
 	public boolean forceAccountLogout(String actName) {
@@ -141,6 +144,25 @@ public class AccountManager {
 			return ai;
 		}
 		return null;
+	}
+	
+	public Map<String,Object> getSessionData(String loginKey) {
+		if(Utils.isEmpty(loginKey)) {
+			return null;
+		}
+		String sk = "_sess:" + loginKey;
+		if(cache.exist(sk)) {
+			return cache.get(sk);
+		}
+		return null;
+	}
+	
+	public void setSessionData(String loginKey, Map<String,Object> data) {
+		if(Utils.isEmpty(loginKey) || data == null || data.isEmpty()) {
+			return;
+		}
+		String sk = "_sess:" + loginKey;
+		cache.put(sk, data);
 	}
 	
 	public ActInfoJRso getAccount(String loginKey,boolean setContext) {

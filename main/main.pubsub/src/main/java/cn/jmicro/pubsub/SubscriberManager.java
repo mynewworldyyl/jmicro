@@ -55,9 +55,9 @@ import cn.jmicro.common.util.StringUtils;
  * @author Yulei Ye
  * @date 2020年1月16日
  */
-class SubcriberManager {
+class SubscriberManager {
 
-	private final static Logger logger = LoggerFactory.getLogger(SubcriberManager.class);
+	private final static Logger logger = LoggerFactory.getLogger(SubscriberManager.class);
 
 	private boolean openDebug = false;
 
@@ -81,7 +81,7 @@ class SubcriberManager {
 
 	private IObjectFactory of;
 
-	SubcriberManager(IObjectFactory of, boolean openDebug) {
+	SubscriberManager(IObjectFactory of, boolean openDebug) {
 		this.openDebug = openDebug;
 		this.of = of;
 		this.cl = of.get(RpcClassLoader.class);
@@ -128,6 +128,8 @@ class SubcriberManager {
 			return;
 		}
 
+		boolean doUpdate = false;
+		
 		for (ServiceMethodJRso sm : item.getMethods()) {
 			// 接收异步消息的方法也要注册
 			/*if (StringUtils.isEmpty(sm.getTopic())) {
@@ -139,15 +141,17 @@ class SubcriberManager {
 			if (callbacks.containsKey(k) || (!callbacks.containsKey(k) 
 					&& StringUtils.isNotEmpty(sm.getTopic()))) {
 				this.waitingLoadClazz.offer(new SubcribeItem(SubcribeItem.TYPE_UPDATE, sm.getTopic(), sm, null));
-
-				synchronized (loadingLock) {
-					loadingLock.notify();
-				}
-
+				doUpdate = true;
 				if (openDebug) {
 					logger.debug("Got one CB: {}", sm.getKey().fullStringKey());
 				}
-			}	
+			}
+		}
+		
+		if(doUpdate) {
+			synchronized (loadingLock) {
+				loadingLock.notify();
+			}
 		}
 	}
 

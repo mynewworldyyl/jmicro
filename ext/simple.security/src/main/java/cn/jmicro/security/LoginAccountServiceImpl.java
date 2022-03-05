@@ -103,8 +103,6 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 				return;
 			}
 		});
-		
-
 	}
 
 	@Override
@@ -223,7 +221,21 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 
 	@Override
 	public IPromise<RespJRso<ActInfoJRso>> loginByWeixin(String code, int shareUserId) {
-		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> bindMobile(String mobile, String vcode) {
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> bindMail(String mail, String vcode) {
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImage, String vcode) {
 		return null;
 	}
 	

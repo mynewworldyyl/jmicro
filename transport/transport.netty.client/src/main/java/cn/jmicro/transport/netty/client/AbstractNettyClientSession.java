@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 
+import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.net.AbstractSession;
 import cn.jmicro.api.net.ISession;
@@ -38,11 +39,11 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
-public abstract class AbstractNettySession extends AbstractSession implements IClientSession {
+public abstract class AbstractNettyClientSession extends AbstractSession implements IClientSession {
 
 	private ChannelHandlerContext ctx;
 	
-	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int connType) {
+	public AbstractNettyClientSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int connType) {
 		super(readBufferSize,heardbeatInterval,connType);
 		this.ctx = ctx;
 	}

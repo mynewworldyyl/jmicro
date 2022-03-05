@@ -29,6 +29,9 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IGatewayMessageCallbackJMSrv {
 
+	//账号消息前缀
+	public static final String TOPIC_PREFIX = "/__act/msg/";
+	
 	void onPSMessage(PSDataJRso[] item);
 	
 }

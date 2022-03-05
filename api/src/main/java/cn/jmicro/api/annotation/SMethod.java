@@ -164,18 +164,21 @@ public @interface SMethod {
 	//必须登陆才能使用
 	public boolean needLogin() default true;
 	
+	//接口调用用户类型，分为系统用户和前端登录用户
+	public int forType() default Constants.FOR_TYPE_ALL;
+	
 	//加密相关
 	public boolean downSsl() default false;
 	public boolean upSsl()  default false;
 	//0:对称加密，1：RSA 非对称加密
 	public byte encType() default 0;
-	public int forType() default Constants.FOR_TYPE_ALL;
 	
 	//事务相关
 	public byte txType() default TxConstants.TYPE_TX_NO;
 	public byte txPhase() default TxConstants.TX_2PC;
 	public byte txIsolation() default Connection.TRANSACTION_READ_COMMITTED;
 	
+	//缓存类型
 	public byte cacheType() default Constants.CACHE_TYPE_NO;
 	public int cacheExpireTime() default 60;//单位秒
 }

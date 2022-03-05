@@ -1,23 +1,21 @@
 <template>
-	<div class="DayCostList">
+	<div class="ActInterfaceList">
 		<table v-if="plist && plist.length > 0" class="configItemTalbe" width="99%">
 		    <thead>
-				<tr><td>{{"providerId"|i18n}}</td><td>{{'actId'|i18n}}</td>
-		        <td>{{'apiId'|i18n}}</td><td>{{'bedate'|i18n}}</td>
-				<td>{{'cost'|i18n}}(元)</td><td>{{'Count'|i18n}}(次)</td>
+				<tr><td>{{"Name"|i18n}}</td><td>{{'ActId'|i18n}}</td>
+		        <td>{{'Amount'|i18n}}(元)</td><td>{{'LockAmount'|i18n}}(元)</td>
+				<td>{{'Enable'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
+				<td>{{'UpdatedTime'|i18n}}</td>
 		        <td>{{"Operation"|i18n}}</td></tr>
 		    </thead>
-			<tr>
-			    <td></td><td></td>
-				 <td></td><td></td><td>{{totalCost}}</td><td>{{totalCnt}}</td>
-				 <td>{{'Total'|i18n}}</td>
-			</tr>
 		    <tr v-for="c in plist" :key="'h'+c.ccv">
-		        <td>{{c.clientId}}</td><td class="descCol">{{c.actId}}</td>
-				 <td>{{c.apiId}}</td><td>{{c.bedate}}</td><td>{{c.cost}}</td>
-				 <td>{{c.cnt}}</td>
+		         <td>{{c.name}}</td><td>{{c.actId}}</td>
+				 <td>{{c.amount}}</td><td>{{c.lockAmount}}</td><td>{{c.enable}}</td>
+				 <td>{{c.createdTime|formatDate(2)}}</td><td>{{c.updatedTime|formatDate(2)}}</td>
 		        <td>
 		           <a @click="viewParam(c)">{{'Detail'|i18n}}</a>&nbsp;
+				   <a v-if="c.enable" v-perm="1198977608" @click="changeEnable(c)">{{'Disable'|i18n}}</a>&nbsp;
+				   <a v-if="!c.enable" v-perm="1198977608" @click="changeEnable(c)">{{'Enable'|i18n}}</a>
 		        </td>
 		    </tr>
 			
@@ -41,15 +39,15 @@
                 :draggable="true" :scrollable="true" width="50" :mask-closable="true" :mask="true">
 		<table v-if="dlist && dlist.length > 0" class="configItemTalbe" width="99%">
 		    <thead>
-				<tr><td>{{"apiId"|i18n}}</td><td>{{'reqId'|i18n}}</td>
-		        <td>{{'code'|i18n}}</td><td>{{'msg'|i18n}}</td><td>{{'actId'|i18n}}</td>
-				<td>{{'price'|i18n}}</td><td>{{'createdTime'|i18n}}</td>
+				<tr><td>{{"ActId"|i18n}}</td><td>{{'OrderId'|i18n}}</td>
+		        <td>{{'Type'|i18n}}</td><td>{{'Desc'|i18n}}</td><td>{{'Type'|i18n}}</td>
+				<td>{{'Amount'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
 				</tr>
 		    </thead>
-		    <tr v-for="c in dlist" :key="'h_'+c.req.reqId">
-		        <td>{{c.req.apiId}}</td><td>{{c.req.reqId}}</td>
-				 <td>{{c.resp.code}}</td> <td class="valCol">{{c.resp.msg}}</td><td>{{c.createdBy}}</td>
-				 <td>{{c.price}}</td><td>{{c.createdTime|formatDate(2)}}</td>
+		    <tr v-for="c in dlist" :key="'h_'+c.id">
+		        <td>{{c.actId}}</td><td>{{c.orderId}}</td>
+				 <td>{{c.type}}</td> <td>{{c.desc}}</td><td>{{c.add?"收入":"支出"}}</td>
+				 <td>{{c.amount}}</td><td>{{c.createdTime|formatDate(2)}}</td>
 		    </tr>
 		</table>
 		
@@ -66,33 +64,34 @@
 	         :draggable="true" :scrollable="true" width="50">
 	    <table id="queryTable">
 	        <tr>
-				<td>startTime</td>
+				<td>{{'StartTime'|i18n}}</td>
 	            <td>
 					 <el-date-picker v-model="queryParams.ps.startTime" type="date" placeholder="选择日期"
-					       value-format="yyyyMMdd">
+					       value-format="yyyy-MM-dd">
 					    </el-date-picker>
 	             </td>
-				 <td>endTime</td>
+				 <td>{{'EndTime'|i18n}}</td>
 	            <td>
 					<el-date-picker v-model="queryParams.ps.endTime" type="date" placeholder="选择日期"
-					     value-format="yyyyMMdd">
+					     value-format="yyyy-MM-dd">
 					   </el-date-picker>
 	            </td>
 	        </tr>
 	
 	        <tr>
-	            <td>ActId</td><td> <Input  v-model="queryParams.ps.actId"/></td>
-	            <td>ClientId</td><td> <Input  v-model="queryParams.ps.clientId"/></td>
+	            <td>{{'ActId'|i18n}}</td><td> <Input  v-model="queryParams.ps.actId"/></td>
+	            <td>{{'Name'|i18n}}</td><td> <Input  v-model="queryParams.ps.name"/></td>
 	        </tr>
+			
 			<tr>
-			    <td>apiId</td><td> <Input  v-model="queryParams.ps.apiId"/></td>
-				<td>By</td><td> 
-					<el-select v-model="queryParams.ps.by" placeholder="请选择">
-				    <el-option label="按日" value="d"></el-option>
-					<el-option label="按月" value="m"></el-option>
-					<el-option label="按年" value="y"></el-option>
+				<td>{{'Enable'|i18n}}</td><td> 
+					<el-select v-model="queryParams.ps.enable" placeholder="请选择">
+				    <el-option label="全部" value=""></el-option>
+					<el-option label="启用" value="true"></el-option>
+					<el-option label="禁用" value="false"></el-option>
 				  </el-select>
 				</td>
+				 <td>{{'ApiId'|i18n}}</td><td> <Input  v-model="queryParams.ps.apiId"/></td>
 			</tr>
 			
 	        <tr>
@@ -111,7 +110,7 @@
 	const ns = defCons.ns;
 	const v = defCons.v;
 
-	const cid = 'dayCostList';
+	const cid = 'actInterfaceList';
 
 	export default {
 		name: cid,
@@ -123,7 +122,7 @@
 				p: {},
 				
 				dlist: [],
-				dqueryParams:{size:10,curPage:1,ps:{by:'d'}},
+				dqueryParams:{size:10,curPage:1,ps:{}},
 				dtotalNum:0,
 				
 				errorMsg:'',
@@ -132,7 +131,7 @@
 				totalCost:0,
 				totalCnt:0,
 				
-				queryParams:{size:10,curPage:1,ps:{by:'d'}},
+				queryParams:{size:10,curPage:1,ps:{enable:''}},
 				totalNum:0,
 				
 				defInfoDrawer: {
@@ -163,7 +162,7 @@
 				this.defInfoDrawer.drawerStatus = true;
 				
 				this.dlist = [],
-				this.dqueryParams={size:10,curPage:1,ps:c},
+				this.dqueryParams={size:10,curPage:1,ps:{actId:c.actId}},
 				this.dtotalNum=0,
 				
 				this.drefresh()
@@ -191,6 +190,18 @@
 			    this.drefresh();
 			},
 			
+			changeEnable(c){
+				this.$jr.rpc.callRpcWithParams(sn, ns, v, 'changeActEnable', [c.actId])
+				    .then((resp)=>{
+				        if(resp.code != 0){
+				           window.console.log(resp.msg);
+				        }
+						this.refresh()
+				    }).catch((err)=>{
+				    window.console.log(err);
+				});
+			},
+			
 			drefresh() {
 			    let self = this;
 			    this.isLogin = this.$jr.auth.isLogin();
@@ -198,7 +209,7 @@
 			        let params = this.dqueryParams;
 					params.ps.code = 0
 			        let self = this;
-			        this.$jr.rpc.callRpcWithParams("cn.jmicro.api.ds.IDataApiJMSrv", ns, v, 'listHistory', [params])
+			        this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listActChangeRecord', [params])
 			            .then((resp)=>{
 			                if(resp.code == 0){
 			                    this.dlist = resp.data;
@@ -225,23 +236,11 @@
 			    if(this.isLogin) {
 			        let params = this.getQueryConditions();
 			        let self = this;
-			        this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listDayCost', [params])
+			        this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listActInter', [params])
 			            .then((resp)=>{
 			                if(resp.code == 0){
 			                    this.plist = resp.data;
 			                    this.totalNum = resp.total;
-								if(this.plist && this.plist.length > 0) {
-									let ct = 0
-									let cnt = 0
-									this.plist.forEach(e => {
-										ct += e.cost
-										cnt += e.cnt
-										e.ccv = ++this.ccv
-										
-									})
-									this.totalCost = ct
-									this.totalCnt = cnt
-								}
 			                } else {
 			                    window.console.log(resp.msg);
 			                }
@@ -292,7 +291,7 @@
 
 <style>
 	
-	.DayCostList {
+	.ActInterfaceList {
 		border-top: 1px dotted lightgray;
 		margin-top: 6px;
 		padding-top: 10px;

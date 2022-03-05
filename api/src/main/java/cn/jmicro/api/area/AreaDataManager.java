@@ -15,6 +15,24 @@ public class AreaDataManager implements IAreaDataServiceJMSrv {
 
 	@Reference
 	private IAreaDataServiceJMSrv ads;
+	
+	@Override
+	public IPromise<RespJRso<AreaJRso>> getProvinceByName(String proName) {
+		check();
+		return ads.getProvinceByName(proName);
+	}
+
+	@Override
+	public IPromise<RespJRso<AreaJRso>> getCityByName(String cityName) {
+		check();
+		return ads.getCityByName(cityName);
+	}
+
+	@Override
+	public IPromise<RespJRso<List<AreaJRso>>> getAreasByName(String name) {
+		check();
+		return ads.getAreasByName(name);
+	}
 
 	@Override
 	public IPromise<RespJRso<List<AreaJRso>>> querySelective(QueryJRso qry) {

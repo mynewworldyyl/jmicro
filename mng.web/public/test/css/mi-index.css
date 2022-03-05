@@ -1,0 +1,143 @@
+	* {
+		margin: 0;
+		padding: 0;
+		font: 12px "Helvetica Neue", Helvetica, Arial, "Microsoft Yahei", "Hiragino Sans GB", "Heiti SC", "WenQuanYi Micro Hei", sans-serif;
+	}
+
+	.topmenubar-wraaper {
+		width: 100%;
+		height: 40px;
+		background-color: black;
+	}
+
+	.menubar {
+		padding-left: 10px;
+		float: left;
+	}
+
+	.menubar>div {
+		float: left;
+	}
+
+	.titleTxt a {
+		line-height: 40px;
+		height: 100%;
+		width: 50px;
+		text-decoration: none;
+		color: lightgray;
+		display: inline-block;
+	}
+
+	.topmenubar-wraaper a:hover {
+		color: white;
+	}
+
+	.divider {
+		width: 1px;
+		height: 20px;
+		margin: 10px 10px;
+		background-color: gray;
+	}
+
+	/* 下拉菜单 */
+	.menubox-wrapper {
+		position: relative;
+	}
+
+	.menu-box {
+		position: absolute;
+		top: 27px;
+		width: 100px;
+		height: 0px;
+		/* border: 1px solid #0000FF; */
+		left: -27px;
+		transition: height 1s;
+		overflow: hidden;
+	}
+
+	/* 定义一个菜单三解形 */
+	.up-image {
+		content: '';
+		display: block;
+		position: absolute;
+		top: 0px;
+		left: 40px;
+		width: 0px;
+		height: 0;
+		border-left: 10px solid transparent;
+		border-right: 10px solid transparent;
+		border-bottom: 13px solid white;
+	}
+
+	.app-menu {
+		width: 90px;
+		height: 130px;
+		/* border: 1px solid #0000FF; */
+		position: absolute;
+		top: 13px;
+		box-shadow: lightgray 0px 1px 10px 1px;
+	}
+
+	.menubox-wrapper:hover .menu-box {
+		height: 150px;
+	}
+
+	/* 购物车样式 */
+	.shopping-car {
+		width: 120px;
+		color: lightgray;
+		text-align: center;
+		line-height: 40px;
+		margin-right: 15px;
+		margin-left: 15px;
+		position: relative;
+	}
+
+	.shopping-car a {
+		color: lightgray;
+		text-decoration: none;
+	}
+
+	.shopping-car:hover,.shopping-car:hover a {
+		color: orange !important;
+		cursor: pointer;
+		background-color: white;
+	}
+
+	.login-status,.shopping-car {
+		float: right;
+	}
+
+	.login-status>div {
+		float: left;
+	}
+
+	/* 购物车商品列表框 */
+	.car-goods-list {
+		width: 300px;
+		height: 0px;
+		box-shadow: lightgray 0px 1px 10px 1px;
+		position: absolute;
+		right: 0px;
+		/* display:none; */
+		transition: height 0.3s;
+		overflow: hidden;
+	}
+
+	/* hover显示商品列表 */
+	.shopping-car:hover .car-goods-list {
+		/* display: block; */
+		height: 200px;
+	}
+
+	/* header栏 */
+	.header-wrapper {
+		height:150px;
+		width:100%;
+		background-color: #ABDCFF;
+	}
+	
+	.logo-bar {
+		width:380px;
+		height:100%;
+	}

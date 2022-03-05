@@ -72,6 +72,8 @@
 						<InterfaceParamList v-else-if="item.group == 'interfaceParamList'" :item="item"></InterfaceParamList>
                         <InterfaceUsedHistory v-else-if="item.group == 'interfaceUsedHistory'" :item="item"></InterfaceUsedHistory>
 						<DayCostList v-else-if="item.group == 'dayCostList'" :item="item"></DayCostList>
+						<FeeOrderList v-else-if="item.group == 'feeOrderList'" :item="item"></FeeOrderList>
+						<ActInterfaceList v-else-if="item.group == 'actInterfaceList'" :item="item"></ActInterfaceList>
 						
 						<JBottomBar></JBottomBar>
                     </div>
@@ -180,6 +182,8 @@
 			InterfaceParamList : () => import('./ds/InterfaceParamList.vue'),
 			InterfaceUsedHistory : () => import('./ds/InterfaceUsedHistory.vue'),
 			DayCostList : () => import('./ds/DayCostList.vue'),
+			FeeOrderList : () => import('./ds/FeeOrderList.vue'),
+			ActInterfaceList : () => import('./ds/ActInterfaceList.vue'),
         },
 
         data () {

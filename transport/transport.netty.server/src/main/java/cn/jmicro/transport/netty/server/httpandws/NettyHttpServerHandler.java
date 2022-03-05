@@ -148,8 +148,8 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     	super.handlerAdded(ctx);
-    	NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
-    			Constants.TYPE_HTTP);
+	    NettyServerSession session = new NettyServerSession(ctx,readBufferSize,heardbeatInterval,
+	    		Constants.TYPE_HTTP);
     	
     	session.setReceiver(receiver);
     	session.setDumpDownStream(false);

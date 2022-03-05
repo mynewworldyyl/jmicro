@@ -167,7 +167,7 @@
                 if(!msg || msg.length == 0) {
                     this.$Message.info("Pubsub topic is disconnected by server")
                     this.doSubscribe();
-                }else {
+                } else {
                     this.result += msg.id + ": "+ msg.data+"\n";
                 }
             },
@@ -187,7 +187,7 @@
                             console.log(succ);
                         }
                     });
-                }else {
+                } else {
                     ps.subscribe(this.subTopic,{},this.msgCallback)
                         .then((rst)=>{
                         if(rst >= 0) {

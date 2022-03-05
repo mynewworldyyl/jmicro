@@ -47,7 +47,11 @@ public abstract class AbstractSession implements ISession{
 	
 	private Set<ISessionListener> listeners = new HashSet<>();
 	
-	private Map<String,Object> params = new ConcurrentHashMap<String,Object>();
+	//JVM内部会话参数，不在不同JVM间共享
+	private Map<String,Object> lparams = new ConcurrentHashMap<String,Object>();
+	
+	//跨JVM参数，在多个JVM间共享
+	//private Map<String,Object> sparams = new ConcurrentHashMap<String,Object>();
 	
 	private int bufferSize = 4096;
 	
@@ -360,7 +364,7 @@ public abstract class AbstractSession implements ISession{
 	public void close(boolean flag) {
 		this.isClose = true;
 		this.notifySessionEvent(ISession.EVENT_TYPE_CLOSE);		
-		params.clear();
+		lparams.clear();
 		this.sessionId=-1L;
 		/*synchronized (worker) {
 			worker.notify();
@@ -369,14 +373,14 @@ public abstract class AbstractSession implements ISession{
 
 	@Override
 	public Object getParam(String key) {
-		return this.params.get(key);
+		return this.lparams.get(key);
 	}
 
 	@Override
 	public void putParam(String key, Object obj) {
-		this.params.put(key, obj);
+		this.lparams.put(key, obj);
 	}
-
+	
 	@Override
 	public boolean isClose() {
 		return this.isClose;

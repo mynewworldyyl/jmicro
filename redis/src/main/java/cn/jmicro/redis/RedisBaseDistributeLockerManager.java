@@ -25,11 +25,11 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.lock.ILocker;
 import cn.jmicro.api.cache.lock.ILockerManager;
 import cn.jmicro.api.config.Config;
-import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.params.SetParams;
 
 /**
  * 
@@ -104,7 +104,9 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 			Jedis jedis = null;
 			try {
 				jedis = pool.getResource();
-				String rst = jedis.set(resource, "dd",NX,PX,timeoutWithMillisenconds);
+				SetParams sp = new SetParams();
+				sp.nx().px(timeoutWithMillisenconds);
+				String rst = jedis.set(resource, "dd",sp);
 				long inv = timeoutWithMillisenconds;
 				while(!"OK".equals(rst)) {
 					try {
@@ -115,7 +117,9 @@ public class RedisBaseDistributeLockerManager implements ILockerManager {
 					
 					inv -= checkIntervalWithMillisenconds;
 					if(inv > 0) {
-						rst = jedis.set(resource, "dd",NX,EX,timeoutWithMillisenconds);
+						SetParams spe = new SetParams();
+						spe.nx().ex(timeoutWithMillisenconds);
+						rst = jedis.set(resource, "dd",spe);
 					 }else {
 						break;
 					}

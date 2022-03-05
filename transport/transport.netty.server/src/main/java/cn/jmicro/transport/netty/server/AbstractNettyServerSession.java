@@ -42,9 +42,9 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
-public abstract class AbstractNettySession extends AbstractSession implements IServerSession {
+public abstract class AbstractNettyServerSession extends AbstractSession implements IServerSession {
 
-	private static final Logger logger = LoggerFactory.getLogger(AbstractNettySession.class);
+	private static final Logger logger = LoggerFactory.getLogger(AbstractNettyServerSession.class);
 	
 	private ChannelHandlerContext ctx;
 	
@@ -53,7 +53,7 @@ public abstract class AbstractNettySession extends AbstractSession implements IS
 	private InetSocketAddress localAddre;
 	private InetSocketAddress remoteAddre;
 	
-	public AbstractNettySession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int type) {
+	public AbstractNettyServerSession(ChannelHandlerContext ctx,int readBufferSize,int heardbeatInterval,int type) {
 		super(readBufferSize,heardbeatInterval,type);
 		this.type = type;
 		this.ctx = ctx;

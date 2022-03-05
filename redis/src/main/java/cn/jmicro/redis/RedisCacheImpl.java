@@ -34,6 +34,7 @@ import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.cache.ICacheRefresher;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
+import cn.jmicro.api.codec.IEncoder;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -101,7 +102,7 @@ public class RedisCacheImpl implements ICache {
 	private String selfPrefix;
 	
 	public void jready() {
-		adminPrefix =Config.getAdminClientId() + ":";
+		adminPrefix = Config.getAdminClientId() + ":";
 		selfPrefix = Config.getClientId() + ":";
 	}
 	
@@ -269,6 +270,50 @@ public class RedisCacheImpl implements ICache {
 	}
 
 	@Override
+	public <T> boolean setNx(String key, T val) {
+		
+		checkPermission(key);
+		
+		if(StringUtils.isEmpty(key)) {
+			logger.error("Set key cannot be NULL");
+			return false;
+		}
+		
+		if(val == null) {
+			logger.error("Set value cannot be NULL");
+			return false;
+		}
+		
+		key = securityKey(key);
+		byte[] k = ICache.keyData(key);
+		if(k == null) {
+			return false;
+		}
+		
+		byte[] value = null;
+		if(val == null || val.toString().equals("")) {
+			value = new byte[0];
+		} else {
+			ByteBuffer bb = (ByteBuffer)codeFactory.getEncoder(Message.PROTOCOL_BIN).encode(val);
+			if(bb == null) {
+				logger.error(val.toString() + " encode error");
+				return false;
+			}
+			value = bb.array();
+		}
+		
+		Jedis jedis = null;
+		try {
+			 jedis = jeditPool.getResource();
+			 return jedis.setnx(k, value) != 0;
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+	}
+
+	@Override
 	public boolean exist(String key) {
 		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
@@ -385,6 +430,200 @@ public class RedisCacheImpl implements ICache {
 				jedis.close();
 			}
 		}
-		
 	}
+
+	
+	/*********************Map start**************************/
+	
+	@Override
+	public boolean hput(String key, Map<String, Object> hdata) {
+		checkPermission(key);
+		
+		if(StringUtils.isEmpty(key)) {
+			logger.error("hPut key cannot be NULL");
+			return false;
+		}
+		
+		if(hdata == null || hdata.isEmpty()) {
+			logger.error("hPut value cannot be NULL");
+			return false;
+		}
+		
+		key = securityKey(key);
+		byte[] k = ICache.keyData(key);
+		if(k == null) {
+			return false;
+		}
+		
+		Map<byte[],byte[]> pdata = new HashMap<>();
+		
+		@SuppressWarnings("unchecked")
+		IEncoder<ByteBuffer> enc = codeFactory.getEncoder(Message.PROTOCOL_BIN);
+		for(Map.Entry<String, Object> e : hdata.entrySet()) {
+			ByteBuffer bb = enc.encode(e.getValue());
+			if(bb == null) {
+				throw new CommonException("Encode error: "+e.getKey()+" ,data: " + e.getValue().getClass().getName());
+			}
+			byte[] value = bb.array();
+			byte[] kd = ICache.keyData(key);
+			pdata.put(kd, value);
+		}
+		
+		Jedis jedis = null;
+		try {
+			 /*if(logger.isInfoEnabled()) {
+				 logger.info("Put KEY: {}, LEN: {}",key,value.length);
+			 }*/
+			 jedis = jeditPool.getResource();
+			 return jedis.hset(k, pdata) == 1;
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+	}
+
+	@Override
+	public boolean hdel(String key, String fname) {
+		checkPermission(key);
+		if(StringUtils.isEmpty(key)) {
+			logger.error("Del key cannot be NULL");
+			return false;
+		}
+		/*byte[] k = ICache.keyData();
+		if( k == null) {
+			return false;
+		}*/
+		Jedis jedis = null;
+		try {
+			jedis = jeditPool.getResource();
+			Long rst = jedis.hdel(selfPrefix + key,fname);
+			this.notExistData.remove(key);
+			return rst == 1;
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+	
+	}
+
+	@Override
+	public <T> T hget(String key, String fname) {
+
+		checkPermission(key);
+		if(StringUtils.isEmpty(key)) {
+			logger.error("Get key cannot be NULL");
+			return null;
+		}
+		
+		key = securityKey(key);
+		
+		byte[] k = ICache.keyData(key);
+		byte[] fk = ICache.keyData(fname);
+		
+		Jedis jedis = null;
+		try {
+			 jedis = jeditPool.getResource();
+			 byte[] val = jedis.hget(k,fk);
+			 
+			/* if(logger.isInfoEnabled()) {
+				 logger.info("Get KEY: {}, LEN: {}",key,(val == null?"Null":val.length));
+			 }*/
+			 
+			if(val != null && val.length > 0) {
+				//命中缓存,理想情况下,大部份缓存都走到这里返回
+				return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
+			} else {
+				//上次从源读取过相同数据,但是数据不存在,则判断和上次更新时间是否超过1秒,是则更新缓存，否则直接返回空
+				if(notExistData.containsKey(key)) {
+					long interval = TimeUtils.getCurTime() - notExistData.get(key);
+					if(interval < 1000) {
+						//间隔时间太小,直接返回空,意味数据最大延迟1000毫秒
+						return null;
+					}
+					notExistData.remove(key);
+				}
+				return null;
+			}
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+	
+	}
+
+	@Override
+	public boolean hexist(String key, String fname) {
+		checkPermission(key);
+		if(StringUtils.isEmpty(key)) {
+			logger.error("Key cannot be NULL");
+			return false;
+		}
+		
+		byte[] k = ICache.keyData(this.securityKey(key));
+		if( k == null) {
+			return false;
+		}
+		
+		byte[] fk = ICache.keyData(this.securityKey(key));
+		
+		Jedis jedis = null;
+		try {
+			 jedis = jeditPool.getResource();
+			 return jedis.hexists(k,fk);
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+	
+	}
+
+	@Override
+	public <T> boolean hput(String key, String fname, T val) {
+
+		checkPermission(key);
+		
+		if(StringUtils.isEmpty(key)) {
+			logger.error("Put key cannot be NULL");
+			return false;
+		}
+		
+		if(val == null) {
+			logger.error("Put value cannot be NULL");
+			return false;
+		}
+		
+		key = securityKey(key);
+		byte[] k = ICache.keyData(key);
+		if(k == null) {
+			return false;
+		}
+		
+		ByteBuffer bb = (ByteBuffer)codeFactory.getEncoder(Message.PROTOCOL_BIN).encode(val);
+		if(bb == null) {
+			logger.error(val.toString() + " encode error");
+			return false;
+		}
+		byte[] value = bb.array();
+		byte[] fk = ICache.keyData(fname);
+		
+		Jedis jedis = null;
+		try {
+			 /*if(logger.isInfoEnabled()) {
+				 logger.info("Put KEY: {}, LEN: {}",key,value.length);
+			 }*/
+			 jedis = jeditPool.getResource();
+			 return jedis.hset(k,fk,value) == 1l;
+		} finally {
+			if(jedis != null) {
+				jedis.close();
+			}
+		}
+	
+	}
+	
+	/**********************Map end*************************/
 }

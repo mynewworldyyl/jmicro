@@ -23,6 +23,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.JMLogItemJRso;
@@ -37,6 +38,7 @@ import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
@@ -55,6 +57,7 @@ public class JMicroContext  {
 	
 	//value should be true or false, for provider or consumer side
 	public static final String CALL_SIDE_PROVIDER = "_callSideProvider";
+	public static final String SESSION_DATA_PREFIX = "__SESS_D:";
 	
 	public static final String LOCAL_HOST = "_host";
 	public static final String LOCAL_PORT = "_port";
@@ -62,6 +65,8 @@ public class JMicroContext  {
 	public static final String REMOTE_HOST = "_remoteHost";
 	public static final String REMOTE_PORT = "_remotePort";
 	public static final String REMOTE_INS_ID = "_remoteInsId";
+	
+	public static final String ORIGIN_MSG = "_originMsg";
 	
 	public static final String LOGIN_ACT = "_loginAccount";
 	public static final String LOGIN_ACT_SYS = "_loginAccountSys";
@@ -99,6 +104,11 @@ public class JMicroContext  {
 	
 	public static final String SESSION_KEY="_sessionKey";
 	
+	public static final String SESSION_DATA = "_sessionData";
+	
+	public static final String LOGIN_TOKEN = "_LOGIN_TOKEN";
+	public static final String SLOGIN_TOKEN = "_SLOGIN_TOKEN";
+	
 	private static final ThreadLocal<JMicroContext> cxt = new ThreadLocal<JMicroContext>();
 	
 	//private final Stack<Map<String,Object>> ctxes = new Stack<>();
@@ -107,6 +117,8 @@ public class JMicroContext  {
 	
 	private static StatisMonitorClient mo;
 	
+	private static ICache ch;
+	
 	private static boolean isReady = false;
 	
 	//当前上下文
@@ -114,13 +126,14 @@ public class JMicroContext  {
 	
 	private JMicroContext() {}
 	
-	public static void jready0(LogMonitorClient loo,StatisMonitorClient moo) {
+	public static void jready0(LogMonitorClient loo,StatisMonitorClient moo,ICache cache) {
 		if(isReady) {
 			return;
 		}
 		isReady = true;
 		lo = loo;
 		mo = moo;
+		ch = cache;
 	}
 	
 	public JMLogItemJRso getMRpcLogItem() {
@@ -238,39 +251,50 @@ public class JMicroContext  {
 	
 	public static void configProvider(ISession s,Message msg,ServiceMethodJRso sm) {
 		
-		JMicroContext context = get();
+		JMicroContext cx = get();
 		
-		context.curCxt.clear();
+		cx.curCxt.clear();
 		
 		setCallSide(true);
 		
-		context.setParam(JMicroContext.SESSION_KEY, s);
+		cx.setParam(JMicroContext.SESSION_KEY, s);
 		
-		context.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
-		context.setParam(JMicroContext.REMOTE_PORT, s.remotePort());
-		context.setParam(JMicroContext.REMOTE_INS_ID, msg.getInsId());
+		cx.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
+		cx.setParam(JMicroContext.REMOTE_PORT, s.remotePort());
+		cx.setParam(JMicroContext.REMOTE_INS_ID, msg.getInsId());
+		cx.setParam(JMicroContext.ORIGIN_MSG, msg);
 		
-		context.setParam(JMicroContext.LOCAL_HOST, s.localHost());
-		context.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
+		cx.setParam(JMicroContext.LOCAL_HOST, s.localHost());
+		cx.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
+		
+		String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
+		if(!Utils.isEmpty(lk)) {
+			cx.setParam(JMicroContext.LOGIN_TOKEN, lk);
+		}
+		
+		String slk = msg.getExtra(Message.EXTRA_KEY_LOGIN_SYS);
+		if(!Utils.isEmpty(slk)) {
+			cx.setParam(JMicroContext.SLOGIN_TOKEN, slk);
+		}
 		
 		Integer cid = msg.getExtra(Message.EXTRA_KEY_CLIENT_ID);
 		if(cid != null) {
-			context.setParam(Message.EXTRA_KEY_CLIENT_ID+"", cid);
+			cx.setParam(Message.EXTRA_KEY_CLIENT_ID+"", cid);
 		} else {
 			ActInfoJRso sai = JMicroContext.get().getSysAccount();
 			if(sai != null) {
-				context.setParam(Message.EXTRA_KEY_CLIENT_ID+"", sai.getClientId());
+				cx.setParam(Message.EXTRA_KEY_CLIENT_ID+"", sai.getClientId());
 			}
 		}
 		
 		byte logLevel =  msg.getLogLevel();
 		
 		if(logLevel != MC.LOG_NO) {
-			context.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
-			context.setParam(Constants.NEW_LINKID, false);
+			cx.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
+			cx.setParam(Constants.NEW_LINKID, false);
 		}
 		
-		context.setByte(JMicroContext.SM_LOG_LEVEL,logLevel);
+		cx.setByte(JMicroContext.SM_LOG_LEVEL,logLevel);
 		
 		boolean iMonitorable = false;
 		boolean isDebug = false;
@@ -287,17 +311,17 @@ public class JMicroContext  {
 		
 		//context.isLoggable = msg.isLoggable();
 		//debug mode 下才有效
-		context.setParam(IS_DEBUG, isDebug);
+		cx.setParam(IS_DEBUG, isDebug);
 		if(isDebug) {
 			//long clientTime = msg.getTime();
 			StringBuilder sb = new StringBuilder();
 			//long curTime = TimeUtils.getCurTime();
 			//context.setParam(CLIENT_UP_TIME, msg.getTime());
 			
-			context.setParam(DEBUG_LOG, sb);
+			cx.setParam(DEBUG_LOG, sb);
 		}
 		
-		context.setParam(IS_MONITORENABLE, iMonitorable);
+		cx.setParam(IS_MONITORENABLE, iMonitorable);
 		if(iMonitorable) {
 			initMrpcStatisItem();
 		}
@@ -306,6 +330,8 @@ public class JMicroContext  {
 			initMrpcLogItem(true);
 		}
 	}
+	
+	
 	
 	private static void initMrpcStatisItem() {
 		JMicroContext context = cxt.get();
@@ -354,6 +380,28 @@ public class JMicroContext  {
 		item.setReqParentId(context.getLong(REQ_PARENT_ID, -1L));
 	}
 	
+	public static boolean isMsg(int flag, int mask) {
+		Message msg = getMsg();
+		if(msg == null) return false;
+		return (msg.getExtrFlag() & mask) != 0;
+	}
+	
+	public static boolean isMsg(short flag, short mask) {
+		Message msg = getMsg();
+		if(msg == null) return false;
+		return (msg.getFlag() & mask) != 0;
+	}
+	
+	public static boolean isFromApiGageway() {
+		Message msg = getMsg();
+		if(msg == null) return false;
+		return msg.isFromApiGateway();
+	}
+	
+	public static Message getMsg() {
+		return cxt.get().getParam(ORIGIN_MSG, null);
+	}
+	
 	public static boolean enableOrDisable(int siCfg,int smCfg) {
 		return smCfg == 1 ? true: (smCfg == 0 ? false:(siCfg == 1 ? true:false));
 	}
@@ -362,6 +410,17 @@ public class JMicroContext  {
 		JMicroContext context = cxt.get();
 		//context.curCxt.clear();
 		setCallSide(false);
+		
+		ActInfoJRso ai = context.getAccount();
+		if(ai != null) {
+			context.setParam(JMicroContext.LOGIN_TOKEN, ai.getLoginKey());
+		}
+		
+		ActInfoJRso sai = context.getSysAccount();
+		if(sai != null) {
+			context.setParam(JMicroContext.SLOGIN_TOKEN, sai.getLoginKey());
+		}
+		
 		//debug mode 下才有效
 		boolean isDebug = enableOrDisable(si.getDebugMode(),sm.getDebugMode());
 		context.setParam(IS_DEBUG, isDebug);
@@ -387,7 +446,7 @@ public class JMicroContext  {
 				mi.setImplCls(si.getImpl());
 				mi.setSmKey(sm.getKey());
 				mi.setSysClientId(Config.getClientId());
-				ActInfoJRso ai = context.getAccount();
+				//ActInfoJRso ai = context.getAccount();
 				if(ai != null) {
 					mi.setActName(ai.getActName());
 					mi.setActClientId(ai.getClientId());
@@ -548,7 +607,6 @@ public class JMicroContext  {
 				LG.log(MC.LOG_INFO, "NL", log.toString());
 			}
 		}
-		
 	}
 	
 
@@ -576,6 +634,87 @@ public class JMicroContext  {
 		if(v == null){
 			return defautl;
 		}
+		return v;
+	}
+	
+	/**
+	 * 客户端用户登录账号
+	 * @param key
+	 * @param defautl
+	 * @return
+	 */
+	public <T> boolean setSessionParam(String key,T val){
+		return setSessionParam0(this.getAccount(),key,val);
+		
+	}
+	
+	/**
+	 * 系统登录账号
+	 * @param key
+	 * @param defautl
+	 * @return
+	 */
+	public <T> boolean setSSessionParam(String key,T val){
+		return setSessionParam0(this.getSysAccount(),key,val);
+	}
+	
+	private <T> boolean setSessionParam0(ActInfoJRso ai, String fname, T val) {
+		if(ai == null) {
+			return false;
+		}
+		
+		String k = sessionDataKey(ai.getActName());
+		boolean r = ch.hput(k, fname, val);
+		if(r) {
+			ch.expire(k, AccountManager.expired);
+		}
+		return r;
+	}
+	
+	public boolean removeSessionParam(String fname) {
+		return removeSessionParam0(this.getAccount(),fname);
+	}
+	
+	public boolean removeSSessionParam(String fname) {
+		return removeSessionParam0(this.getSysAccount(),fname);
+	}
+	
+	private boolean removeSessionParam0(ActInfoJRso ai, String fname) {
+		if(ai == null) {
+			return false;
+		}
+		String k = sessionDataKey(ai.getActName());
+		return ch.hdel(k, fname);
+	}
+	
+	private String sessionDataKey(String token) {
+		return SESSION_DATA_PREFIX + token;
+	}
+
+	/**
+	 * 客户端用户登录账号
+	 * @param key
+	 * @param defautl
+	 * @return
+	 */
+	public <T> T getSessionParam(String fname,T defautl){
+		return getSessionParam0(this.getAccount(),fname,defautl);
+	}
+	
+	/**
+	 * 系统登录账号
+	 * @param key
+	 * @param defautl
+	 * @return
+	 */
+	public <T> T getSSessionParam(String fname,T defautl){
+		return getSessionParam0(this.getSysAccount(),fname,defautl);
+	}
+	
+	private <T> T getSessionParam0(ActInfoJRso ai,String fname,T defautl){
+		if(ai == null) return null;
+		T v = ch.hget(sessionDataKey(ai.getActName()), fname);
+		if(v == null) return defautl;
 		return v;
 	}
 	

@@ -69,6 +69,8 @@
 				   	<Menu-item name="__interfaceParamList"><Icon type="ios-alert" />{{"InterfaceParamList"|i18n}}</Menu-item>
 				   	<Menu-item name="__interfaceUsedHistory"><Icon type="ios-alert" />{{"InterfaceUsedHistory"|i18n}}</Menu-item>
 					<Menu-item name="__dayCostList"><Icon type="ios-alert" />{{"DayCostList"|i18n}}</Menu-item>
+					<Menu-item name="__feeOrderList"><Icon type="ios-alert" />{{"FeeOrderList"|i18n}}</Menu-item>
+					<Menu-item name="__actInterfaceList"><Icon type="ios-alert" />{{"AccountList"|i18n}}</Menu-item>
 				  </Menu-group>
 				  
               </Submenu>

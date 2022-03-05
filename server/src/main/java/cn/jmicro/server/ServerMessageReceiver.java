@@ -286,7 +286,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	}
 	
 	//@Suspendable
-	public void doReceive(JMicroTask task){
+	private void doReceive(JMicroTask task){
 		Message msg = task.msg;
 		IServerSession s = task.s;
 		JMicroContext.configProvider(s, msg, task.sm);
@@ -321,8 +321,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 			
 			 if(msg.isOuterMessage() && msg.getType() != Constants.MSG_TYPE_PUBSUB) {
+				 //非订阅消息都经由网关转发到后台系统
 				gatewayHandler.onMessage(s, msg);
 			 } else {
+				 //全部后台系统或API网关内部服务走此代码
 				IMessageHandler h = handlers.get(msg.getType());
 				if(h == null) {
 					String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();

@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.gateway.ApiRequestJRso;
@@ -284,7 +285,8 @@ public class LG {
 		
 		m = of.get(LogMonitorClient.class);
 		
-		JMicroContext.jready0(of.get(LogMonitorClient.class), of.get(StatisMonitorClient.class));
+		JMicroContext.jready0(of.get(LogMonitorClient.class), of.get(StatisMonitorClient.class)
+				,of.get(ICache.class));
 		
 		//isMs = m != null;
 		pi = of.get(ProcessInfoJRso.class);

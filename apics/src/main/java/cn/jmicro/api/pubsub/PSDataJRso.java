@@ -34,6 +34,8 @@ public class PSDataJRso implements Serializable{
 	
 	private static final long serialVersionUID = 389875668374730999L;
 	
+	public static final String MSG_TYPE = "__msgType";
+	
 	public static final String SRC_PSDATA_ID = "_spid_";
 	
 	public static final byte FLAG_DEFALUT = 0;

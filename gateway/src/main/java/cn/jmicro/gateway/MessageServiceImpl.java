@@ -115,7 +115,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		}
 	};
 	
-	private int subscribe(ISession session, String topic,Map<String, Object> ctx,Message msg) {
+	private int subscribe(ISession session, String topic, Map<String, Object> ctx,Message msg) {
 		if(StringUtils.isEmpty(topic)) {
 			logger.error("Topic cannot be NULL");
 			return -1;
@@ -127,9 +127,11 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		
 		Set<Registion> sess = this.topic2Sessions.get(topic);
 		if(sess == null) {
-			sess = new HashSet<Registion>();
 			synchronized(topic2Sessions) {
-				this.topic2Sessions.put(topic, sess);
+				sess = this.topic2Sessions.get(topic);
+				if(sess == null) {
+					this.topic2Sessions.put(topic, sess = new HashSet<Registion>());
+				}
 			}
 		}
 		
@@ -146,7 +148,6 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 			if(sit == null) continue;
 			ServiceMethodJRso sm = sit.getMethod("onPSMessage", new Class[] {new PSDataJRso[0].getClass()});
 			if(sm != null) {
-				
 				flag = true;
 				if(StringUtils.isNotEmpty(sm.getTopic())) {
 					String[] ts = sm.getTopic().split(Constants.TOPIC_SEPERATOR);
@@ -288,7 +289,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 	}
 
 	@Override
-	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true)
+	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true,needLogin=false)
 	public void onPSMessage(PSDataJRso[] items) {
 		if(items == null || items.length == 0) {
 			return;
@@ -413,6 +414,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		
 		int opCode = new Double(Double.parseDouble(op.toString())).intValue();
 		if(opCode == 1) {
+			//订阅消息
 			String topic = (String)params.get("topic");
 			if(Utils.isEmpty(topic)) {
 				responseError(session,msg,RespJRso.SE_INVALID_TOPIC,"Topic is null");
@@ -422,12 +424,13 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 			int subId = this.subscribe(session, topic, params,msg);
 			msg.setPayload(subId);
 		} else if(opCode == 2) {
-			String subId = (String)params.get("subId");
+			//取消订阅消息
+			String subId = params.get("subId").toString();
 			if(Utils.isEmpty(subId)) {
 				responseError(session,msg,RespJRso.SE_INVALID_SUB_ID,"Invalid subscribe id");
 				return true;
 			}
-			int sid = Integer.parseInt(subId);
+			int sid = new Double(Double.parseDouble(subId)).intValue();
 			boolean suc = this.unsubscribe(sid);
 			msg.setPayload(suc);
 		}

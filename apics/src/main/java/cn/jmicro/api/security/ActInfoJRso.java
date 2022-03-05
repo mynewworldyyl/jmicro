@@ -50,6 +50,18 @@ public class ActInfoJRso {
 	private String email;
 	private String mobile;
 	
+	//实名
+	private String realname;
+	
+	//身份证号
+	private String idNo;
+	
+	//账号分数
+	private int levelScore;
+	
+	//账号等级名称
+	private String levelName;
+	
 	private String token;
 	private byte tokenType;
 	
@@ -85,6 +97,8 @@ public class ActInfoJRso {
 	
 	private Set<Integer> clientIds = new HashSet<>();
 	
+	private Set<String> tags = new HashSet<>();
+	
 	public ActInfoJRso() {};
 	
 	public ActInfoJRso(String actName,String pwd,int id) {
@@ -119,6 +133,46 @@ public class ActInfoJRso {
 	
 	public int getShareUserId() {
 		return shareUserId;
+	}
+
+	public Set<String> getTags() {
+		return tags;
+	}
+
+	public void setTags(Set<String> tags) {
+		this.tags = tags;
+	}
+
+	public String getRealname() {
+		return realname;
+	}
+
+	public void setRealname(String realname) {
+		this.realname = realname;
+	}
+
+	public String getIdNo() {
+		return idNo;
+	}
+
+	public void setIdNo(String idNo) {
+		this.idNo = idNo;
+	}
+
+	public int getLevelScore() {
+		return levelScore;
+	}
+
+	public void setLevelScore(int levelScore) {
+		this.levelScore = levelScore;
+	}
+
+	public String getLevelName() {
+		return levelName;
+	}
+
+	public void setLevelName(String levelName) {
+		this.levelName = levelName;
 	}
 
 	public String getSessionKey() {
@@ -431,4 +485,7 @@ public class ActInfoJRso {
 		this.gender = gender;
 	}
 
+	public static enum Tag {
+		Mobile,Email,RealName
+	}
 }

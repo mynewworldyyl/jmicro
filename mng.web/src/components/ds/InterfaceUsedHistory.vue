@@ -192,8 +192,7 @@
 		    let self = this;
 		    this.$bus.$emit("editorOpen",
 		        {"editorId":cid, "menus":[
-		            {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}
-					]
+		            {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
 		        });
 		
 		    let ec = function() {

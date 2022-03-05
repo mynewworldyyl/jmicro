@@ -27,7 +27,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @author Yulei Ye
  * @date 2018年10月21日-下午9:15:12
  */
-public class NettyServerSession extends AbstractNettySession implements IServerSession{
+public class NettyServerSession extends AbstractNettyServerSession implements IServerSession{
 
 	static final Logger LOG = LoggerFactory.getLogger(NettyServerSession.class);
 	
