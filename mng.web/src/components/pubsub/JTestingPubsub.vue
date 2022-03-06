@@ -18,8 +18,15 @@
 
             <div>
                 <label for="Content">{{'SendContent'|i18n}}</label>
-                <Input id="Content" v-model="content" placeholder=""/>
+                <!-- <Input id="Content" v-model="content" placeholder=""/>-->
+				<Input id="Content"  class='textarea' type="textarea" v-model="content"/>
             </div>
+			
+			<div>
+			    <label for="cxt">{{'Context'|i18n}}</label>
+			    <!-- <Input id="Content" v-model="content" placeholder=""/>-->
+				<Input id="cxt"  class='textarea' type="textarea" v-model="cxt"/>
+			</div>
 
             <br/>
 
@@ -28,7 +35,7 @@
                 <Input id="SendResultTopic" v-model="sendResultTopic"/>
             </div>
 
-            <div v-if="needSendResult">
+            <div>
                 <label for="sendResultBox">{{'SendResult'|i18n}}</label>&nbsp;&nbsp;&nbsp;
                 <Input id="sendResultBox"  class='textarea' type="textarea" v-model="sendResult"/>
             </div>
@@ -64,19 +71,19 @@
 
     export default {
         name: 'JTestingPubsub',
-        components:{
-
-        },
+        components:{},
 
         data () {
             return {
                 isLogin:false,
-                sendTopic:'/jmicro/test/topic01',
-                subTopic:'/jmicro/test/topic01',
-                content:'test content',
-                result:'',
-                msg:'',
-                subState:false,
+                //sendTopic:'/jmicro/test/topic01',
+				sendTopic : "/__act/msg/202",
+                subTopic : '/jmicro/test/topic01',
+                content : this.$jr.lc.get('psContent'),
+				cxt : this.$jr.lc.get('psCxt'),
+                result : '',
+                msg : '',
+                subState : false,
 
                 needSendResult:false,
                 sendResult:'',
@@ -154,13 +161,22 @@
                         cb = this.sendResultTopic;
                     }
                 }
-
-                ps.publishString(this.sendTopic,this.content,true,false,cb,{})
-                    .then(rst=>{
-                        console.log(rst);
-                    }).catch(err=>{
-                       console.log(err)
+				
+				let c = {}
+				if(this.cxt && this.cxt.length > 0) {
+					c = JSON.parse(this.cxt)
+					this.$jr.lc.set("psCxt",this.cxt)
+				}
+				this.$jr.lc.set("psContent",this.content)
+				
+                ps.publishString(this.sendTopic,this.content,true,false,cb,c)
+				.then(rst=>{
+					console.log(rst);
+					this.sendResult += JSON.stringify(rst) + "\n";
+				}).catch(err=>{
+				   console.log(err)
                 });
+				
             },
 
             msgCallback(msg) {
@@ -203,7 +219,7 @@
         mounted () {
             let self = this;
             self.isLogin = this.$jr.auth.isLogin();
-            this.$jr.auth.addActListener(cid,()=>{
+            this.$jr.auth.addActListener(()=>{
                 self.isLogin = this.$jr.auth.isLogin();
             });
 
@@ -223,8 +239,8 @@
 
 <style>
     .JTestingPubsub{
+		display: flex;
         margin-bottom: 20px;
-        height:90%;
     }
 
     .publishCon, .subscribeCon{
@@ -234,16 +250,14 @@
     }
 
     .publishCon{
-        float:left;
-
+		
     }
     .subscribeCon{
-        float:right;
-        height: 90%;
+		
     }
 
     .textarea{
-        height: 100%;
+        height: 200px;
     }
 
     #sendResultBox{

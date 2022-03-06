@@ -34,7 +34,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		 List<Field> fields = new ArrayList<>();
-		
+		 
 		 Class<?> beanClass = AopUtils.getTargetClass(bean);
 		 
 		 Utils.getIns().getFields(fields, beanClass);
@@ -63,11 +63,11 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 		 for(Method m : methods) {
 			 if(m.isAnnotationPresent(JMethod.class)) {
 				 JMethod ajm = m.getAnnotation(JMethod.class);
-				 if(Constants.JMICRO_READY.equals(ajm.value())) {
+				 if(Constants.JMICRO_READY_METHOD_NAME.equals(ajm.value())) {
 					 sm = m;
 					 break;
 				 }
-			 }else if(Constants.JMICRO_READY.equals(m.getName())) {
+			 }else if(Constants.JMICRO_READY_METHOD_NAME.equals(m.getName())) {
 				 sm = m;
 				 break;
 			 }

@@ -205,7 +205,7 @@
         mounted () {
             let self = this;
             this.act = this.$jr.auth.actInfo;
-            this.$jr.auth.addActListener(cid,self.doQuery);
+            this.$jr.auth.addActListener(self.doQuery);
             let ec = function() {
                 this.$jr.auth.removeActListener(cid);
                 this.$off('editorClosed',ec);

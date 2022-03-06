@@ -174,7 +174,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            this.$jr.auth.addActListener(this.item.id,this.refresh);
+            this.$jr.auth.addActListener(this.refresh);
             this.refresh();
 
             let menus = [{name:"Refresh",label:"Refresh",icon:"ios-cog",call:self.refresh},

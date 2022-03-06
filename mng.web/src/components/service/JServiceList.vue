@@ -79,7 +79,7 @@
 
         mounted(){
             let self = this;
-            this.$jr.auth.addActListener(this.slId,()=>{
+            this.$jr.auth.addActListener(()=>{
                 self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.loadServices();

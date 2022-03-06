@@ -262,7 +262,7 @@ export default {
 
         this.isLogin = this.$jr.auth.isLogin();
 
-        this.$jr.auth.addActListener(cid,()=>{
+        this.$jr.auth.addActListener(()=>{
             self.isLogin = this.$jr.auth.isLogin();
         });
 

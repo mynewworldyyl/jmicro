@@ -25,7 +25,7 @@ public interface Constants {
 	
 	public static final String JMICRO_READY_METHOD_NAME = "jready";
 	
-	public static final String JMICRO_READY = "jmicroReady";
+	//public static final String JMICRO_READY = "jmicroReady";
 	
 	public static final String CORE_CLASS="cn.jmicro.api";
 	public static final String INVALID_LOG_DESC = "nl";

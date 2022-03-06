@@ -230,7 +230,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             //has admin permission, only control the show of the button
-            this.$jr.auth.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(this.refresh);
             let self = this;
             this.$bus.$emit("editorOpen",
                 {"editorId":'process',

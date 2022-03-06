@@ -186,7 +186,7 @@
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
-            this.$jr.auth.addActListener(cid,self.refresh);
+            this.$jr.auth.addActListener(self.refresh);
             let ec = function() {
                 this.$jr.auth.removeActListener(cid);
                 this.$off('editorClosed',ec);

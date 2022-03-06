@@ -162,7 +162,7 @@
         mounted () {
             let self = this;
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            this.$jr.auth.addActListener(this.item.id,()=>{
+            this.$jr.auth.addActListener(()=>{
                 self.refresh();
             });
             this.refresh();

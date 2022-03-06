@@ -148,7 +148,7 @@ export default {
 			this.doLoginOrLogout()
 		}
 		
-        this.$jr.auth.addActListener(cid,(type,ai)=>{
+        this.$jr.auth.addActListener((type,ai)=>{
             if(type == Constants.LOGIN) {
                 self.actInfo = ai;
                 self.isLogin = true;

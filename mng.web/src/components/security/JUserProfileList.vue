@@ -41,7 +41,7 @@
 
         mounted(){
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            this.$jr.auth.addActListener(cid,this.accountListener);
+            this.$jr.auth.addActListener(this.accountListener);
             this.$bus.$on('tabItemRemove',this.editorRemove);
         },
 

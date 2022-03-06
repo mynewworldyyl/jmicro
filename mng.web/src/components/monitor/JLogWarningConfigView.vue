@@ -258,7 +258,7 @@
 
         mounted () {
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
-            this.$jr.auth.addActListener(cid,this.refresh);
+            this.$jr.auth.addActListener(this.refresh);
             let self = this;
             this.$bus.$emit("editorOpen",
                 {"editorId":cid,

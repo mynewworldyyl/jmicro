@@ -324,7 +324,7 @@
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             let self = this;
             this.$bus.$on("editTopic",this.editTopic);
-            this.$jr.auth.addActListener(cid,self.doQuery);
+            this.$jr.auth.addActListener(self.doQuery);
             self.doQuery();
 
             let ec = function() {

@@ -59,7 +59,7 @@
 
             let self = this;
             self.isLogin = this.$jr.auth.isLogin();
-            this.$jr.auth.addActListener(cid,()=>{
+            this.$jr.auth.addActListener(()=>{
                 self.isLogin = this.$jr.auth.isLogin();
                 if( self.isLogin) {
                     self.refresh();

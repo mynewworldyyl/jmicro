@@ -351,7 +351,7 @@
             self.refresh();
             self.getJarFiles();
 
-            this.$jr.auth.addActListener(cid,self.refresh);
+            this.$jr.auth.addActListener(self.refresh);
             this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"ADD",label:"Add",icon:"ios-cog",call:self.addDeploy},

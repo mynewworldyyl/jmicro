@@ -839,7 +839,7 @@
                 menus.push(clearDbFileMenu);
             }
 
-            this.$jr.auth.addActListener(cid,function(type,ai){
+            this.$jr.auth.addActListener(function(type,ai){
                 self.refresh();
                 if(type == Constants.LOGOUT) {
                     if(menus.length == 4){

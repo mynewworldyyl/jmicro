@@ -71,7 +71,7 @@ public class TimerTicker {
 		final Holder<Integer> checkCnt = new Holder<>(0);
 		TimerTicker.getBaseTimer().addListener(key, attachement, (key0,att0)->{
 			int v = checkCnt.get();
-			if( (++v% fact) == 0) {
+			if( (++v % fact) == 0) {
 				v = 0;
 				act.act(key0, att0);
 			}

@@ -188,7 +188,7 @@
 
         mounted () {
             let self = this;
-            this.$jr.auth.addActListener(cid,self.doQuery);
+            this.$jr.auth.addActListener(self.doQuery);
             self.doQuery();
             let ec = function() {
                 this.$jr.auth.removeActListener(cid);

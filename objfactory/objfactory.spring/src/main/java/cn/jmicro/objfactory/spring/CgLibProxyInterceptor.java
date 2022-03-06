@@ -42,7 +42,7 @@ public class CgLibProxyInterceptor implements MethodInterceptor {
 	@Override
 	public Object intercept(Object proxy, Method m, Object[] args, MethodProxy mp) throws Throwable {
 		Class<?>[] types = m.getParameterTypes();
-		logger.info("actInfo is null: {} ",JMicroContext.get().getAccount()==null);
+		//logger.info("actInfo is null: {} ",JMicroContext.get().getAccount()==null);
 		
 		//Object[] giveArgs = new Object[types.length];
 		
