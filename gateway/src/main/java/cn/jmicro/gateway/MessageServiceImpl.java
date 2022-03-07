@@ -323,6 +323,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 				
 				for(Registion r : rs) {
 					if(i.getSrcClientId() > 0 && r.clientId != i.getSrcClientId()) {
+						logger.warn("Source clientId:" + i.getSrcClientId()+", target clientId:" + r.clientId+", topic: "+ i.getTopic());
 						continue;
 					}
 					

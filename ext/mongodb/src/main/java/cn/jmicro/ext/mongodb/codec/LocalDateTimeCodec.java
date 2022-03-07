@@ -16,6 +16,7 @@ import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecConfigurationException;
 
 import cn.jmicro.api.utils.DateUtils;
+import cn.jmicro.common.Utils;
 
 public class LocalDateTimeCodec implements Codec<LocalDateTime>{
 
@@ -97,7 +98,9 @@ public class LocalDateTimeCodec implements Codec<LocalDateTime>{
 				d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DD_HHMMSSSSST);
 			} else if(str.contains("T")) {
 				d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DDTHHMMSSSSST);
-			} else {
+			} else if(Utils.isEmpty(str)) {
+				d = new Date(0);
+			}else {
 				d = DateUtils.parseDate(str, DateUtils.PATTERN_YYYY_MM_DD_HHMMSS);
 			}
 			return Instant.ofEpochMilli(d.getTime()).atZone(ZoneOffset.UTC).toLocalDateTime();
