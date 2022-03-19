@@ -18,7 +18,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.IRegistry;
@@ -259,7 +259,7 @@ public class TransactionResourceServiceIml implements ITransactionResourceJMSrv,
 	}
 	
 	@Override
-	public void waitTxFinish(long txid,PromiseImpl<Object> asyP) {
+	public void waitTxFinish(long txid,Promise<Object> asyP) {
 		TxEntry txe = this.txEntries.get(txid);
 		if(txe == null || !txe.valid) {
 			LG.log(MC.LOG_ERROR, this.getClass(), txid +" not found, commit false ");
@@ -424,7 +424,7 @@ public class TransactionResourceServiceIml implements ITransactionResourceJMSrv,
 		
 		private byte txPhase = TxConstants.TX_2PC;
 		
-		private PromiseImpl<Object> p;
+		private Promise<Object> p;
 		
 		private Set<ITxListener> lis;
 	}

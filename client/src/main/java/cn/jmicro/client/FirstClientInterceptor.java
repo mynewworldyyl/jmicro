@@ -25,7 +25,7 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.limitspeed.ILimiter;
 import cn.jmicro.api.net.AbstractInterceptor;
 import cn.jmicro.api.net.IInterceptor;
@@ -89,7 +89,7 @@ public class FirstClientInterceptor extends AbstractInterceptor implements IInte
 	}
 
 	public static IPromise<Object> doFastFail(IRequest req,Throwable e,int code) {
-		PromiseImpl<Object> p = new PromiseImpl<>();
+		Promise<Object> p = new Promise<>();
 		p.setFail(code, e.getLocalizedMessage());
 		p.done();
 		return p;

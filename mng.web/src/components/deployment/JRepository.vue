@@ -60,9 +60,9 @@
                 </td>
                 </tr>
 
-                <tr v-if="upStatis.onUpload"><td colspan="2">SIZE&FINISH:{{upStatis.totalSize}}/{{upStatis.finishSize}}&nbsp;&nbsp;
-                    COST:{{upStatis.costTime}}&nbsp;&nbsp;SPEED:{{upStatis.uploadSpeed}}</td></tr>
-                <tr v-if="upStatis.onUpload"><td colspan="2"><Progress :percent="upStatis.progressVal"></Progress></td></tr>
+                <tr v-if="uploader.upStatis.onUpload"><td colspan="2">SIZE&FINISH:{{uploader.upStatis.totalSize}}/{{uploader.upStatis.finishSize}}&nbsp;&nbsp;
+                    COST:{{uploader.upStatis.costTime}}&nbsp;&nbsp;SPEED:{{uploader.upStatis.uploadSpeed}}</td></tr>
+                <tr v-if="uploader.upStatis.onUpload"><td colspan="2"><Progress :percent="uploader.upStatis.progressVal"></Progress></td></tr>
 
                 <tr><td>{{"ModifyTime"|i18n}}</td><td>{{res0.modifiedTime | formatDate}}</td></tr>
                 <tr><td>{{"UploadTime"|i18n}}</td><td>{{res0.uploadTime | formatDate}}</td></tr>
@@ -145,8 +145,11 @@
     import {i18n} from "../common/JFilters.js";
 
     import rep from "@/rpcservice/repository"
+	
     import {Constants} from "@/rpc/message"
     import jmconfig from "@/rpcservice/jm"
+	
+	 import io from "@/rpc/io.js"
     
     const cid = 'repository';
 
@@ -154,6 +157,7 @@
         name: 'JRepository',
         data () {
             return {
+				cid,
                 resList:[],
                 dicts:{},
 
@@ -164,17 +168,7 @@
 
                 errMsg:'',
 
-                upStatis:{
-                    finishSize:'',
-                    costTime:'',
-                    uploadSpeed:'',
-                    progressVal:0,
-                    onUpload:false,
-                    totalLen:0,
-                    blockNum:0,
-                    dv:null,
-                    curBlock:0,
-                },
+                uploader : new rep.Uploader(),
 
                 isLogin:false,
                 actInfo:null,
@@ -198,6 +192,7 @@
         },
 
         watch:{
+			
             "owner" : function(n){
                 if(n == 1) {
                     this.res0.clientId = -1;
@@ -386,6 +381,7 @@
 
             getQueryConditions() {
                 let ps = {};
+				console.log(this)
                 if(typeof this.queryParams.status!= "undefined") {
                     ps.status = parseInt(this.queryParams.status);
                 }
@@ -409,7 +405,6 @@
                 }
                 return ps;
             },
-
 
             testArrayBuffer() {
                 rep.addResourceData('test01',[0,1,2],0,3).then((resp)=>{
@@ -437,91 +432,6 @@
                 this.drawer.drawerStatus = true;
             },
 
-            uploadData(data,blockNum,cb) {
-                let self = this;
-                rep.addResourceData(this.res0.id,data,blockNum)
-                    .then((resp) =>{
-                        if(resp.code==0) {
-                            cb(true);
-                        } else {
-                            self.errMsg = resp.msg;
-                            cb(false);
-                        }
-                    })
-                    .catch((err) =>{
-                        if(cb) {
-                            cb(false);
-                        }
-                        self.errMsg ='Upload data error: ' + name + err;
-                    });
-            },
-
-            getSizeVal(size) {
-                let v = '';
-                if(size < 1024) {
-                    v = size + 'B';
-                }else if(size < 1024*1024 ) {
-                    v = this.toFixed(size/1024,2) + 'KB';
-                }else if(size < 1024*1024*1024 ) {
-                    v = this.toFixed(size/(1024*1024),2) + 'MB';
-                }else {
-                    v = this.toFixed(size/(1024*1024*1024),2) + 'GB';
-                }
-                return v;
-            },
-
-            getFinishSize(blockSize,curBlock) {
-                let s = blockSize * (curBlock+1);
-                return this.getSizeVal(s);
-            },
-
-            getProgressVal(blockSize,curBlock,totalSize) {
-                let s = blockSize * (curBlock+1);
-                return this.toFixed((s/totalSize)*100,0);
-            },
-
-            toFixed(val, num) {
-                if(val) {
-                    return parseFloat(val).toFixed(num);
-                }
-            },
-
-            getCostTime(startTime) {
-                let v = '';
-                let c = new Date().getTime() - startTime;
-                if(c < 1000) {
-                    v = c + 'MS';
-                }else if(c < 1000 * 60) {
-                    v = this.toFixed(c/1000,2) + 'S';
-                }else if(c < 1000 * 60 * 60) {
-                    c = c / 1000;
-                    v = this.toFixed(c/60,2)+'M '+(c%60)+'S'
-                }else {
-                    c = c / 1000;
-                    let h = c/(60*60);
-
-                    c = c % (60*60);
-                    let m = c/60;
-
-                    let s = c %(60);
-
-                    v = this.toFixed(h,0)+'H '+this.toFixed(m,0)+'M '+this.toFixed(s,0)+'S'
-                }
-                return v;
-            },
-
-            getSpeedVal(blockSize,curBlock,startTime) {
-                let s = blockSize * (curBlock+1);
-                let c = (new Date().getTime() - startTime)/1000;
-
-                if(c <= 0) {
-                    return '*';
-                }else {
-                    let sp = s/c;
-                    return this.getSizeVal(sp)+'/M';
-                }
-            },
-
             doUpdate(){
                 this.errMsg = "";
                 let self = this;
@@ -540,99 +450,10 @@
                         });
                 } else {
                     delete this.res0.fileChange;
-                    self.getFileContent().then((buf) => {
-                        self.res0.size =  buf.byteLength;
-                        rep.updateResource(self.res0,true).then((resp)=>{
-                            if(resp.code != 0) {
-                                //self.$Message.error(resp.msg);
-                                self.errMsg = resp.msg;
-                                return;
-                            }
-                            //resp.data blockSize
-                            self.res0 = resp.data;
-                            self.initProgressData(buf);
-                            self.uploadCurBlock();
-                        }).catch((err)=>{
-                            window.console.log(err);
-                        });
-                    }).catch(err=>{
-                        window.console.log(err);
-                        self.$Message.error(err);
-                    });
-                }
-            },
-
-            resetUploadStatis() {
-                this.upStatis = {
-                        finishSize:'',
-                        costTime:'',
-                        uploadSpeed:'',
-                        progressVal:0,
-
-                        onUpload:false,
-                        totalLen:0,
-                        blockNum:0,
-                        dv:null,
-                        curBlock:0,
-                        startTime:0,
-                },
-                this.refresh();
-            },
-
-            initProgressData(buf) {
-                let self = this;
-                let totalLen = buf.byteLength;
-
-                self.upStatis.totalLen = totalLen;
-                self.upStatis.totalSize =  self.getSizeVal(totalLen);
-                self.upStatis.onUpload = true;
-                self.upStatis.blockNum = parseInt(totalLen/self.res0.blockSize);
-                self.upStatis.dv = new DataView(buf,0,totalLen);
-                self.upStatis.curBlock = 0;
-                self.upStatis.startTime = new Date().getTime();
-            },
-
-            uploadCurBlock() {
-                let self = this;
-                self.upStatis.finishSize =  self.getFinishSize(self.res0.blockSize,self.upStatis.curBlock);
-                self.upStatis.costTime = self.getCostTime(self.upStatis.startTime);
-                self.upStatis.progressVal = parseInt(self.getProgressVal(self.res0.blockSize,self.upStatis.curBlock,self.upStatis.totalLen));
-                self.upStatis.uploadSpeed = self.getSpeedVal(self.res0.blockSize,self.upStatis.curBlock,self.upStatis.startTime);
-
-                if(self.upStatis.curBlock < self.upStatis.blockNum) {
-                    let bl = [];
-                    for(let j = 0; j < self.res0.blockSize; j++) {
-                        bl.push(self.upStatis.dv.getUint8(self.res0.blockSize*self.upStatis.curBlock+j));
-                    }
-                    self.uploadData(bl,self.upStatis.curBlock,(success)=>{
-                        if(success) {
-                            self.upStatis.curBlock += 1;
-                            self.uploadCurBlock();
-                        } else {
-                            self.errMsg = "Fail upload: " + self.res0.name;
-                            self.resetUploadStatis();
-                        }
-                    });
-
-                }else if(self.upStatis.curBlock == self.upStatis.blockNum) {
-                    //最后一块
-                    let lastBlockSize = self.upStatis.totalLen % self.res0.blockSize;
-                    if( lastBlockSize > 0) {
-                        let bl = [];
-                        for (let j = 0; j < lastBlockSize; j++) {
-                            bl.push(self.upStatis.dv.getUint8(self.upStatis.blockNum * self.res0.blockSize + j));
-                        }
-                        self.uploadData(bl,self.upStatis.curBlock,function(suc){
-                            if(suc) {
-                                self.closeDrawer();
-                                self.$Message.success("Success upload "+self.res0.name);
-                            } else {
-                                //self.$Message.error("Fail upload "+self.res0.name);
-                                self.errMsg = "Fail upload "+self.res0.name;
-                            }
-                        });
-                    }
-                    self.resetUploadStatis();
+					this.uploader.uploadFile(this.$refs.resFile.files[0],this.res0,
+					(rst)=>{
+						console.log(rst)
+					})
                 }
             },
 
@@ -642,12 +463,14 @@
                     this.errMsg = "Group cannot be null";
                     return;
                 }
+				
                 this.res0.group = this.res0.group.trim();
                 this.errMsg = "";
 
                 if(this.res0.waitingRes) {
                     delete this.res0.waitingRes;
                 }
+				
                 if(this.res0.depIds) {
                     delete this.res0.depIds;
                 }
@@ -655,15 +478,31 @@
                 let self = this;
 
                 if(this.model == 2) {
+					//只变数据，没变内容
                     this.doUpdate();
                     return;
                 }
 
                 delete this.res0.fileChange;
-
+				
+				this.uploader.uploadFile(this.$refs.resFile.files[0], this.res0,
+				(rst)=>{
+					if(rst.code == io.UP_RES) {
+						this.res0 = rst.res;
+					}else if(rst.code == io.UP_PROGRESS){
+						//更新进度条
+					} else if(rst.code == io.UP_FINISH) {
+						this.closeDrawer();
+					}else {
+						console.log(rst)
+					}
+				})
+				
+				/*
                 this.getFileContent().then((buf) => {
                     self.res0.size =  buf.byteLength;
-                    rep.addResource(self.res0).then((resp)=>{
+                    rep.addResource(self.res0)
+					.then((resp)=>{
                         if(resp.code != 0) {
                             self.errMsg = resp.msg;
                             return;
@@ -676,46 +515,10 @@
                     });
                 }).catch(err=>{
                     window.console.log(err);
-                        self.$Message.error(err);
-                    });
-            },
-
-            getFileContent(){
-                let self = this;
-                return new Promise(function(reso,reje){
-                    let file = self.$refs.resFile.files[0];
-                    if(file){
-                        let reader = new FileReader();
-                        reader.readAsArrayBuffer(file);
-
-                        reader.onabort	=()=> {};
-
-                        //当读取操作发生错误时调用
-                        reader.onerror	= ()=> {
-                            reje('read file error');
-                        };
-
-                        //当读取操作成功完成时调用
-                        reader.onload =	 () => {
-                            reso(reader.result);
-                        };
-
-                        //当读取操作完成时调用,不管是成功还是失败
-                        reader.onloadend =	()=> {
-
-                        };
-
-                        //当读取操作将要开始之前调用
-                        reader.onloadstart	= ()=> {
-
-                        };
-
-                        //在读取数据过程中周期性调用
-                        reader.onprogress	= ()=> {
-
-                        };
-                    }
-                })
+                    self.$Message.error(err);
+                });
+				*/
+				
             },
 
             deleteRes(res){
@@ -819,6 +622,9 @@
 
         mounted () {
             let self = this;
+			
+			console.log(self)
+			
             this.isLogin = this.$jr.auth.isLogin();
             this.actInfo = this.$jr.auth.actInfo;
 
@@ -839,7 +645,7 @@
                 menus.push(clearDbFileMenu);
             }
 
-            this.$jr.auth.addActListener(function(type,ai){
+            this.$jr.auth.addActListener((type,ai)=>{
                 self.refresh();
                 if(type == Constants.LOGOUT) {
                     if(menus.length == 4){
@@ -858,7 +664,7 @@
 
             this.$bus.$emit("editorOpen", {"editorId":cid, "menus":menus});
 
-            let ec = function() {
+            let ec = ()=> {
                 this.$jr.auth.removeActListener(cid);
                 this.$off('editorClosed',ec);
             }

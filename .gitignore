@@ -194,6 +194,7 @@ config/bin/
 config/data/
 config/src/main/gen
 mng.web/.settings/
+mng.web/public/
 mng.web/target/
 mng.web/.classpath
 mng.web/.project

@@ -370,7 +370,7 @@ private void mergeUploadFile(DataBlockJRso db) {
 			tempDir.mkdir();
 		}
 		
-		TimerTicker.doInBaseTicker(120, "ResourceReponsitoryChecker", null, (key,att)->{
+		TimerTicker.doInBaseTicker(120, "uploadFileManager", null, (key,att)->{
 			try {
 				doChecker();
 			} catch (Throwable e) {

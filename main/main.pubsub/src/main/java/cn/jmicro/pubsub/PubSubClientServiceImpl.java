@@ -49,10 +49,14 @@ public class PubSubClientServiceImpl implements IPubSubClientServiceJMSrv {
 		if(items.length == 0 || items.length > 10) {
 			return PSDataJRso.INVALID_ITEM_COUNT;
 		}
-
+		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
+		for(PSDataJRso i : items) {
+			i.setFr(ai.getId()+"");
+		}
+
 		if(pm.getVal(ai.getClientId(),  PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
-			psMng.persist2Db(ai.getClientId(),items);
+			psMng.persist2Db(ai.getClientId(), items);
 		}
 		return psServer.publishItems(items[0].getTopic(),items);
 	
@@ -63,6 +67,7 @@ public class PubSubClientServiceImpl implements IPubSubClientServiceJMSrv {
 	@SMethod(perType=false,needLogin=true,maxSpeed=50,maxPacketSize=8192)
 	public int publishOneItem(PSDataJRso item) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
+		item.setFr(ai.getId()+"");
 		if(item.isPersist()) {
 			if(pm.getVal(item.getSrcClientId(), PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
 				psMng.persit2Db(ai.getClientId(),item);

@@ -15,7 +15,7 @@ import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.mng.IMonitorServerManagerJMSrv;
 import cn.jmicro.api.monitor.IMonitorAdapterJMSrv;
 import cn.jmicro.api.monitor.MC;
@@ -55,7 +55,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
 	public IPromise<MonitorServerStatusJRso[]> status(String[] srvKeys) {
 		
-		PromiseImpl<MonitorServerStatusJRso[]> p = new PromiseImpl<>();
+		Promise<MonitorServerStatusJRso[]> p = new Promise<>();
 		
 		if(this.monitorServers.isEmpty() || srvKeys == null || srvKeys.length == 0) {
 			p.done();
@@ -114,7 +114,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 		
 		JMicroContext cxt = JMicroContext.get();
 		
-		PromiseImpl<Boolean> p = new PromiseImpl<>(false);
+		Promise<Boolean> p = new Promise<>(false);
 		
 		IMonitorAdapterJMSrv$JMAsyncClient s = this.getServerByKey(srvKey);
 		if(s == null) {
@@ -144,7 +144,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
 	public IPromise<Void> reset(String[] srvKeys) {
 		
-		PromiseImpl<Void> p = new PromiseImpl<>();
+		Promise<Void> p = new Promise<>();
 		
 		if(this.monitorServers.isEmpty() || srvKeys == null || srvKeys.length == 0) {
 			p.done();
@@ -164,7 +164,7 @@ public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=4096)
 	public IPromise<MonitorInfoJRso[]> serverList() {
 		
-		PromiseImpl<MonitorInfoJRso[]> p = new PromiseImpl<>();
+		Promise<MonitorInfoJRso[]> p = new Promise<>();
 		
 		JMicroContext cxt = JMicroContext.get();
 		

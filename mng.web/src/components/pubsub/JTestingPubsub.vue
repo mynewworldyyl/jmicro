@@ -15,6 +15,11 @@
                 <label for="Topic">{{'SendTopic'|i18n}}</label>
                 <Input id="Topic" v-model="sendTopic" placeholder=""/>
             </div>
+			
+			<div>
+			    <label for="To">{{'ToTarget'|i18n}}</label>
+			    <Input id="To" v-model="to" placeholder=""/>
+			</div>
 
             <div>
                 <label for="Content">{{'SendContent'|i18n}}</label>
@@ -77,13 +82,14 @@
             return {
                 isLogin:false,
                 //sendTopic:'/jmicro/test/topic01',
-				sendTopic : "/__act/msg/202",
+				sendTopic : "/__act/msg/25500",
                 subTopic : '/jmicro/test/topic01',
                 content : this.$jr.lc.get('psContent'),
 				cxt : this.$jr.lc.get('psCxt'),
                 result : '',
                 msg : '',
                 subState : false,
+				to: this.$jr.lc.get('psTo'),
 
                 needSendResult:false,
                 sendResult:'',
@@ -168,8 +174,9 @@
 					this.$jr.lc.set("psCxt",this.cxt)
 				}
 				this.$jr.lc.set("psContent",this.content)
+				this.$jr.lc.set("psTo",this.to)
 				
-                ps.publishString(this.sendTopic,this.content,true,false,cb,c)
+                ps.publishString(this.sendTopic,this.content,this.to,c,true,false,cb)
 				.then(rst=>{
 					console.log(rst);
 					this.sendResult += JSON.stringify(rst) + "\n";

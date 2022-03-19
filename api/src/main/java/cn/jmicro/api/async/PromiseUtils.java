@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.internal.async.IClientAsyncCallback;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
@@ -23,7 +23,7 @@ public class PromiseUtils {
 		
 		final JMicroContext cxt = JMicroContext.get();
 		
-		PromiseImpl<R> p = new PromiseImpl<R>();
+		Promise<R> p = new Promise<R>();
 		
 		ServiceMethodJRso remoteMethd = cxt.getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(remoteMethd != null) {

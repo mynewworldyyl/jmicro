@@ -23,6 +23,9 @@ package cn.jmicro.common;
  */
 public interface Constants {
 	
+	public static final String BASE64_IMAGE_PREFIX = "data:image/jpeg;base64,";
+	public static final String BASE64_IMAGE_SUBFIX = "==";
+	
 	public static final String JMICRO_READY_METHOD_NAME = "jready";
 	
 	//public static final String JMICRO_READY = "jmicroReady";

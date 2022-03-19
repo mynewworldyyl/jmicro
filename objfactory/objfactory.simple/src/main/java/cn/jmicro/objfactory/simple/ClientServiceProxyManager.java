@@ -427,13 +427,22 @@ class ClientServiceProxyManager {
 			
 			AsyncConfigJRso[] acs = this.getAcs(ref);
 			
-			proxy = this.getRefRemoteService(becls.getName(),type.getName(), ref.namespace(), ref.version(), null,acs);
+			//如果本地存在实例，则优先使用本地实例
+			if(!type.getName().startsWith("cn.jmicro.api.classloader")) {
+				proxy = this.of.get(type, false);
+			}
 			
-			String key = UniqueServiceKeyJRso.serviceName(type.getName(),ref.namespace(),ref.version());
+			if(proxy == null) {
+				//本地不存在实例，使用远程实例
+				proxy = this.getRefRemoteService(becls.getName(),type.getName(), ref.namespace(), ref.version(), null,acs);
+				
+				String key = UniqueServiceKeyJRso.serviceName(type.getName(),ref.namespace(),ref.version());
+				
+				//this.initProxyField(proxy, key, srcObj, f);
+				FieldServiceProxyListener lis = new FieldServiceProxyListener(this,srcObj,f,this.registry);
+				registry.addExistsServiceListener(key, lis);
+			}
 			
-			//this.initProxyField(proxy, key, srcObj, f);
-			FieldServiceProxyListener lis = new FieldServiceProxyListener(this,srcObj,f,this.registry);
-			registry.addExistsServiceListener(key, lis);
 		}
 		
 		return proxy;

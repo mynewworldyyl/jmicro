@@ -33,7 +33,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractHandler;
@@ -57,7 +57,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	@Override
 	public IPromise<Object> onRequest(IRequest request) {
 		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
-		PromiseImpl<Object> p = null;
+		Promise<Object> p = null;
 		try {
 			Method m = getServiceMethod(obj, request);
 			/*if(m.getName().equals("publishData")) {
@@ -95,14 +95,14 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 				return (IPromise<Object>)result;
 			}
 			
-			p = new PromiseImpl<Object>();
+			p = new Promise<Object>();
 			p.setResult(result);
 			p.done();
 			
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("onRequest:",e);
 			LG.log(MC.LOG_ERROR, RpcRequestHandler.class, "Invoke service error ", e);
-			p = new PromiseImpl<Object>();
+			p = new Promise<Object>();
 			Throwable srcex = e.getCause();
 			if(srcex instanceof CommonException) {
 				CommonException ce = (CommonException)srcex;

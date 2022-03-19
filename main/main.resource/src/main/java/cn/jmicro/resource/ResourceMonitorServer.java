@@ -37,7 +37,7 @@ import cn.jmicro.api.email.genclient.IEmailSenderJMSrv$JMAsyncClient;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.mng.ProcessInstanceManager;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -617,7 +617,7 @@ public class ResourceMonitorServer{
 		
 		RespJRso<Map<String,Set<ResourceDataJRso>>> r = new RespJRso<>();
 		//Map<String,Set<ResourceData>> resDatas = new HashMap<>();
-		PromiseImpl<RespJRso<Map<String, Set<ResourceDataJRso>>>> p = new PromiseImpl<>();
+		Promise<RespJRso<Map<String, Set<ResourceDataJRso>>>> p = new Promise<>();
 		p.setResult(r);
 		
 		Reg reg = srv2Regs.get(insName);
@@ -674,7 +674,7 @@ public class ResourceMonitorServer{
 	@SuppressWarnings("unchecked")
 	public IPromise<RespJRso<Map<String, List<ResourceDataJRso>>>> getDirectResourceData(ResourceDataReqJRso req) {
 		
-		PromiseImpl<RespJRso<Map<String, List<ResourceDataJRso>>>> p = new PromiseImpl<>();
+		Promise<RespJRso<Map<String, List<ResourceDataJRso>>>> p = new Promise<>();
 		RespJRso<Map<String,List<ResourceDataJRso>>> r = new RespJRso<>();
 		p.setResult(r);
 		

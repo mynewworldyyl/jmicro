@@ -12,6 +12,11 @@ public class Base64Utils {
 		byte[] tmp = encode(inStr.getBytes("UTF-8"));
 		return new String(tmp);
 	}
+	
+	public static String encodeToStr(byte[] data) throws Exception {
+		byte[] tmp = encode(data);
+		return new String(tmp);
+	}
 
 	public static String decodeToStr(String inStr) throws Exception {
 		byte[] tmp = decode(inStr.getBytes());

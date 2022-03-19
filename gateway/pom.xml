@@ -18,6 +18,10 @@
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>jmicro.redis</artifactId>
 	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.mongodb</artifactId>
+	    </dependency>
 	</dependencies>
    
 </project>

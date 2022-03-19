@@ -10,7 +10,7 @@ import org.springframework.cglib.proxy.MethodProxy;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.JsonUtils;
@@ -93,8 +93,8 @@ public class CgLibProxyInterceptor implements MethodInterceptor {
 			Class<?> trst = proxy.getClass().getClassLoader().loadClass(RespJRso.class.getName());
 			Object tobj = copyRespData((RespJRso)rst,trst);
 			return tobj;
-		} else if(rst instanceof PromiseImpl){
-			PromiseImpl p = (PromiseImpl)rst;
+		} else if(rst instanceof Promise){
+			Promise p = (Promise)rst;
 			Object o = p.getResult();
 			if(o != null && o instanceof RespJRso) {
 				Class<?> trst = proxy.getClass().getClassLoader().loadClass(RespJRso.class.getName());

@@ -41,7 +41,7 @@ import cn.jmicro.api.exception.AsyncRpcException;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.loadbalance.ISelector;
 import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.LG;
@@ -86,7 +86,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
     private static final Class<?> TAG = RpcClientRequestHandler.class;
 	
-	private final Map<Long,PromiseImpl<Object>> waitForResponse = new ConcurrentHashMap<>();
+	private final Map<Long,Promise<Object>> waitForResponse = new ConcurrentHashMap<>();
 	
 	//private final static Map<Long,IResponseHandler> asyncResponse = new ConcurrentHashMap<>();
 	
@@ -172,7 +172,6 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 	        		//SF.doSubmit(MonitorConstant.CLIENT_REQ_SERVICE_NOT_FOUND, req,null);
 	        		//服务未找到，或服务不存在
 	        		String errMsg = "Service [" + request.getServiceName() + "] not found!";
-	        		//SF.serviceNotFound(TAG.getSimpleName(), );
 	        		LG.log(MC.LOG_ERROR, TAG, errMsg);
 	        		MT.rpcEvent(MC.MT_SERVICE_ITEM_NOT_FOUND);
 	    			throw new RpcException(request,errMsg,MC.MT_SERVICE_ITEM_NOT_FOUND);
@@ -218,7 +217,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
 	private <T> IPromise<T> doAsyncInvoke(ClientServiceProxyHolder proxy, IRequest req,ServiceMethodJRso sm,AsyncConfigJRso ac) {
 		
-		PromiseImpl<T> p = new PromiseImpl<T>();
+		Promise<T> p = new Promise<T>();
 		
 		String topic = sm.getKey().methodID();
 		
@@ -297,7 +296,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 
 	private IPromise<Object> doRequest(IRequest req, ClientServiceProxyHolder proxy,ServiceItemJRso si) {
         
-		PromiseImpl<Object> p = new PromiseImpl<>();
+		Promise<Object> p = new Promise<>();
 		
 		JMicroContext cxt = JMicroContext.get();
 		
@@ -318,7 +317,8 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		
 		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
 			if(pi.isLogin()) {
-				msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, cxt.getString(JMicroContext.LOGIN_KEY_SYS, null));
+				//msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, cxt.getString(JMicroContext.LOGIN_KEY_SYS, null));
+				msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, pi.getAi().getLoginKey());
 				//req.putObject(JMicroContext.LOGIN_KEY_SYS, pi.getAi().getLoginKey());
 			} else {
 				String desc = Config.getInstanceName() + " need system login for method: " + sm.getKey().methodID();
@@ -534,7 +534,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 			LG.log(MC.LOG_DEBUG,TAG,"receive message");
 		}
 		
-		PromiseImpl<Object> p = waitForResponse.remove(respMsg.getMsgId());
+		Promise<Object> p = waitForResponse.remove(respMsg.getMsgId());
 		
 		if(p== null){
 			String errMsg = LG.messageLog("waitForResponse keySet:" + waitForResponse.keySet(),respMsg);
@@ -650,7 +650,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				timeouts.remove(k);
 				if(waitForResponse.containsKey(k)) {
 					//logger.error("waitForResponse callback timeout reqID: " + k);
-					PromiseImpl<Object> p = waitForResponse.get(k);
+					Promise<Object> p = waitForResponse.get(k);
 					if(timeoutCheck(p)) {
 						waitForResponse.remove(k);
 					}
@@ -660,7 +660,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		
 	}
 
-	private boolean timeoutCheck(PromiseImpl<Object> p) {
+	private boolean timeoutCheck(Promise<Object> p) {
 
 		JMicroContext cxt = JMicroContext.get();
 		JMicroContext.clear();

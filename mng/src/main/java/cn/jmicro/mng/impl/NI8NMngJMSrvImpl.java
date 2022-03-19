@@ -18,7 +18,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.DataBlockJRso;
 import cn.jmicro.api.net.UploadFileManager;
@@ -57,7 +57,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@Override
 	@SMethod(maxPacketSize=1024*1024*1,perType=true,needLogin=true,maxSpeed=5)
 	public IPromise<RespJRso<DataBlockJRso>> uploadFile(byte[] data) {
-		return new PromiseImpl<RespJRso<DataBlockJRso>>((suc,fail)->{
+		return new Promise<RespJRso<DataBlockJRso>>((suc,fail)->{
 			RespJRso<DataBlockJRso> r = uploadFileMng.addResourceData(data, this::importData);
 			suc.success(r);
 		});
@@ -218,7 +218,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public IPromise<RespJRso<Boolean>> add(I18nJRso vo) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
-		return new PromiseImpl<RespJRso<Boolean>>((suc,fail)->{
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
 			
 			RespJRso<Boolean> rr =  checkPermission(vo);
@@ -265,7 +265,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public IPromise<RespJRso<Boolean>> delete(Long id) {
-		return new PromiseImpl<RespJRso<Boolean>>((suc,fail)->{
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
 			
 			I18nJRso vo = crudSrv.getById(I18nJRso.class, id);
@@ -292,7 +292,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public IPromise<RespJRso<Boolean>> update(I18nJRso vo) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
-		return new PromiseImpl<RespJRso<Boolean>>((suc,fail)->{
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = new RespJRso<>(RespJRso.CODE_FAIL);
 			RespJRso<Boolean> rr =  checkPermission(vo);
 			if(rr != null) {
@@ -311,7 +311,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public IPromise<RespJRso<List<I18nJRso>>> list(QueryJRso qry) {
-		return new PromiseImpl<RespJRso<List<I18nJRso>>>((suc,fail)->{
+		return new Promise<RespJRso<List<I18nJRso>>>((suc,fail)->{
 			RespJRso<List<I18nJRso>> r = crudSrv.query(I18nJRso.class, qry);
 			suc.success(r);
 		});
@@ -320,7 +320,7 @@ public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=5,maxPacketSize=1024)
 	public IPromise<RespJRso<I18nJRso>> detail(Long id) {
-		return new PromiseImpl<RespJRso<I18nJRso>>((suc,fail)->{
+		return new Promise<RespJRso<I18nJRso>>((suc,fail)->{
 			RespJRso<I18nJRso> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
 			I18nJRso o = crudSrv.getById(I18nJRso.class, id);
 			r.setData(o);

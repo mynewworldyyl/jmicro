@@ -379,10 +379,13 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		timer.addListener(TIMER_KEY, null, tickerAct);
 		//-2120102654
 		//-1331833745
-		/*srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "subscribe",
+		
+		/*
+		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "subscribe",
 				new Class[] {ISession.class,String.class,Map.class});
 		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "unsubscribe",
-				new Class[] {Integer.class});*/
+				new Class[] {Integer.class});
+		*/
 	}
 
 	private class Registion{

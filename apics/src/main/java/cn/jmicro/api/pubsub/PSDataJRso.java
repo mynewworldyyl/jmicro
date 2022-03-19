@@ -22,6 +22,7 @@ import java.util.Map;
 
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
+import lombok.Data;
 
 /**
  * 
@@ -30,6 +31,7 @@ import cn.jmicro.api.annotation.SO;
  */
 @SO
 @IDStrategy(100)
+@Data
 public class PSDataJRso implements Serializable{
 	
 	private static final long serialVersionUID = 389875668374730999L;
@@ -97,6 +99,10 @@ public class PSDataJRso implements Serializable{
 	private String topic;
 	
 	private int srcClientId;
+	
+	private String fr;
+	
+	private String to;
 	
 	private Object data;
 	
@@ -168,22 +174,6 @@ public class PSDataJRso implements Serializable{
 		initContext();
 		this.cxt.putAll(cxt);
 	}
-
-	public byte getFlag() {
-		return flag;
-	}
-
-	public void setFlag(byte flag) {
-		this.flag = flag;
-	}
-
-	public String getTopic() {
-		return topic;
-	}
-
-	public void setTopic(String topic) {
-		this.topic = topic;
-	}
 	
 	private void initContext() {
 		if(this.cxt == null) {
@@ -202,22 +192,6 @@ public class PSDataJRso implements Serializable{
 		this.cxt = cxt;
 	}
 
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public Object getData() {
-		return data;
-	}
-
-	public void setData(Object data) {
-		this.data = data;
-	}
-	
 	public void put(String key,Object v) {
 		initContext();
 		this.cxt.put(key, v);
@@ -229,38 +203,6 @@ public class PSDataJRso implements Serializable{
 			return null;
 		}
 		return (T) this.cxt.get(key);
-	}
-
-	public ILocalCallback getLocalCallback() {
-		return localCallback;
-	}
-
-	public void setLocalCallback(ILocalCallback localCallback) {
-		this.localCallback = localCallback;
-	}
-
-	public String getCallback() {
-		return callback;
-	}
-
-	public void setCallback(String callback) {
-		this.callback = callback;
-	}
-
-	public int getFailCnt() {
-		return failCnt;
-	}
-
-	public void setFailCnt(int failCnt) {
-		this.failCnt = failCnt;
-	}
-
-	public int getSrcClientId() {
-		return srcClientId;
-	}
-
-	public void setSrcClientId(int clientId) {
-		this.srcClientId = clientId;
 	}
 
 	@Override

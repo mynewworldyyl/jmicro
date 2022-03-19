@@ -15,11 +15,13 @@ import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.gridfs.GridFS;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectfactory.IPostFactoryListener;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 
 @Component(lazy=false, level=99)
@@ -44,6 +46,8 @@ public class MongodbInit implements IPostFactoryListener{
 		String  username = cfg.getString("/mongodb/username", "");
 		String  password = cfg.getString("/mongodb/password", null);
 		String  dbname = cfg.getString("/mongodb/dbname", "jmicrodb");
+		
+		String  gridFs = cfg.getString("/mongodb/gridFs", "");
 		
 		//数据库链接选项        
         MongoClientOptions mongoClientOptions = MongoClientOptions.builder().build();
@@ -84,6 +88,11 @@ public class MongodbInit implements IPostFactoryListener{
         of.regist(MongoDatabase.class, mdb);
         of.regist(DB.class, db);
         of.regist(JMicroCodecProvider.class,p);
+        
+        if(!Utils.isEmpty(gridFs)) {
+        	GridFS fs = new GridFS(db);
+        	of.regist(GridFS.class,fs);
+        }
         
         logger.info("Mongodb connected successfully!");
 		

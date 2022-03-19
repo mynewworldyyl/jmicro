@@ -38,6 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.http.IHttpRequestHandler;
 import cn.jmicro.common.Constants;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -74,6 +76,12 @@ public class StaticResourceHttpHandler  {
 	
 	private Map<String,byte[]> contents = new HashMap<>();
 	
+	@Inject(required=false)
+	private Map<String,IHttpRequestHandler> handlers = new HashMap<>();
+	
+	@Inject(required=false)
+	private Set<IHttpRequestHandler> pathMatchHandler = new HashSet<>();
+	
 	public boolean canhandle(FullHttpRequest request){
 		return request.method().equals(HttpMethod.GET);
 	}
@@ -88,15 +96,45 @@ public class StaticResourceHttpHandler  {
 		//response.headers().set("content-Type",getContentType(path));
 		
 		//LOG.debug(path);
-		String path0 = URLDecoder.decode(path, Constants.CHARSET);
-		byte[] content = this.getContent(path0,response);
-
-		response.headers().set("content-Length",content.length);
+		boolean hsuc = false;
+		String key = request.headers().get(IHttpRequestHandler.HANDLER_KEY);
+	
+		JMicroNettyHttpRequest rr = new JMicroNettyHttpRequest(request);
+		if(key == null) {
+			key = rr.getReqParam(IHttpRequestHandler.HANDLER_KEY);
+		}
 		
-		ByteBuf responseBuf = Unpooled.copiedBuffer(content);
-		response.content().writeBytes(responseBuf);
-		responseBuf.release();
-		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+		if(key != null && handlers.containsKey(key)) {
+			//基于头部KEY匹配
+			handlers.get(key).handler(rr, new JMicroNettyHttpResponse(response,ctx));
+			//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+			hsuc = true;
+		} else {
+			if(!pathMatchHandler.isEmpty()) {
+				//基于路径匹配
+				for(IHttpRequestHandler h : pathMatchHandler) {
+					if(h.match(rr) ) {
+						h.handler(rr, new JMicroNettyHttpResponse(response,ctx));
+						//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+						hsuc = true;
+						break;
+					}
+				}
+			}
+		}
+		
+		if(!hsuc) {
+
+			//其他静态资源
+			String path0 = URLDecoder.decode(path, Constants.CHARSET);
+			byte[] content = this.getContent(path0,request,response);
+			response.headers().set("Content-Length",content.length);
+			ByteBuf responseBuf = Unpooled.copiedBuffer(content);
+			response.content().writeBytes(responseBuf);
+			responseBuf.release();
+			ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+		}
+		
 	}
 
 	private String getContentType(String path) {
@@ -113,7 +151,7 @@ public class StaticResourceHttpHandler  {
 		}
 	}
 	   
-	private byte[] getContent(String path,FullHttpResponse response) {
+	private byte[] getContent(String path, FullHttpRequest request, FullHttpResponse response) {
 		String absPath = null;
 		
 		InputStream bisr = null;

@@ -29,7 +29,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
@@ -74,7 +74,7 @@ public class ServiceInvokeManager {
 		
 		ServiceProxyHolder proxy = getProxy(srvName,ns,ver);
 		if(proxy == null) {
-			PromiseImpl<T> p = new PromiseImpl<T>();
+			Promise<T> p = new Promise<T>();
 			p.setFail(MC.MT_SERVICE_RROXY_NOT_FOUND,"Service not found: " +key);
 			p.done();
 			return p;
@@ -83,7 +83,7 @@ public class ServiceInvokeManager {
 		Method m = proxy.getSMethod(method,returnParamClazz,paramsCls,args);
 		
 		if(m == null) {
-			PromiseImpl<T> p = new PromiseImpl<T>();
+			Promise<T> p = new Promise<T>();
 			p.setFail(MC.MT_SERVICE_METHOD_NOT_FOUND,"Service method not found: " + key + UniqueServiceKeyJRso.SEP + method);
 			p.done();
 			return p;
@@ -119,7 +119,7 @@ public class ServiceInvokeManager {
 			if(result != null && result instanceof IPromise) {
 				promise = (IPromise<T>)result;
 			}else {
-				PromiseImpl<T> p = new PromiseImpl<T>();
+				Promise<T> p = new Promise<T>();
 				promise = p ;
 				p.setResult((T)result);
 				p.done();
@@ -136,7 +136,7 @@ public class ServiceInvokeManager {
 			}*/
 		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.error("onRequest:" +srvName + "." + m.getName()+ ",arg: "+ JsonUtils.getIns().toJson(args),e);
-			PromiseImpl<T> p = new PromiseImpl<T>();
+			Promise<T> p = new Promise<T>();
 			promise = p ;
 			p.setFail(MC.MT_SERVER_ERROR, e.getMessage());
 			p.done();
@@ -191,7 +191,7 @@ public class ServiceInvokeManager {
 			return p;
 		}catch(Throwable e){
 			if(p ==null) {
-				PromiseImpl<T> promise = new PromiseImpl<T>();
+				Promise<T> promise = new Promise<T>();
 				p = promise ;
 				promise.setFail(MC.MT_SERVER_ERROR, e.getMessage());
 				promise.done();

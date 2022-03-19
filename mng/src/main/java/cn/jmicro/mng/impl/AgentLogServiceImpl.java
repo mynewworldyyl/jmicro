@@ -18,7 +18,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.IAgentProcessServiceJMSrv;
 import cn.jmicro.api.choreography.genclient.IAgentProcessServiceJMSrv$JMAsyncClient;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.mng.LogFileEntryJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
@@ -50,7 +50,7 @@ public class AgentLogServiceImpl implements IAgentLogServiceJMSrv {
 		RespJRso<List<LogFileEntryJRso>> resp = new RespJRso<>();
 		resp.setCode(0);
 		
-		PromiseImpl<RespJRso<List<LogFileEntryJRso>>> p = new PromiseImpl<>();
+		Promise<RespJRso<List<LogFileEntryJRso>>> p = new Promise<>();
 		p.setResult(resp);
 		
 		if(agentServices.isEmpty()) {
@@ -88,7 +88,7 @@ public class AgentLogServiceImpl implements IAgentLogServiceJMSrv {
 		
 		RespJRso<Boolean> resp = new RespJRso<Boolean>();
 		
-		PromiseImpl<RespJRso<Boolean>> p = new PromiseImpl<>();
+		Promise<RespJRso<Boolean>> p = new Promise<>();
 		p.setResult(resp);
 		
 		if(!id2Aps.containsKey(agentId)) {
@@ -121,7 +121,7 @@ public class AgentLogServiceImpl implements IAgentLogServiceJMSrv {
 		
 		RespJRso<Boolean> resp = new RespJRso<Boolean>();
 		
-		PromiseImpl<RespJRso<Boolean>> p = new PromiseImpl<>();
+		Promise<RespJRso<Boolean>> p = new Promise<>();
 		p.setResult(resp);
 		
 		if(!id2Aps.containsKey(agentId)) {

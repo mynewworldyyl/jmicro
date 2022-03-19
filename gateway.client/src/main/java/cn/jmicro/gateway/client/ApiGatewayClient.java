@@ -39,7 +39,7 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.gateway.ApiRequestJRso;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.ISession;
@@ -77,7 +77,7 @@ public class ApiGatewayClient {
 	
 	private ApiGatewayClientSessionManager sessionManager = new ApiGatewayClientSessionManager();
 	
-	private final Map<Long,PromiseImpl<?>> waitForResponse = new ConcurrentHashMap<>();
+	private final Map<Long,Promise<?>> waitForResponse = new ConcurrentHashMap<>();
 	
 	private ApiGatewayConfig config = null;
 	
@@ -203,7 +203,7 @@ public class ApiGatewayClient {
 	}
 	
 	protected void notifyOnMessage(Message msg) {
-		PromiseImpl p = this.waitForResponse.remove(msg.getMsgId());
+		Promise p = this.waitForResponse.remove(msg.getMsgId());
 		parseResult(msg,p.resultType(),p);
 	}
 
@@ -262,7 +262,7 @@ public class ApiGatewayClient {
 		IPromise<RespJRso<ActInfoJRso>> p = null;
 		
 		if(actInfo != null) {
-			PromiseImpl<RespJRso<ActInfoJRso>> p0 = new PromiseImpl<>();
+			Promise<RespJRso<ActInfoJRso>> p0 = new Promise<>();
 			p0.setFail(1, "Have login and have to logout before relogin");
 			p0.setResult(null);
 			p0.done();
@@ -283,7 +283,7 @@ public class ApiGatewayClient {
 	public IPromise<RespJRso> logoutJMAsync() {
 		IPromise<RespJRso> p = null;
 		if(actInfo == null) {
-			PromiseImpl<RespJRso> p0 = new PromiseImpl<>();
+			Promise<RespJRso> p0 = new Promise<>();
 			p0.setResult(null);
 			p0.setFail(1, "Not login");
 			p0.done();
@@ -372,9 +372,9 @@ public class ApiGatewayClient {
 		}
 		
 		Message msg = this.createMessage(serviceName, namespace, version, methodName, args);
-		final PromiseImpl<T> p = new PromiseImpl<T>();
+		final Promise<T> p = new Promise<T>();
 		p.setResultType(returnType);
-		waitForResponse.put(msg.getMsgId(), (PromiseImpl<?>)p);
+		waitForResponse.put(msg.getMsgId(), (Promise<?>)p);
 		
 		IClientSession sessin = sessionManager.getOrConnect(null,this.config.getHost(),
 				this.config.getPort());
@@ -385,16 +385,16 @@ public class ApiGatewayClient {
 	
 	public <T> IPromise<T> sendMessage(byte msgType,Object arg,Class<T> resultType) {
 		Message msg = this.createMessage(msgType,arg);
-		final PromiseImpl<T> p = new PromiseImpl<T>();
+		final Promise<T> p = new Promise<T>();
 		p.setResultType(resultType);
-		waitForResponse.put(msg.getMsgId(), (PromiseImpl<?>)p);
+		waitForResponse.put(msg.getMsgId(), (Promise<?>)p);
 		IClientSession sessin = sessionManager.getOrConnect(null,this.config.getHost(),this.config.getPort());
 		sessin.write(msg);
 		return p;
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <R> R parseResult(Message respMsg, Type resultType, PromiseImpl p) {
+	private <R> R parseResult(Message respMsg, Type resultType, Promise p) {
 		 
 		 if(respMsg == null) {
 			 return null;

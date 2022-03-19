@@ -1,0 +1,31 @@
+package cn.jmicro.gateway.fs.api;
+
+import java.util.List;
+import java.util.Map;
+
+import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.codegenerator.AsyncClientProxy;
+
+@AsyncClientProxy
+public interface IFileJMSrv {
+
+	IPromise<RespJRso<List<FileJRso>>> getFileList(Map<String,Object> qry,int pageSize,int curPage);
+	
+	IPromise<RespJRso<FileJRso>> addFile(FileJRso pr);
+	
+	IPromise<RespJRso<FileJRso>> getFile(int resId);
+	
+	//IPromise<RespJRso<FileJRso>> updateFile(FileJRso pr,boolean updateFile);
+	
+	IPromise<RespJRso<Boolean>> addFileData(int id, byte[] data, int blockNum);
+	
+	IPromise<RespJRso<Boolean>> deleteFile(int id);
+	
+	IPromise<RespJRso<byte[]>> downFileData(int downloadId, int blockNum);
+	
+	IPromise<RespJRso<Integer>> initDownloadFile(int actId,int resId);
+	
+	IPromise<RespJRso<Map<String,Object>>> queryDict();
+	
+}

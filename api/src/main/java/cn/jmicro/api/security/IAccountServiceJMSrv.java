@@ -11,6 +11,8 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IAccountServiceJMSrv {
 
+	public RespJRso<Boolean> activeAccount(Integer aid, String token);
+	
 	IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd, String code,String codeId);
 	
 	IPromise<RespJRso<ActInfoJRso>> loginWithId(int id,String pwd);
@@ -29,6 +31,8 @@ public interface IAccountServiceJMSrv {
 	
 	RespJRso<Map<Integer,String>> clientList();
 	
+	IPromise<RespJRso<Boolean>> activeSomething(String token);
+	 
 	/**
 	 * 绑定手机号
 	 * @param mobile
@@ -44,13 +48,47 @@ public interface IAccountServiceJMSrv {
 	IPromise<RespJRso<Boolean>>  bindMail(String mail,String vcode);
 	
 	/**
-	 * 实名认证
+	 * 实名认证通过
 	 * @param name
 	 * @param idNo
 	 * @param faceImage
 	 * @return
 	 */
-	IPromise<RespJRso<Boolean>>  realNameVerify(String name, String idNo,String faceImage,String vcode);
+	IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImageId,
+			String idCardFileId, String vcode);
+	
+	/**
+	 * 接收通过实名认证接口
+	 * @param actId
+	 * @return
+	 */
+	public IPromise<RespJRso<Boolean>> approveRealname(Integer actId);
+	
+	/**
+	 * 提交认证附件信息
+	 * @param name
+	 * @param idNo
+	 * @param idCardFileId
+	 * @param vcode
+	 * @return
+	 */
+	IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, String fileId, String vcode
+			,String codeId);
+	
+	/**
+	 * 
+	 * @param fieldName
+	 * @param val
+	 * @return
+	 */
+	IPromise<RespJRso<Boolean>>  updateAttr(String fieldName, String val);
+	
+	/**
+	   * 取得用户基本信息，如nickname,头像等
+	 * @param uid
+	 * @return
+	 */
+	IPromise<RespJRso<Map<String,Object>>> userInfo(Integer uid,String verifyCode);
 	
 	public default String key(String subfix) {
 		return JMicroContext.CACHE_LOGIN_KEY + subfix;

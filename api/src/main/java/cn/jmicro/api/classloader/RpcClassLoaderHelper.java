@@ -322,7 +322,7 @@ public class RpcClassLoaderHelper {
 	            			JMicroContext.get().setSysAccount(pi.getAi());
 	            		}
 	   					RespJRso<Boolean> r = rcl.registRemoteClass(rc);
-	            		if(r != null && r.getData()) {
+	            		if(r != null && r.getCode() == RespJRso.CODE_SUCCESS) {
 	            			successClasses.add(className);
 	            			respClasses.remove(className);
 	            			ClassScannerUtils.remoteClassData(className);

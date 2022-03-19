@@ -28,7 +28,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Interceptor;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.exception.RpcException;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.AbstractInterceptor;
@@ -72,7 +72,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 		
 		final Holder<Boolean> txOwner = new Holder<>(false);
 		final Holder<Long> txid = new Holder<>(null);
-		final Holder<PromiseImpl<Object>> asyP = new Holder<>(null);
+		final Holder<Promise<Object>> asyP = new Holder<>(null);
 		
 		final SqlSession s = (SqlSession)curSqlSessionManager.curSession();
 		
@@ -136,14 +136,14 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 				});
 			}else if(sm.getTxType() == TxConstants.TYPE_TX_DISTRIBUTED) {
 				
-				PromiseImpl<Object> pa = null;
+				Promise<Object> pa = null;
 				if(txOwner.get()) {
-					pa = new PromiseImpl<>();
+					pa = new Promise<>();
 					asyP.set(pa);
 				}
 				
 				p.success((rst,cxt)->{
-					PromiseImpl<Object> pa0 = asyP.get();
+					Promise<Object> pa0 = asyP.get();
 					if(pa0 != null) {
 						pa0.setContext(p.getContext());
 						pa0.setResult(rst);
@@ -199,7 +199,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 					doVote(sm,txid.get(),false);
 					
 					if(txOwner.get()) {
-						PromiseImpl<Object> pa0 = asyP.get();
+						Promise<Object> pa0 = asyP.get();
 						pa0.setContext(p.getContext());
 						pa0.setResult(p.getResult());
 						pa0.setResultType(p.resultType());
@@ -258,7 +258,7 @@ public class MybatisInterceptor extends AbstractInterceptor implements IIntercep
 	}
 			
 	
-	private void ownerEnd(ServiceMethodJRso sm,Long tid,PromiseImpl<Object> asyP) {
+	private void ownerEnd(ServiceMethodJRso sm,Long tid,Promise<Object> asyP) {
 		if(LG.isLoggable(MC.LOG_INFO)) {
 			String msg = "Wait tx finish txid: " + JMicroContext.get().getLong(TxConstants.TX_ID, -1L);
 			LG.log(MC.LOG_INFO, TAG, msg);

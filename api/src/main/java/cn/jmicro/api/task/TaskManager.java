@@ -33,7 +33,6 @@ public class TaskManager extends Thread {
 	public void run() {
 		while(true) {
 			try {
-				
 				synchronized(syncObj) {
 					if(tasks.isEmpty()) {
 						syncObj.wait();

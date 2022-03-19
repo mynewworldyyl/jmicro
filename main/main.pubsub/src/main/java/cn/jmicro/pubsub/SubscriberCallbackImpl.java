@@ -32,7 +32,7 @@ import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.async.PromiseUtils;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.internal.pubsub.IInternalSubRpcJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -119,7 +119,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 		throw new CommonException(0,"onMessage topic:"+sm.getTopic()+", type: " + type +"," + sm.getKey().methodID());
 	}
 	
-	private void notiryResultFail(int code,String msg,Object cxt,List<PSDataJRso> fs,PromiseImpl<PSDataJRso[]> p) {
+	private void notiryResultFail(int code,String msg,Object cxt,List<PSDataJRso> fs,Promise<PSDataJRso[]> p) {
 
 		//List<PSDataJRso> fs = fsPro.getResult();
 		PSDataJRso[] items = (PSDataJRso[])cxt;
@@ -156,7 +156,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	}
 
 	private IPromise<PSDataJRso[]> callAsArra(PSDataJRso[] items) {
-		PromiseImpl<PSDataJRso[]> p = new PromiseImpl<>();
+		Promise<PSDataJRso[]> p = new Promise<>();
 		try {
 			//多个消息作为整体发送
 			PromiseUtils.callService(srvProxy, sm.getKey().getMethod(), items,  new Object[] {items}) //m.invoke(this.srvProxy, new Object[] {items});
@@ -204,7 +204,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	}
 
 	private IPromise<List<PSDataJRso>> notifyResult(Object obj, PSDataJRso[] items,int resultCode) {
-		PromiseImpl<List<PSDataJRso>> outp = new PromiseImpl<>();
+		Promise<List<PSDataJRso>> outp = new Promise<>();
 		
 		List<PSDataJRso> fails = new ArrayList<>();
 		
@@ -258,7 +258,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 
 	private IPromise<PSDataJRso[]> callOneByOne(PSDataJRso[] items,int type) {
 		
-		PromiseImpl<PSDataJRso[]> p = new PromiseImpl<>();
+		Promise<PSDataJRso[]> p = new Promise<>();
 		p.setResult(null);
 		
 		List<PSDataJRso> fails = new ArrayList<>();
@@ -364,7 +364,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	}
 	
 	public IPromise<PSDataJRso> callback(PSDataJRso item,Object result,int statuCode) {
-		PromiseImpl<PSDataJRso> p = new PromiseImpl<>();
+		Promise<PSDataJRso> p = new Promise<>();
 		p.setResult(null);
 		
 		if (StringUtils.isEmpty(item.getCallback())) {
@@ -392,7 +392,7 @@ public class SubscriberCallbackImpl implements ISubscriberCallback{
 	//异步回调用返回值，如异步RPC时，返回结果给调用者
 	public IPromise<PSDataJRso> callbackServiceMethod(PSDataJRso item,Object result,int statuCode) {
 
-		PromiseImpl<PSDataJRso> p = new PromiseImpl<>();
+		Promise<PSDataJRso> p = new Promise<>();
 		p.setResult(null);
 		
 		if(StringUtils.isEmpty(item.getCallback())) {

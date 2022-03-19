@@ -13,7 +13,7 @@ import cn.jmicro.api.client.IAsyncSuccessCallback;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
 
-public class PromiseImpl<R> implements IPromise<R>{
+public class Promise<R> implements IPromise<R>{
 
 	private IAsyncCallback<R>[] callbacks ;
 	
@@ -39,7 +39,7 @@ public class PromiseImpl<R> implements IPromise<R>{
 	
 	private CommonException ex;
 	
-	public PromiseImpl(IFinish<R> f) {
+	public Promise(IFinish<R> f) {
 		this.callbacks = new IAsyncCallback[1];
 		f.onResult((R r)->{
 			this.setResult(r);
@@ -50,11 +50,11 @@ public class PromiseImpl<R> implements IPromise<R>{
 		});
 	}
 	
-	public PromiseImpl() {
+	public Promise() {
 		this.callbacks = new IAsyncCallback[1];
 	}
 	
-	public PromiseImpl(R defResult) {
+	public Promise(R defResult) {
 		this();
 		this.setResult(defResult);
 	}

@@ -56,6 +56,9 @@ public class ActInfoJRso {
 	//身份证号
 	private String idNo;
 	
+	//性别
+	private String sex;
+	
 	//账号分数
 	private int levelScore;
 	
@@ -116,6 +119,14 @@ public class ActInfoJRso {
 		return Collections.unmodifiableSet(this.clientIds);
 	}
 	
+	public String getSex() {
+		return sex;
+	}
+
+	public void setSex(String sex) {
+		this.sex = sex;
+	}
+
 	public int minClient() {
 		if(this.clientIds.isEmpty()) return 0;
 		int cid = 0;

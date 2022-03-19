@@ -15,7 +15,7 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.IAccountServiceJMSrv;
@@ -51,9 +51,25 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 	
 	@Override
+	public RespJRso<Boolean> activeAccount(Integer aid, String token) {
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> activeSomething(String token) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> updateAttr(String fieldName, String val) {
+		return null;
+	}
+
+	@Override
 	public IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd,String code,String codeId) {
 
-		return new PromiseImpl<RespJRso<ActInfoJRso>>((suc,fail)->{
+		return new Promise<RespJRso<ActInfoJRso>>((suc,fail)->{
 			RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>();
 			ActInfoJRso ai = accounts.get(actName);
 			if(ai == null) {
@@ -110,7 +126,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 		if(id2ActName.containsKey(id)) {
 			return login(this.id2ActName.get(id),pwd,"","");
 		} else {
-			return new PromiseImpl<RespJRso<ActInfoJRso>>((suc,fail)->{
+			return new Promise<RespJRso<ActInfoJRso>>((suc,fail)->{
 				RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>(RespJRso.CODE_FAIL,"Account not found!");
 				suc.success(r);
 			});
@@ -234,8 +250,29 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 		return null;
 	}
 
+
 	@Override
-	public IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImage, String vcode) {
+	public IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImageId, String idCardFileId,
+			String vcode) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> approveRealname(Integer actId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, String fileId, String vcode, String vcodeId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public IPromise<RespJRso<Map<String, Object>>> userInfo(Integer uid, String verifyCode) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 	

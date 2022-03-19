@@ -182,6 +182,7 @@ public class TimerTicker {
 	
 	@SuppressWarnings("rawtypes")
 	public void addListener(String key,Object attachement,boolean replace,ITickerAction act) {
+		
 		if(this.listeners.containsKey(key)) {
 			if(act != this.listeners.get(key) && !replace) {
 				throw new CommonException("listener with key[" + key+"] have been exists");

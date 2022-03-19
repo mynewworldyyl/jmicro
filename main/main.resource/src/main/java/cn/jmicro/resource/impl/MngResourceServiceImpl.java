@@ -28,7 +28,7 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.ExpUtils;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.async.PromiseImpl;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.ResourceDataJRso;
@@ -266,7 +266,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 	@SMethod(perType=false,needLogin=true,maxSpeed=1,maxPacketSize=4096)
 	public IPromise<RespJRso<Map<String,List<ResourceDataJRso>>>> getInstanceResourceData(ResourceDataReqJRso req) {
 		
-		PromiseImpl<RespJRso<Map<String,List<ResourceDataJRso>>>> p = new PromiseImpl<>();
+		Promise<RespJRso<Map<String,List<ResourceDataJRso>>>> p = new Promise<>();
 		
 		RespJRso<Map<String,List<ResourceDataJRso>>> r = new RespJRso<> ();
 		p.setResult(r);
@@ -338,7 +338,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 			cursor.close();
 		}
 		
-		PromiseImpl<RespJRso<Map<String, List<ResourceDataJRso>>>> p = new PromiseImpl<>();
+		Promise<RespJRso<Map<String, List<ResourceDataJRso>>>> p = new Promise<>();
 		p.setResult(resp);
 		p.done();
 		
