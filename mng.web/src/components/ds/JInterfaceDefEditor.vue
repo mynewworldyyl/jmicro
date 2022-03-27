@@ -77,7 +77,7 @@
 			</el-row>
 		</div>
 		
-		<RespView v-if="testResp.resp" :resp="testResp.resp"></RespView>
+		<RespView v-if="testResp" :resp="testResp"></RespView>
 
 		</Drawer>
 
@@ -192,7 +192,12 @@
 			
 			doTest(){
 				//console.log(this.testParam)
-				let qry = {jsonParam: JSON.stringify(this.testParam),apiId:this.form.apiId}
+				
+				let ps = JSON.stringify(this.testParam)
+				let key = "__inttps_" + this.form.apiId
+				this.$jr.lc.set(key,ps)
+				
+				let qry = {jsonParam: JSON.stringify(this.testParam), apiId:this.form.apiId}
 				let st = new Date().getTime();
 				this.$jr.rpc.callRpcWithParams("cn.jmicro.api.ds.IDataApiJMSrv", ns, v, 'getData', [qry])
 				    .then((resp)=>{
@@ -240,6 +245,13 @@
 				if(resp && resp.code == 0){
 					this.testParam = {}
 				    this.form = resp.data
+					
+					let key = "__inttps_" + this.form.apiId
+					let js = this.$jr.lc.get(key)
+					if(js && js.length > 0) {
+						this.testParam = JSON.parse(js)
+					}
+					
 				    this.testDefDrawer.drawerStatus = true
 				} else if(!resp) {
 				   this.$notify.error({

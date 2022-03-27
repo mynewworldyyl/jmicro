@@ -54,7 +54,7 @@
 
             refresh(){
                 let self = this;
-                this.isAdmin = this.$jr.rpcisAdmin();
+                this.isAdmin = this.$jr.auth.isAdmin();
                 this.errMsg = '';
                 moType.getAllConfigs().then((resp)=>{
                     if(resp.code != 0) {

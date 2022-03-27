@@ -1,37 +1,36 @@
 <template>
-	<div class="RespView">
-			<el-row class="blockSt" v-if="resp.data">
+	<div>
+		<div  class="RespView">
+			<el-row class="blockSt">
 				<el-col class="title">{{"Resp"|i18n}}</el-col>
 				<el-col>{{resp.data}}</el-col>
 			</el-row>
-			<el-row  class="blockSt"  v-if="resp.code != 0">
+			<el-row  class="blockSt">
 				<el-col  class="title"  :span="5">{{"RespCode"|i18n}}</el-col>
 				<el-col :span="19">{{resp.code}}</el-col>
 			</el-row>
-			<el-row  class="blockSt" v-if="resp.msg">
+			<el-row  class="blockSt">
 				<el-col  class="title" :span="5">{{"RespMsg"|i18n}}</el-col>
 				<el-col  :span="19">{{resp.msg}}</el-col>
 			</el-row>
-			<el-row  class="blockSt" v-if="resp.key">
+			<el-row  class="blockSt">
 				<el-col  class="title" :span="5">{{"Key"|i18n}}</el-col>
 				<el-col  :span="19">{{resp.key}}</el-col>
 			</el-row>
-			<el-row  class="blockSt" v-if="resp.total">
+			<el-row  class="blockSt">
 				<el-col  class="title" :span="5">{{"total"|i18n}}</el-col>
 				<el-col  :span="19">{{resp.total}}</el-col>
 			</el-row>
-			<el-row  class="blockSt" v-if="resp.pageSize">
+			<el-row  class="blockSt">
 				<el-col  class="title" :span="5">{{"Key"|i18n}}</el-col>
-				<el-col  :span="19"resp.pageSize}}</el-col>
+				<el-col  :span="19">{{resp.pageSize}}</el-col>
 			</el-row>
-			<el-row  class="blockSt" v-if="resp.curPage">
+			<el-row  class="blockSt">
 				<el-col  class="title" :span="5">{{"Key"|i18n}}</el-col>
 				<el-col  :span="19">{{resp.curPage}}</el-col>
 			</el-row>
-			<el-row  class="blockSt"  v-if="resp.cost">
-				<el-col  class="title" :span="5">{{"Cost"|i18n}}</el-col>
-				<el-col  :span="19">{{resp.cost+'(毫秒)'}}</el-col>
-			</el-row>
+		</div>
+		
 	
 	</div>
 </template>
@@ -51,13 +50,31 @@
 			return {
 			}
 		},
-
+		
+		watch:{
+			"resp":function(nv){
+				if(nv && nv.code == 0) {
+					this.bdata = nv.data
+					this.body = null
+				}else {
+					this.bdata = null
+					this.body = JSON.stringify(nv)
+				}
+			}
+		},
+		
+		beforeCreate() {
+			this.body = null
+		},
+		
 		methods: {
 			
 		},
+		
+		
 
 		mounted() {
-
+			
 		},
 
 		beforeDestroy() {

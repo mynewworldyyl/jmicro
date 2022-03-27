@@ -80,6 +80,7 @@ public final class UniqueServiceKeyJRso {
 	
 	private transient String snvKey = null;
 	
+	//缓存本服务的全部方法Hash
 	private transient Set<Integer> methodHash = new HashSet<>();
 	
 	public UniqueServiceKeyJRso() {}

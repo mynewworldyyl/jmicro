@@ -33,6 +33,13 @@
 
         <Drawer ref="defInfo"  v-model="defInfoDrawer.drawerStatus" :closable="true" placement="right" :transfer="true"
                 :draggable="true" :scrollable="true" width="50" :mask-closable="true" :mask="true">
+		
+		 <i-button @click="testThisReq(p.req.reqId)">{{"TestOne"|i18n}}</i-button>
+		 
+		 <el-row v-for="(val,key) in p">
+		 	<el-col v-if="key != 'req' && key !='resp'" class="title" :span="3">{{key|i18n}}</el-col>
+		 	<el-col v-if="key != 'req' && key !='resp'" class="paramCol" :span="21">{{val}}</el-col>
+		 </el-row>
 		 
 		 <div v-if="p && p.req" class="paramContainer">
 		 	<el-row v-for="(val,key) in p.req">
@@ -41,8 +48,24 @@
 		 	</el-row>
 		 </div>
 		 
-		 <RespView v-if="p.resp" :resp="p.resp"></RespView>
-		
+		  <RespView v-if="p.resp" :resp="p.resp"></RespView>
+		 
+		 <div v-if="testResult">
+			 <div>Test Result</div>
+			 <el-row >
+			 	<el-col class="title" :span="3">{{'Code'|i18n}}</el-col>
+			 	<el-col class="paramCol" :span="21">{{testResult.code}}</el-col>
+			 </el-row>
+			 <el-row >
+			 	<el-col class="title" :span="3">{{'Msg'|i18n}}</el-col>
+			 	<el-col class="paramCol" :span="21">{{testResult.msg}}</el-col>
+			 </el-row>
+			 <el-row >
+			 	<el-col class="title" :span="3">{{'Data'|i18n}}</el-col>
+			 	<el-col class="paramCol" :span="21">{{testResult.data}}</el-col>
+			 </el-row>
+		 </div>
+
 	</Drawer>
 	
 	<div v-if="isLogin"  :style="queryDrawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openQueryDrawer()"></div>
@@ -90,6 +113,7 @@
 </template>
 
 <script>
+	import { Loading } from 'element-ui';
 	import defCons from "./cons.js"
     import RespView from "./RespView.vue"
 	const sn = "cn.jmicro.api.ds.IDataApiJMSrv";
@@ -111,8 +135,10 @@
 				isLogin:false,
 				plist: [],
 				
-				queryParams:{size:10,curPage:1,ps:{}},
+				queryParams:{size:10,curPage:1,ps:{},order:"desc",sortName:'createdTime'},
 				totalNum:0,
+				
+				testResult:null,
 				
 				defInfoDrawer: {
 				    drawerStatus : false,
@@ -128,6 +154,18 @@
 
 		methods: {
 			
+			testThisReq(reqId){
+				let lding = Loading.service({ fullscreen: true, text:"呼叫服务中，请稍后。。。" });
+				this.$jr.rpc.callRpcWithParams(sn, ns, v, 'testDataApi', [reqId+""])
+				    .then((resp)=>{
+						lding.close()
+						this.testResult = resp
+				    }).catch((err)=>{
+						lding.close()
+						window.console.log(err);
+				});
+			},
+			
 			openQueryDrawer() {
 			    this.queryDrawer.drawerStatus = true;
 			    this.queryDrawer.drawerBtnStyle.zindex = 10000;
@@ -138,7 +176,27 @@
 				this.model = 3;
 				this.p = c;
 				this.p.cost = c.cost
-				this.defInfoDrawer.drawerStatus = true;
+				let self = this;
+				
+				if(c.req.jsonParam) {
+					this.defInfoDrawer.drawerStatus = true;
+					return
+				}
+				
+				this.$jr.rpc.callRpcWithParams(sn, ns, v, 'queryByReqId', [c.req.reqId,1024])
+				    .then((resp)=>{
+						this.defInfoDrawer.drawerStatus = true;
+				        if(resp.code == 0){
+							this.p = resp.data
+							c.req = resp.data.req
+				        } else {
+				           this.p = c;
+				        }
+				    }).catch((err)=>{
+						this.defInfoDrawer.drawerStatus = true;
+							window.console.log(err);
+				});
+
 			},
 			
 			curPageChange(curPage){

@@ -465,7 +465,7 @@ public class RedisCacheImpl implements ICache {
 				throw new CommonException("Encode error: "+e.getKey()+" ,data: " + e.getValue().getClass().getName());
 			}
 			byte[] value = bb.array();
-			byte[] kd = ICache.keyData(key);
+			byte[] kd = ICache.keyData(e.getKey());
 			pdata.put(kd, value);
 		}
 		
@@ -475,7 +475,7 @@ public class RedisCacheImpl implements ICache {
 				 logger.info("Put KEY: {}, LEN: {}",key,value.length);
 			 }*/
 			 jedis = jeditPool.getResource();
-			 return jedis.hset(k, pdata) == 1;
+			 return jedis.hset(k, pdata) >= 1;
 		} finally {
 			if(jedis != null) {
 				jedis.close();
@@ -490,14 +490,14 @@ public class RedisCacheImpl implements ICache {
 			logger.error("Del key cannot be NULL");
 			return false;
 		}
-		/*byte[] k = ICache.keyData();
+		byte[] k = ICache.keyData(this.securityKey(key));
 		if( k == null) {
 			return false;
-		}*/
+		}
 		Jedis jedis = null;
 		try {
 			jedis = jeditPool.getResource();
-			Long rst = jedis.hdel(selfPrefix + key,fname);
+			Long rst = jedis.hdel(k,ICache.keyData(fname));
 			this.notExistData.remove(key);
 			return rst == 1;
 		} finally {

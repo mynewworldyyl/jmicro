@@ -39,6 +39,14 @@ public @interface SMethod {
 
 	public String desc() default "";
 	
+	/**
+	 * 是否可通过api网关使用
+	 * 0： 由所属服务配置决定
+	 * 1：可以通过API网关访问
+	 * -1：不可以通过API网关访问
+	 */
+	public int external() default 0;
+	
 	//public String value() default "";
 	
 	/**

@@ -653,6 +653,7 @@ public class ServiceLoader{
 		checkMethod.setLogLevel(MC.LOG_NO);;
 		checkMethod.setDebugMode(0);
 		checkMethod.getKey().setSnvHash(HashUtils.FNVHash1(checkMethod.getKey().methodID()));
+		checkMethod.setExternal(item.isExternal());
 		
 		item.addMethod(checkMethod);
 		
@@ -717,6 +718,7 @@ public class ServiceLoader{
 				sm.setTxPhase(TxConstants.TX_2PC);
 				sm.setTxIsolation((byte)Connection.TRANSACTION_READ_COMMITTED);
 				sm.setCacheType(Constants.CACHE_TYPE_NO);
+				sm.setExternal(item.isExternal());
 			} else {
 
 				 //实现类方法配置具有高优先级
@@ -760,6 +762,8 @@ public class ServiceLoader{
 				sm.setTxPhase(manno.txPhase());
 				sm.setCacheType(manno.cacheType());
 				sm.setCacheExpireTime(manno.cacheExpireTime());
+				
+				sm.setExternal(item.isExternal() ? (manno.external() == 0 ? true : manno.external() == 1) : false);
 				
 				if(sm.getTimeout() <= 0) {
 					throw new CommonException("Invalid timeout val with 0 for  " +item.getImpl() + "."+ m.getName());

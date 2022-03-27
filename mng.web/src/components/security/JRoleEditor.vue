@@ -4,11 +4,12 @@
         <div v-if="isLogin && roleList && roleList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td>{{'ID'|i18n}}</td><td>{{'Name'|i18n}}</td><td>{{'Desc'|i18n}}</td>
+				<td>{{'ClientId'|i18n}}</td>
                     <td>{{'CreatedBy'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
                     <td>{{"Operation"|i18n}}</td></tr>
                 </thead>
                 <tr v-for="c in roleList" :key="c._id">
-                    <td>{{c.roleId}}</td> <td>{{c.name}}</td> <td>{{c.desc}}</td>
+                    <td>{{c.roleId}}</td> <td>{{c.name}}</td> <td>{{c.desc}}</td><td>{{c.clientId}}</td>
                     <td>{{c.createdBy}}</td><td>{{c.createdTime | formatDate(1)}}</td>
                     <td>
                         <a  @click="openActInfoDrawer(c)">{{"Permission"|i18n}}</a>
@@ -60,6 +61,12 @@
                 <a v-if="isLogin" @click="doAddRole()">{{'Confirm'|i18n}}</a>
             </div>
             <div>
+				<div>
+					<Label v-if="isAdmin" for="forAllClient">{{'forAllClient'|i18n}}</Label>
+					<Checkbox v-if="isAdmin"  id="forAllClient" v-model="forAllClient"></Checkbox>
+				</div>
+				
+				
                 <Label for="Name">{{'Name'|i18n}}</Label>
                 <Input id="Name" v-model="role.name"/>
 
@@ -98,6 +105,7 @@
         },
         data() {
             return {
+				isAdmin:false,
                 errorMsg:'',
                 isLogin:false,
                 roleList: [],
@@ -105,6 +113,8 @@
                 totalNum:0,
                 pageSize:10,
                 curPage:1,
+				
+				forAllClient:false,
 
                 srcPermissions:[],
                 curActParsedPermissions:[],
@@ -158,6 +168,11 @@
                 let self = this;
                 self.errorMsg = '';
                 let method = self.updateModel ? 'updateRole':'addRole';
+				
+				if(this.isAdmin && this.forAllClient) {
+					this.role.clientId = -1
+				}
+				
                 this.$jr.rpc.callRpcWithParams(sn, ns, v, method, [ this.role ])
                     .then((resp)=>{
                     if(resp.code == 0 && resp.data) {
@@ -352,6 +367,7 @@
         },
 
         mounted () {
+			this.isAdmin = this.$jr.auth.isAdmin()
             this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             this.$jr.auth.addActListener(this.refresh);
             this.refresh();

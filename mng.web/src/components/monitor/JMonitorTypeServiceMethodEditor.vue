@@ -53,7 +53,7 @@
             refresh(){
                 let self = this;
                 this.errMsg = '';
-                this.isAdmin = this.$jr.rpcisAdmin();
+                this.isAdmin = this.$jr.auth.isAdmin();
                 moType.getAllConfigsByGroup(['deflt']).then((resp)=>{
                     if(resp.code != 0) {
                         self.$Message.success(resp.msg);

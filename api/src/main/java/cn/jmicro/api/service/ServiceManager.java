@@ -259,11 +259,13 @@ public class ServiceManager {
 		//加载时间
 		//si.setLoadTime(TimeUtils.getCurTime());
 		ServiceItemJRso osi = this.path2SrvItems.get(child);
+		
+		loadMethodHash(key,null);
+		
 		if(osi == null && !eagLoad) {
 			if(logger.isInfoEnabled()) {
 				logger.info("Lazy load service data: " + child);
 			}
-			loadMethodHash(key,null);
 			return; //延时到使用时加载
 		}
 		
@@ -279,11 +281,11 @@ public class ServiceManager {
 	}
 	
 	private void loadMethodHash(UniqueServiceKeyJRso key,String siData) {
+		/*if(key.getServiceName().equals("cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv")) {
+			logger.info(key.fullStringKey());
+		}*/
 		
-		if(!this.needCacheHashMethod(key)) {
-			return;
-		}
-		
+		//非自身服务，也非API网关模式，
 		String path = path(key.fullStringKey());
 		if(siData == null) {
 			siData = op.getData(path);
@@ -294,15 +296,13 @@ public class ServiceManager {
 		}
 		
 		ServiceItemJRso si = JsonUtils.getIns().fromJson(siData,ServiceItemJRso.class);
-		
-		if(this.needCacheHashMethod(key,si.isExternal())) {
-			Set<Integer> methodHash = key.getMethodHash();
-			for(ServiceMethodJRso sm : si.getMethods()) {
-				methodHash.add(sm.getKey().getSnvHash());
-			}
-			notifyServiceChange(IServiceListener.ADD, si.getKey(),si,key.fullStringKey());
-			op.addDataListener(path, this.dataListener);
+
+		Set<Integer> methodHash = key.getMethodHash();
+		for(ServiceMethodJRso sm : si.getMethods()) {
+			methodHash.add(sm.getKey().getSnvHash());
 		}
+		notifyServiceChange(IServiceListener.ADD, si.getKey(),si,key.fullStringKey());
+		op.addDataListener(path, this.dataListener);
 		
 	}
 
@@ -312,6 +312,7 @@ public class ServiceManager {
 		String data = this.op.getData(path);
 		
 		if(!isChange(data, child)) {
+			//同时更新methodHash2Method列表
 			logger.warn("Service Item no change {}",child);//没数据变动
 			return false;
 		}
@@ -444,6 +445,7 @@ public class ServiceManager {
 	}
 	
 	public ServiceMethodJRso getServiceMethodByHash(int hash) {
+		
 		ServiceMethodJRso sm = methodHash2Method.get(hash);
 		if(sm != null) return sm;
 		
@@ -918,22 +920,24 @@ public class ServiceManager {
 	}
 	
 	/*
-	 * 缓存本实例全部方法
-	 * 网关服务器缓存全部实例方法，后面做全量加载时再判断external属性
+	自身实例的服务，全部要缓存起来
 	 */
-	private boolean needCacheHashMethod(UniqueServiceKeyJRso uk/*,boolean external*/) {
-		return uk != null && (uk.getInstanceName().equals(Config.getInstanceName()) 
-				|| this.gatewayModel /*&& external*/);
+	private boolean myService(UniqueServiceKeyJRso uk/*,boolean external*/) {
+		return uk != null && uk.getInstanceName().equals(Config.getInstanceName());
 	}
 	
-	private boolean needCacheHashMethod(UniqueServiceKeyJRso uk,boolean external) {
-		return uk != null && (uk.getInstanceName().equals(Config.getInstanceName()) 
-				|| this.gatewayModel && external);
+	/*
+	 * API网关模式，并且服务外部可访问，则要缓存
+	 */
+	private boolean apiGateway(boolean external) {
+		return this.gatewayModel && external;
 	}
 	
 	private void serviceRemove(String child) {
 		
 		UniqueServiceKeyJRso uk = this.allPaths.remove(child);
+		
+		boolean isMy = this.myService(uk);
 		
 		ServiceItemJRso si = path2SrvItems.remove(child);
 		
@@ -948,7 +952,7 @@ public class ServiceManager {
 		
 		try {
 			l.lock();
-			if(si != null && methods != null && !methods.isEmpty() && needCacheHashMethod(uk,si.isExternal())) {
+			if(si != null && methods != null && !methods.isEmpty() && (this.myService(uk) || this.gatewayModel)) {
 				//存储时已经保证不存在全局性重复hash
 				/*Set<UniqueServiceKeyJRso> items = this.getServiceItems(si.getKey().getServiceName(),
 						si.getKey().getNamespace(), si.getKey().getVersion());*/
@@ -1030,11 +1034,13 @@ public class ServiceManager {
 		ServiceItemJRso nsi = JsonUtils.getIns().fromJson(ndata, ServiceItemJRso.class);
 		logger.info("Service added, Code: " + nhash + ", Service: " + nsi.getKey().toSnv());
 		
+		boolean isMy = this.myService(nsi.getKey());
+		
 		ReentrantReadWriteLock.WriteLock l = methodHash2MethodLocker.writeLock();
 		try {
 			l.lock();
 			
-			if(needCacheHashMethod(nsi.getKey(),nsi.isExternal())) {
+			if(isMy || this.gatewayModel && nsi.isExternal()) {
 				for(ServiceMethodJRso sm : nsi.getMethods()) {
 					int h = sm.getKey().getSnvHash();
 					if(!this.methodHash2Method.containsKey(h)) {

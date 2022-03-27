@@ -25,7 +25,7 @@ public interface IAccountServiceJMSrv {
 	
 	RespJRso<Map<String, Set<PermissionJRso>>> getCurActPermissionDetail();
 	
-	RespJRso<String> getCode(int type);
+	RespJRso<String> getCode(int type,String vcode,String codeId,String mobile);
 	
 	IPromise<RespJRso<ActInfoJRso>> changeCurClientId(int clientId);
 	
@@ -45,7 +45,7 @@ public interface IAccountServiceJMSrv {
 	 * @param mobile
 	 * @return
 	 */
-	IPromise<RespJRso<Boolean>>  bindMail(String mail,String vcode);
+	IPromise<RespJRso<Boolean>>  bindMail(String mail, String vcode,String codeId);
 	
 	/**
 	 * 实名认证通过

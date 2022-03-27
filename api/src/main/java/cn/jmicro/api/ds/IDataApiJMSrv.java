@@ -18,12 +18,25 @@ public interface IDataApiJMSrv {
 	IPromise<RespJRso<String>> getData(ApiReqJRso req);
 	
 	/**
-	 *    从缓存中查询上历史请求结果
-	 *    如果缓存已经清空，则返回空
+	 * 
 	 * @param reqId
 	 * @return
 	 */
-	IPromise<RespJRso<String>> queryByReqId(String reqId);
+	public IPromise<RespJRso<String>> testDataApi(String reqId);
 	
+	/**
+	 * 从缓存中查询上历史请求结果
+	 * 如果缓存已经清空，则返回空
+	 * @param reqId
+	 * @param trimSize 如果参数字符串长度大于trimSize，则截断参数，保留最大长度为trimSize个字符
+	 * @return
+	 */
+	IPromise<RespJRso<DsQueryCacheJRso>> queryByReqId(String reqId,int trimSize);
+	
+	/**
+	 * 
+	 * @param qry
+	 * @return
+	 */
 	IPromise<RespJRso<List<DsQueryCacheJRso>>> listHistory(QueryJRso qry);
 }

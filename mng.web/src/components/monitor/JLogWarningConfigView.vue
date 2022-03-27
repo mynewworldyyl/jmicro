@@ -238,7 +238,7 @@
                     return;
                 }
 
-                this.isAdmin = this.$jr.rpcisAdmin();
+                this.isAdmin = this.$jr.auth.isAdmin();
 
                 this.$jr.rpc.callRpcWithParams(sn,ns,v, 'query', [])
                 .then((resp)=>{

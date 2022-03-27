@@ -6,14 +6,14 @@
                 <thead>
 					<tr><td>{{'ID'|i18n}}</td><td>{{'InsId'|i18n}}</td><td>{{'NodeId'|i18n}}</td>
                     <td>{{'applyId'|i18n}}</td><td>{{'ApplyName'|i18n}}</td><td>{{'Status'|i18n}}</td>
-					<td>{{'ApproverId'|i18n}}</td><td>{{'ApproverType'|i18n}}</td><td>{{'Remark'|i18n}}</td>
+					<td>{{'ApproverId'|i18n}}</td><td>{{'type'|i18n}}</td><td>{{'Remark'|i18n}}</td>
 					<td>{{'UpdatedBy'|i18n}}</td><td>{{'CreatedTime'|i18n}}</td>
                     <td>{{"Operation"|i18n}}</td></tr>
                 </thead>
                 <tr v-for="c in roleList" :key="c._id">
                     <td>{{c.id}}</td> <td>{{c.insId}}</td> <td>{{c.nodeId}}</td>
 					 <td>{{c.applyId}}</td> <td>{{c.applyName}}</td><td>{{statusMap[c.status]}}</td>
-					  <td>{{c.approverId}}</td> <td>{{c.approverType==1?"User":"Role"}}</td> <td>{{c.remark}}</td>
+					  <td>{{c.approverId}}</td> <td>{{type2Map[c.type]}}</td> <td>{{c.remark}}</td>
                     <td>{{c.updatedBy}}</td><td>{{c.createdTime | formatDate(1)}}</td>
                     <td>
                         <a v-if="c.status!=1"  @click="openApproveInfoDrawer(c)">{{"View"|i18n}}</a>
@@ -69,6 +69,17 @@
 	const STATUS_REJECT = 3;//审批拒绝
 	const STATUS_BACK = 4;//审批驳回
 	
+	//流程类审批
+	const  CFG_APPROVER_TYPE_FLOW = 1;
+		
+	//非流程类审批 实名认证
+	const CFG_APPROVER_TYPE_REALNAME = 2;
+		
+	//申请特定角色，如配送
+	const CFG_APPROVER_TYPE_ROLE = 3;
+	
+	const  type2Map={1:'流程类',2:'实名认证',3:'角色',}
+	
 	const statusMap = {'1':'待审批','2':'通过','3':'拒绝','4':'驳回',}
 	
     const sn = 'cn.jmicro.security.apply.api.IApplyMngServiceJMsrv';
@@ -83,6 +94,7 @@
         },
         data() {
             return {
+				type2Map,
                 errorMsg:'',
                 isLogin:false,
                 roleList: [],

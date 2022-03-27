@@ -271,7 +271,8 @@ public class ClassScannerUtils {
 	}
 	
 	private boolean isComponentClass(Class<?> cls){
-
+		logger.info(Component.class.getClassLoader().getClass().getName());
+		logger.info(cls.isAnnotationPresent(Component.class)+"");
 		return  cls.isAnnotationPresent(Component.class)
 				||cls.isAnnotationPresent(Service.class)
 				||cls.isAnnotationPresent(PostListener.class)
@@ -312,7 +313,7 @@ public class ClassScannerUtils {
 						}
 					}*/
 					//logger.debug(c.getName());
-					/*if(c.getName().equals("cn.jmicro.api.server.FirstInterceptor")) {
+					/*if(c.getName().equals("cn.jmicro.shop.wx.filter.AuthIntercepter")) {
 						logger.debug(c.getName());
 					}*/
 					if(checker.accept(c)){

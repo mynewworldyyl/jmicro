@@ -41,6 +41,10 @@ public @interface Service {
 	
 	/**
 	 * 是否可通过api网关使用
+	 * 如果此值为false,则其全部服务方法都不能从外部网关访问；
+	 * 如果此值为true，则其服务方法能否从外部网关服务方法，取决于SMethod.external配置
+	 * a. SMethod.external==0或SMethod.external==1，可以访问，
+	 * b. 除a外的情况，服务方法不能从外部访问
 	 */
 	public boolean external() default false;
 	

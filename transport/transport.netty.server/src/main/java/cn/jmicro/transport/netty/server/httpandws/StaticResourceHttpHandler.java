@@ -106,6 +106,7 @@ public class StaticResourceHttpHandler  {
 		
 		if(key != null && handlers.containsKey(key)) {
 			//基于头部KEY匹配
+			
 			handlers.get(key).handler(rr, new JMicroNettyHttpResponse(response,ctx));
 			//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 			hsuc = true;

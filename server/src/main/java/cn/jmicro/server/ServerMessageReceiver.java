@@ -213,7 +213,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				if(smkey != null) { 
 					sm = srvMng.getServiceMethodByKey(smkey);
 				}*/
-				String errMsg = "Invalid message method code: [" + msg.toString() + "]";
+				String errMsg = "Invalid message method code: [" + msg.toString() + "] mcode: " + msg.getSmKeyCode();
 				errMsg += ",client host: " + s.remoteHost() + ",remotePort: " + s.remotePort()+",from insId: " + msg.getInsId();
 				
 				/*if(sm != null) {

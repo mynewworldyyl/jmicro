@@ -10,6 +10,9 @@ public class DsQueryCacheJRso {
 
 	public static final String TABLE = "t_ds_req_resp";
 	
+	public static final String[] QRY_COLUMNS = {"resp","createdBy","createdTime","clientId","cost",
+			"price","counted","req.apiId","req.reqId","req.validDays"};
+	
 	private RespJRso<String> resp;
 	
 	private ApiReqJRso req;

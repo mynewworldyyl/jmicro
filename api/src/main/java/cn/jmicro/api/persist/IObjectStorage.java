@@ -76,14 +76,20 @@ public interface IObjectStorage {
 	
 	Map<String,Object> getFields(String table,Map<String, Object> filter, String...fields);
 	
-	
+	/**
+	 * 
+	 * @param sort
+	 * @param def
+	 * @return 1:升序， -1： 倒序
+	 */
 	public static int getOrderVal(String sort, int def) {
 		if(Utils.isEmpty(sort)) return def;
 		String lo = sort.toLowerCase();
 		if("asc".equals(lo)) return 1;
-		if("desc".equals(lo)) return 1;
+		if("desc".equals(lo)) return -1;
 		try {
-			return Integer.parseInt(lo);
+			int v = Integer.parseInt(lo);
+			if(v >= 0) return 1; else return -1;
 		} catch (NumberFormatException e) {
 			return def;
 		}

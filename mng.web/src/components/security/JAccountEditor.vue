@@ -340,7 +340,7 @@
             refresh() {
                 let self = this;
                 this.isLogin = this.$jr.auth.isLogin();
-                if(this.$jr.rpcisAdmin()) {
+                if(this.$jr.auth.isAdmin()) {
                     let params = this.getQueryConditions();
                     act.getAccountList(params,this.pageSize,this.curPage-1).then((resp)=>{
                         if(resp.code != 0) {

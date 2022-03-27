@@ -333,7 +333,7 @@
             refresh(){
                 let self = this;
                 this.isLogin = this.$jr.auth.isLogin();
-                this.isAdmin= this.$jr.rpcisAdmin();
+                this.isAdmin= this.$jr.auth.isAdmin();
                 if(!this.isLogin) {
                     this.routeList = [];
                     return;

@@ -45,6 +45,13 @@ public final class ServiceMethodJRso {
 	//private String methodName="";
 	//private String[] methodParamTypes; //full type name
 	
+	/**
+	 * 是否可通过api网关使用
+	 * true：可以通过API网关访问
+	 *	false ：不可以通过API网关访问
+	 */
+	public boolean external;
+	
 	//-1 use Service config, 0 disable, 1 enable
 	private int monitorEnable = -1;
 	private byte logLevel  = MC.LOG_DEPEND;
@@ -225,6 +232,8 @@ public final class ServiceMethodJRso {
 		this.desc = p.desc;
 		this.cacheType = p.cacheType;
 		this.cacheExpireTime = p.cacheExpireTime;
+		
+		this.external = p.external;
 		
 		this.key.form(p.key);
 	}

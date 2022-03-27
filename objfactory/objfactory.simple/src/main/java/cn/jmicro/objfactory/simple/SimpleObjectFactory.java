@@ -282,6 +282,9 @@ public class SimpleObjectFactory implements IObjectFactory {
 				Component anno = c.getAnnotation(Component.class);
 				if(anno != null && anno.active()) {
 					//logger.info(c.getName());
+					/*if(c.getSimpleName().equals("AuthIntercepter")) {
+						logger.info(c.getName());
+					}*/
 					Object obj = this.get(c);
 					/*if(obj != null) {
 						set.add((T)obj);

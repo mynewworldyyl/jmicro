@@ -30,11 +30,10 @@ public class ServiceAdapterHttpRequestHandler implements IHttpRequestHandler {
 	@Override
 	public void handler(HttpRequest req, HttpResponse resp) {
 		Map<String,String> ps = req.getAllParam();
-		String smCodeStr = ps.get("code");
+		String smCodeStr = ps.get("__smc__");
 		
 		if(Utils.isEmpty(smCodeStr)) {
-			resp.contentType("text/html");
-			resp.write("404无效请求");
+			resp(resp,"404无效请求");
 			return;
 		}
 		
@@ -42,29 +41,32 @@ public class ServiceAdapterHttpRequestHandler implements IHttpRequestHandler {
 			Integer code = Integer.parseInt(smCodeStr);
 			if(code == 1222260450) {
 				//账号激活
-				String token = ps.get("token");
+				String token = ps.get("t");
 				asrv.call(1222260450, new Object[] {token})
 				.then((rst,fail,cxt)->{
 					RespJRso<Boolean> r = (RespJRso<Boolean>)rst;
-					resp.contentType("text/html");
 					if(r.getCode() == RespJRso.CODE_SUCCESS) {
-						resp.write("激活成功");
+						resp(resp,"激活成功");
 					}else {
-						resp.write(r.getMsg());
+						resp(resp,r.getMsg());
 					}
 				});
 			} else {
-				resp.contentType("text/html");
-				resp.write("404无效请求");
+				resp(resp,"404无效请求");
 				return;
 			}
 		} catch (Throwable e) {
 			log.error(req.getUri(),e);
-			resp.contentType("text/html");
-			resp.write("404无效请求");
+			resp(resp,"404无效请求");
 			return;
 		}
 		
+	}
+	
+	//application/json;charset:utf-8
+	private void resp(HttpResponse resp,String content) {
+		resp.contentType("text/html;charset:utf-8");
+		resp.write(content);
 	}
 
 	@Override

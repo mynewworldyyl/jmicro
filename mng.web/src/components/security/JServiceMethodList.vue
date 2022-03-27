@@ -7,12 +7,14 @@
                 <td style="width:70px">{{'ClientId'|i18n}}</td>
                 <td>{{'Namespace'|i18n}}</td><td style="width:70px">{{'Version'|i18n}}</td>
                 <td style="width:60px">{{'OnLine'|i18n}}</td>
+				<td style="width:60px">{{'External'|i18n}}</td>
                 <td>{{'UpdatedTime'|i18n}}</td><td>{{'Operation'|i18n}}</td>
             </tr>
             </thead>
             <tr v-for="a in keyList" :key="a.id">
                 <td>{{a.serviceName}}</td><td>{{a.method}}</td> <!--<td>{{a.haCode}}</td>--><td>{{a.clientId}}</td>
-                <td>{{a.namespace}}</td><td>{{a.version}}</td><td>{{a.online}}</td><td>{{a.updatedTime|formatDate(2)}}</td>
+                <td>{{a.namespace}}</td><td>{{a.version}}</td><td>{{a.online}}</td><td>{{a.external}}</td>
+				<td>{{a.updatedTime|formatDate(2)}}</td>
                 <td>&nbsp;
                     <a @click="openDetailDrawer(a)"> {{'Detail' | i18n}} </a>
                     <a v-if="a.perType" @click="openAuthDrawer(a)"> {{'Auth' | i18n}} </a>

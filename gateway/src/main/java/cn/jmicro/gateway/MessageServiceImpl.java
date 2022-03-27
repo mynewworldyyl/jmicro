@@ -289,7 +289,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 	}
 
 	@Override
-	@SMethod(asyncable=true,timeout=5000,retryCnt=0,needResponse=true,needLogin=false)
+	@SMethod(maxPacketSize=10240,asyncable=true,timeout=5000,retryCnt=0,needResponse=true,needLogin=false)
 	public void onPSMessage(PSDataJRso[] items) {
 		if(items == null || items.length == 0) {
 			return;
@@ -429,11 +429,11 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 			msg.setPayload(subId);
 		} else if(opCode == 2) {
 			//取消订阅消息
-			String subId = params.get("subId").toString();
-			if(Utils.isEmpty(subId)) {
+			if(params.get("subId") == null || Utils.isEmpty(params.get("subId").toString())) {
 				responseError(session,msg,RespJRso.SE_INVALID_SUB_ID,"Invalid subscribe id");
 				return true;
 			}
+			String subId = params.get("subId").toString();
 			int sid = new Double(Double.parseDouble(subId)).intValue();
 			boolean suc = this.unsubscribe(sid);
 			msg.setPayload(suc);

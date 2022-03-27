@@ -86,6 +86,7 @@ public class MessageRouteTable {
 			if(!sit.isExternal()) {
 				return;
 			}
+			
 			if(type == IListener.ADD) {
 				serviceAdd(sit);
 			}else if(type == IListener.REMOVE) {
@@ -137,6 +138,10 @@ public class MessageRouteTable {
 		if(methods == null || methods.isEmpty()) return;
 		
 		for(ServiceMethodJRso sm : methods) {
+			if(!sm.isExternal()) {
+				continue;
+			}
+			
 			Integer h = sm.getKey().getSnvHash();
 			Set<Integer> l = method2Instances.get(h);
 			if(l == null) {

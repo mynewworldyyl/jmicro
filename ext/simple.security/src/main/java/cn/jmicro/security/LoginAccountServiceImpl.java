@@ -133,8 +133,10 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 		}
 	}
 	
+
 	@Override
-	public RespJRso<String> getCode(int type) {
+	public RespJRso<String> getCode(int type, String vcode, String codeId, String mobile) {
+		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -246,7 +248,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 
 	@Override
-	public IPromise<RespJRso<Boolean>> bindMail(String mail, String vcode) {
+	public IPromise<RespJRso<Boolean>> bindMail(String mail, String vcode,String codeId) {
 		return null;
 	}
 

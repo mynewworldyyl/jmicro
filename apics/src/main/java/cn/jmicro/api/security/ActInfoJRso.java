@@ -497,6 +497,17 @@ public class ActInfoJRso {
 	}
 
 	public static enum Tag {
-		Mobile,Email,RealName
+		Mobile("未绑定手机号"),Email("未绑定邮箱"),RealName("未实名认证"),Face("未提交人脸信息");
+		
+		private String errMsg;
+		
+		private Tag(String d) {
+			this.errMsg = d;
+		}
+
+		public String getErrMsg() {
+			return errMsg;
+		}
+		
 	}
 }
