@@ -13,7 +13,7 @@ import cn.jmicro.common.Utils;
 @Component
 public class AreaDataManager implements IAreaDataServiceJMSrv {
 
-	@Reference
+	@Reference(forceRemote=true)
 	private IAreaDataServiceJMSrv ads;
 	
 	@Override

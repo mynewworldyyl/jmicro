@@ -428,7 +428,7 @@ class ClientServiceProxyManager {
 			AsyncConfigJRso[] acs = this.getAcs(ref);
 			
 			//如果本地存在实例，则优先使用本地实例
-			if(!type.getName().startsWith("cn.jmicro.api.classloader")) {
+			if(!type.getName().startsWith("cn.jmicro.api.classloader") && !ref.forceRemote()) {
 				proxy = this.of.get(type, false);
 			}
 			

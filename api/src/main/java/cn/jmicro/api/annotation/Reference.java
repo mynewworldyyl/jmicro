@@ -22,6 +22,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import cn.jmicro.api.area.IAreaDataServiceJMSrv;
 import cn.jmicro.common.Constants;
 
 /**
@@ -99,4 +100,11 @@ public @interface Reference {
 	 * @return
 	 */
 	public Async[] asyncs() default {};
+	
+	/**
+	 * 强制性使用远程调用，不能使用本地实例
+	 * 如cn.jmicro.api.area.AreaDataManager.ads;  private IAreaDataServiceJMSrv
+	 * @return
+	 */
+	public boolean forceRemote() default false;
 }
