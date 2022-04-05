@@ -5,7 +5,7 @@
                 <TabPane v-for="(item) in items"  :name="item.id" v-bind:key="item.id"
                          :label="(item.label ? item.label :item.title) | i18n ">
                     <!-- RPC  config -->
-                    <div class="editorBody">
+                    <div class="editorBody" :style="{height:($jcontentHeight-32)+'px'}">
                         <JServiceItem v-if="item.group == 'service' && item.type == 'sn'" :item="item"></JServiceItem>
                         <JInstanceItem v-else-if="item.group == 'service' && item.type == 'ins'" :item="item"></JInstanceItem>
                         <JMethodItem v-else-if="item.group == 'service' && item.type == 'method'" :meth="item"></JMethodItem>
@@ -56,6 +56,7 @@
                         <JProcess v-else-if="item.group == 'process'" :item="item"></JProcess>
 
                         <JTypeConfig v-else-if="item.group == 'typeConfig'" :item="item"></JTypeConfig>
+						<JDataType v-else-if="item.group == 'jdataType'" :item="item"></JDataType>
                         <JMonitorTypeKeyEditor v-else-if="item.group == 'monitorTye'" :item="item"></JMonitorTypeKeyEditor>
                         <JMonitorTypeServiceMethodEditor v-else-if="item.group == 'mtsm'" :item="item"></JMonitorTypeServiceMethodEditor>
                         <JInvokeLinkView v-else-if="item.group == 'invokeLinkView'" :item="item"></JInvokeLinkView>
@@ -75,7 +76,7 @@
 						<FeeOrderList v-else-if="item.group == 'feeOrderList'" :item="item"></FeeOrderList>
 						<ActInterfaceList v-else-if="item.group == 'actInterfaceList'" :item="item"></ActInterfaceList>
 						
-						<JBottomBar></JBottomBar>
+						
                     </div>
                 </TabPane>
             </Tabs>
@@ -86,7 +87,7 @@
 <script>
 
     import TreeNode from "./common/JTreeNode.js"
-    import JBottomBar from './common/JBottomBar.vue'
+   
     import config from "@/rpc/config"
 
     //import JServiceItem from './service/JServiceItem.vue'
@@ -125,7 +126,6 @@
     export default {
         name: 'JMicroEditor',
         components: {
-            JBottomBar,
             JServiceItem : () => import('./service/JServiceItem.vue'),
             JMethodItem: () => import('./service/JSMethodItem.vue'),
             JInstanceItem : () => import('./service/JInstanceItem.vue'),
@@ -184,6 +184,7 @@
 			DayCostList : () => import('./ds/DayCostList.vue'),
 			FeeOrderList : () => import('./ds/FeeOrderList.vue'),
 			ActInterfaceList : () => import('./ds/ActInterfaceList.vue'),
+			JDataType : () => import('./ds/JDataType.vue'),
         },
 
         data () {
@@ -592,18 +593,12 @@
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
     .JMainContentEditor{
-        height:100%;
-        /* min-height: 500px;*/
         overflow:hidden;
-       /* position:relative;*/
     }
 
     .editorBody {
-        height: 90%;
-        overflow-y: auto;
-        box-sizing: border-box;
-        position: relative;
-        /*margin-bottom: 1000px;*/
+      overflow-y: auto;
+	  overflow-x: hidden;
     }
 
     .editorToolBar{

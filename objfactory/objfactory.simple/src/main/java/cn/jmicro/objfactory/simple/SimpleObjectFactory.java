@@ -213,11 +213,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		if(!this.osSet.isEmpty() && !cls.getName().startsWith("cn.jmicro.api")) {
-			for(IObjectSource os: osSet) {
-				Object co = os.get(cls);
-				if(co != null) return (T)co;//外部数据源直接返回
-			}
+		if(cls.getName().equals("cn.jmicro.shop.db.service.UserService")) {
+			logger.info(cls.getName());
 		}
 		
 		if(obj != null) {
@@ -226,6 +223,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 				return (T)obj;
 			}
 			logger.warn(getSecurityPackageName() + " cannot get instance of " + tc.getName());
+		}
+		
+		if(!this.osSet.isEmpty() && !cls.getName().startsWith("cn.jmicro.api")) {
+			for(IObjectSource os: osSet) {
+				Object co = os.get(cls);
+				if(co != null) return (T)co;//外部数据源直接返回
+			}
 		}
 		
 		return null;
@@ -508,6 +512,10 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		//logger.debug(RpcClassLoaderHelper.class.getClassLoader().toString());
 		//logger.debug(ClassScannerUtils.class.getClassLoader().toString());
+		IObjectSource so = IObjectSource.getObjectSource();
+		if(so != null) {
+			this.cacheObj(IObjectSource.class, so,"sysObjectSource");
+		}
 		
 		this.cacheObj(RpcClassLoaderHelper.class, clHelper,"rpcClHelper");
 		this.cacheObj(RpcClassLoader.class, rpcClassLoader,"rpcClassLoader");

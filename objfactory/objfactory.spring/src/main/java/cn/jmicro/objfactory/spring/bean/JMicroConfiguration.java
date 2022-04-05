@@ -61,14 +61,17 @@ public class JMicroConfiguration implements ApplicationContextAware{
 			args = argStr.split(" ");
 		}
 		
-		Object jmicroObjectFactory = JMicro.getObjectFactoryAndStart(args);
-		ClassLoader jmicroRpcClassloader = jmicroObjectFactory.getClass().getClassLoader();
-		IObjectFactory of = SpringAndJmicroComponent.createLazyProxyObjectByCglib(jmicroObjectFactory,IObjectFactory.class.getName(),SpringAndJmicroComponent.class.getClassLoader());
-		
 		SpringObjectSource2Jmicto os2Jmicro = new SpringObjectSource2Jmicto();
 		if(cxt != null) {
 			os2Jmicro.setCxt(cxt);
 		}
+		
+		IObjectSource.setObjectSource(os2Jmicro);
+		
+		Object jmicroObjectFactory = JMicro.getObjectFactoryAndStart(args);
+		ClassLoader jmicroRpcClassloader = jmicroObjectFactory.getClass().getClassLoader();
+		IObjectFactory of = SpringAndJmicroComponent.createLazyProxyObjectByCglib(jmicroObjectFactory,IObjectFactory.class.getName(),SpringAndJmicroComponent.class.getClassLoader());
+	
 		os2Jmicro.setJmicroRpcClassloader(jmicroRpcClassloader);
 		
 		Object toJmicroOS = SpringAndJmicroComponent.createLazyProxyObjectByCglib(os2Jmicro,IObjectSource.class.getName(),jmicroRpcClassloader);

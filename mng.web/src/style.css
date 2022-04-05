@@ -1,0 +1,8 @@
+html{
+	font-size: (100vh/40);
+}
+
+html,body{
+	overflow-x: hidden;
+}
+	

@@ -1,7 +1,7 @@
 <template>
     <div class="JRoleEditor">
 
-        <div v-if="isLogin && roleList && roleList.length > 0" style="position:relative;height:auto;margin-top:10px;">
+        <div v-if="isLogin && roleList && roleList.length > 0">
             <table class="configItemTalbe" width="99%">
                 <thead><tr><td>{{'ID'|i18n}}</td><td>{{'Name'|i18n}}</td><td>{{'Desc'|i18n}}</td>
 				<td>{{'ClientId'|i18n}}</td>
@@ -368,7 +368,7 @@
 
         mounted () {
 			this.isAdmin = this.$jr.auth.isAdmin()
-            this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
+            //this.$el.style.minHeight=(document.body.clientHeight-67)+'px';
             this.$jr.auth.addActListener(this.refresh);
             this.refresh();
             let self = this;
@@ -395,7 +395,7 @@
 
 <style>
     .JRoleEditor{
-        min-height: 500px;
+      
     }
 
     .JRoleEditor a {

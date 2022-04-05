@@ -3,6 +3,7 @@
 
         <table v-if="isLogin  && keyList && keyList.length > 0" class="configItemTalbe" width="99%">
             <thead><tr><td style="width:500px">{{'Service'|i18n}}</td><td>{{'Method'|i18n}}</td>
+				<td>{{'haCode'|i18n}}</td>
                 <!--<td style="width:150px">{{'Hash'|i18n}}</td>-->
                 <td style="width:70px">{{'ClientId'|i18n}}</td>
                 <td>{{'Namespace'|i18n}}</td><td style="width:70px">{{'Version'|i18n}}</td>
@@ -12,7 +13,7 @@
             </tr>
             </thead>
             <tr v-for="a in keyList" :key="a.id">
-                <td>{{a.serviceName}}</td><td>{{a.method}}</td> <!--<td>{{a.haCode}}</td>--><td>{{a.clientId}}</td>
+                <td>{{a.serviceName}}</td><td>{{a.method}}</td> <td>{{a.haCode}}</td><td>{{a.clientId}}</td>
                 <td>{{a.namespace}}</td><td>{{a.version}}</td><td>{{a.online}}</td><td>{{a.external}}</td>
 				<td>{{a.updatedTime|formatDate(2)}}</td>
                 <td>&nbsp;

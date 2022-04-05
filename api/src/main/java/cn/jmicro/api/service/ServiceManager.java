@@ -226,7 +226,7 @@ public class ServiceManager {
 	}
 
 	protected void childrenAdd(String child) {
-		if(this.path2SrvItems.containsKey(child)) return;
+		//if(this.path2SrvItems.containsKey(child)) return;
 		
 		UniqueServiceKeyJRso key = UniqueServiceKeyJRso.fromKey(child);
 		
@@ -235,9 +235,9 @@ public class ServiceManager {
 			return;
 		}
 		
-		/*if("cn.jmicro.api.tx.ITransactionResource".equals(si.getKey().getServiceName())) {
-			logger.debug("test debug");
-		}*/
+		if(key.getServiceName().equals("cn.jmicro.api.area.IAreaDataServiceJMSrv")) {
+			logger.info(key.fullStringKey());
+		}
 		
 		if(!PermissionManager.checkClientPermission(Config.getClientId(), key.getClientId())) {
 			//logger.info("No permisstion for: " + path);
@@ -281,9 +281,9 @@ public class ServiceManager {
 	}
 	
 	private void loadMethodHash(UniqueServiceKeyJRso key,String siData) {
-		/*if(key.getServiceName().equals("cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv")) {
+		if(key.getServiceName().equals("cn.jmicro.api.area.IAreaDataServiceJMSrv")) {
 			logger.info(key.fullStringKey());
-		}*/
+		}
 		
 		//非自身服务，也非API网关模式，
 		String path = path(key.fullStringKey());
@@ -465,6 +465,7 @@ public class ServiceManager {
 		}
 		
 		if(siKey == null) {
+			
 			logger.error("Service not found for method hash: " + hash);
 			return null;
 		}

@@ -9,6 +9,8 @@ import 'view-design/dist/styles/iview.css'
 import JMicroEditor from  './components/JMicroEditor.vue'
 import rpc from  '@/rpc/rpcbase'
 
+import './style.css'
+
 import * as filters from './components/common/JFilters'
 Object.keys(filters).forEach(key => {
     Vue.filter(key, filters[key])
@@ -33,6 +35,11 @@ import JMonitor from './components/monitor/JMonitor.vue'
 
 import Element from 'element-ui'
 Vue.use(Element)
+
+let ch = parseFloat(`${document.documentElement.clientHeight}`)
+Vue.prototype.$jch = ch//视口高度
+Vue.prototype.$jcontainerHeight = ch;//容器区高度设置为视口高度
+Vue.prototype.$jcontentHeight = ch - 35//内容区高度=视口高度-菜单栏高度
 
 Vue.use(iView)
 //Vue.use(window.jm)

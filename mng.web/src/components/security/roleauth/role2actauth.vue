@@ -32,6 +32,7 @@
               <td><a v-if="a.status == st.STATUS_APPROVE"   @click="descAuthOk(a.id,st.STATUS_REVOKE)"> {{'Revoke' | i18n}} </a>
                   <a v-if="a.status == st.STATUS_APPLY || a.status == st.STATUS_REJECT"   @click="descAuthOk(a.id,st.STATUS_APPROVE)"> {{'Approve' | i18n}} </a>
                   <a v-if="a.status == st.STATUS_APPLY"   @click="descAuthOk(a.id,st.STATUS_REJECT)"> {{'Reject' | i18n}} </a>
+				  <a v-if="a.status == st.STATUS_REVOKE"   @click="reinvokeAuth(a.actId)"> {{'Reinvoke' | i18n}} </a>
               </td>
           </tr>
       </table>
@@ -85,6 +86,13 @@
         },
 
         methods:{
+			
+			reinvokeAuth(aid){
+				this.actId = aid
+				this.showClientIdBox=true;
+				this.okAuthByClientId()
+			},
+			
             refreshAuthList(){
                 if(!this.role) {
                     return

@@ -22,16 +22,22 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 
 /**
  * 
- * 
+ * 后台可以通过网关给用户下发消息
  * @author Yulei Ye
  * @date 2020年3月26日
  */
 @AsyncClientProxy
 public interface IGatewayMessageCallbackJMSrv {
 
+	public static final Integer MSG_TYPE_CHAT_CODE = 5556;//聊天消息
+    public static final Integer MSG_TYPE_SENDER_CODE = 5555;//配送员端订单消息
+	public static final Integer MSG_TYPE_CUST_CODE = 5557;//配送服务客户端消息
+	
 	//账号消息前缀
 	public static final String TOPIC_PREFIX = "/__act/msg/";
 	
 	void onPSMessage(PSDataJRso[] item);
+	
+	void onOnePSMessage(PSDataJRso item);
 	
 }

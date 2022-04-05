@@ -287,67 +287,80 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		}
 		return true;
 	}
+	
+	@Override
+	public void onOnePSMessage(PSDataJRso item) {
+		publishOneMessage(item);
+	}
+
+	private void publishOneMessage(PSDataJRso i) {
+		
+		try {
+			
+			Message msg = new Message();
+			msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+			
+			//强制使用JSON下发数据
+			msg.setDownProtocol(Message.PROTOCOL_JSON);
+			
+			Set<Registion> rsList = topic2Sessions.get(i.getTopic());
+			if(rsList == null || rsList.isEmpty()) {
+				logger.warn("No subcriber for topic: " + i.getTopic());
+				return;
+			}
+			
+			Set<Registion> rs = new HashSet<>();
+			rs.addAll(rsList);
+			
+			//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+i.getData());
+			
+			Map<String,Object> context = null;
+			
+			if(i.getContext() != null) {
+				context = new HashMap<>();
+				context.putAll(i.getContext());
+			}
+			
+			for(Registion r : rs) {
+				if(i.getSrcClientId() > 0 && r.clientId != i.getSrcClientId()) {
+					logger.warn("Source clientId:" + i.getSrcClientId()+", target clientId:" + r.clientId+", topic: "+ i.getTopic());
+					continue;
+				}
+				
+				if(context != null && r.ctx != null && !r.ctx.isEmpty()) {
+					i.getContext().clear();
+					i.getContext().putAll(context);
+					i.getContext().putAll(r.ctx);
+				}
+				
+				//强制使用JSON下发数据
+				msg.setPayload(ICodecFactory.encode(codecFactory, i, Message.PROTOCOL_JSON));
+				
+				try {
+					r.sess.write(msg);
+					r.lastActiveTime = TimeUtils.getCurTime();
+				} catch (Throwable e) {
+					logger.error("onMessage write error will unsubscribe the topic: "+r.topic,e);
+					this.unsubscribe(r.id);
+				}
+			}
+			
+		} catch (Throwable e) {
+			logger.error("",e);
+		}	
+	
+	}
 
 	@Override
 	@SMethod(maxPacketSize=10240,asyncable=true,timeout=5000,retryCnt=0,needResponse=true,needLogin=false)
 	public void onPSMessage(PSDataJRso[] items) {
 		if(items == null || items.length == 0) {
+			logger.warn("Got items is null: ");
 			return;
 		}
 		
-		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
-		
-		//强制使用JSON下发数据
-		msg.setDownProtocol(Message.PROTOCOL_JSON);
-		
 		for(PSDataJRso i : items) {
-			
-			try {
-				Set<Registion> rsList = topic2Sessions.get(i.getTopic());
-				if(rsList == null || rsList.isEmpty()) {
-					continue;
-				}
-				
-				Set<Registion> rs = new HashSet<>();
-				rs.addAll(rsList);
-				
-				//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+i.getData());
-				
-				Map<String,Object> context = null;
-				
-				if(i.getContext() != null) {
-					context = new HashMap<>();
-					context.putAll(i.getContext());
-				}
-				
-				for(Registion r : rs) {
-					if(i.getSrcClientId() > 0 && r.clientId != i.getSrcClientId()) {
-						logger.warn("Source clientId:" + i.getSrcClientId()+", target clientId:" + r.clientId+", topic: "+ i.getTopic());
-						continue;
-					}
-					
-					if(context != null && r.ctx != null && !r.ctx.isEmpty()) {
-						i.getContext().clear();
-						i.getContext().putAll(context);
-						i.getContext().putAll(r.ctx);
-					}
-					
-					//强制使用JSON下发数据
-					msg.setPayload(ICodecFactory.encode(codecFactory, i, Message.PROTOCOL_JSON));
-					
-					try {
-						r.sess.write(msg);
-						r.lastActiveTime = TimeUtils.getCurTime();
-					} catch (Throwable e) {
-						logger.error("onMessage write error will unsubscribe the topic: "+r.topic,e);
-						this.unsubscribe(r.id);
-					}
-				}
-				
-			} catch (Throwable e) {
-				logger.error("",e);
-			}	
+			 publishOneMessage(i);
 		}
 		
 	}

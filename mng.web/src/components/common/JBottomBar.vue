@@ -1,5 +1,5 @@
 <template>
-    <div id="bottomBar" class="JBottomBar" ref="bottomBar" :style="{top:btnTop}">
+    <div id="bottomBar" class="JBottomBar" ref="bottomBar">
         <a target="_blank" class="icp" href="http://beian.miit.gov.cn"><pre>粤ICP备2020078757号</pre></a>
         <a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=44030602004897"
            class="ba">
@@ -23,7 +23,6 @@ export default {
     data() {
         return {
             bb:null,
-            btnTop:0,
         };
     },
 
@@ -38,16 +37,16 @@ export default {
          }*/
         //滚动滑轮触发scrollFunc方法
         //window.onmousewheel = document.onmousewheel = this.scrollFunc;
-        this.bb = document.getElementById("bottomBar");
+        //this.bb = document.getElementById("bottomBar");
         //this.bb.previousElementSibling.style.minHeight=(document.body.clientHeight-67)+'px';
         //this.bb.parentElement.firstChild.style.minHeight=(document.body.clientHeight-67)+'px';
         // this.bb.style.position='relative';
         //this.bb.style.width=document.body.clientWidth+'px';
-        if(document.body.scrollHeight < document.body.clientHeight) {
-            this.btnTop = (document.body.clientHeight-67)+'px';
-        }else {
-            this.btnTop = (document.body.scrollHeight-document.body.clientHeight)+'px';
-        }
+        // if(document.body.scrollHeight < document.body.clientHeight) {
+        //     this.btnTop = (document.body.clientHeight-67)+'px';
+        // }else {
+        //     this.btnTop = (document.body.scrollHeight-document.body.clientHeight)+'px';
+        // }
     },
 
     methods: {

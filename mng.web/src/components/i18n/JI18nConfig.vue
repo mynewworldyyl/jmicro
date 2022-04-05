@@ -48,7 +48,7 @@
 
         <!--  创建 或 更新 -->
         <Drawer  v-model="addDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
-                :draggable="true" :scrollable="true" width="50">
+                :draggable="true" :scrollable="true" width="50" :mask-closable="false">
             <div class="error">{{errMsg}}</div>
             <div class="addClientcls">
                 <a v-if="actInfo  && !importFileModel" @click="doAdd()">{{'Confirm'|i18n}}</a>
@@ -184,7 +184,7 @@
                     key:'',
                     val:'',
                     mod:'',
-                    ps : [{opType:1,fn:'country',v:null},{opType:1,fn:'lan',v:null},{opType:1,fn:'clientId',v:null},
+                    qryPs : [{opType:1,fn:'country',v:null},{opType:1,fn:'lan',v:null},{opType:1,fn:'clientId',v:null},
                         {opType:2,fn:'key',v:null},{opType:2,fn:'val',v:null},{opType:2,fn:'mod',v:null},]
                 },
 
@@ -261,12 +261,12 @@
 
             doQuery(){
                 this.qry.curPage = 1
-                this.qry.ps = []
-                this.qryData.ps.forEach((e)=>{
+                this.qry.qryPs = []
+                this.qryData.qryPs.forEach((e)=>{
                     let v = this.qryData[e.fn]
                     if(v && v != '') {
                         e.v = v
-                        this.qry.ps.push(e)
+                        this.qry.qryPs.push(e)
                     }
                 })
                 this.refresh()
