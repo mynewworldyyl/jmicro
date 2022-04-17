@@ -16,10 +16,11 @@
  */
 package cn.jmicro.api.internal.pubsub;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.codegenerator.AsyncClientProxy;
-import cn.jmicro.common.Constants;
 
 /**
  * 
@@ -34,7 +35,7 @@ public interface IInternalSubRpcJMSrv {
 	 * @param item
 	 * @return 状态码
 	 */
-	int publishItem(PSDataJRso item);
+	IPromise<RespJRso<Integer>> publishItem(PSDataJRso item);
 	
 	/**
 	 * 
@@ -42,7 +43,7 @@ public interface IInternalSubRpcJMSrv {
 	 * @param items
 	 * @return 状态码
 	 */
-	int publishItems(String topic, PSDataJRso[] items);
+	IPromise<RespJRso<Integer>> publishItems(String topic, PSDataJRso[] items);
 	
 	/**
 	 * 
@@ -50,13 +51,13 @@ public interface IInternalSubRpcJMSrv {
 	 * @param content
 	 * @return 状态码
 	 */
-	int publishString(String topic,String content);
+	IPromise<RespJRso<Integer>> publishString(String topic,String content);
 	
 	/**
 	 * 检测是否存在指定主题的订阅者
 	 * @param topic
 	 * @return
 	 */
-	boolean hasTopic(String topic);
+	IPromise<RespJRso<Boolean>> hasTopic(String topic);
 	
 }

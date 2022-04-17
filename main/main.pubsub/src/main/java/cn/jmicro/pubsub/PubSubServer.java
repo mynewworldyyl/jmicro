@@ -35,17 +35,20 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.basket.BasketFactory;
 import cn.jmicro.api.basket.IBasket;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.internal.pubsub.IInternalSubRpcJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -60,12 +63,11 @@ import cn.jmicro.common.util.StringUtils;
 import redis.clients.jedis.JedisPool;
 
 /**
- *
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:21
  */
-@Service(clientId=Constants.NO_CLIENT_ID,limit2Packages="cn.jmicro.api.pubsub",version="0.0.1",
-retryCnt=0, monitorEnable=0,timeout=5000)
+@Service(clientId=Constants.NO_CLIENT_ID, limit2Packages="cn.jmicro.api.pubsub", version="0.0.1",
+retryCnt=0, monitorEnable=0, timeout=5000)
 @Component(level=5)
 public class PubSubServer implements IInternalSubRpcJMSrv{
 	
@@ -196,8 +198,12 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	}
 	
 	@Override
-	public boolean hasTopic(String topic) {
-		return this.subManager.isValidTopic(topic);
+	public IPromise<RespJRso<Boolean>> hasTopic(String topic) {
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
+			RespJRso<Boolean> r =new RespJRso<>(RespJRso.CODE_SUCCESS,true);
+			r.setData(this.subManager.isValidTopic(topic));
+			suc.success(r);
+		});
 	}
 
 	/**
@@ -205,7 +211,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	 */
 	@Override
 	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
-	public int publishItem(PSDataJRso item) {
+	public Promise<RespJRso<Integer>> publishItem(PSDataJRso item) {
 		return publishItems(item.getTopic(),new PSDataJRso[]{item});
 	}
 	
@@ -213,13 +219,13 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
 	 */
 	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
-	public int publishString(String topic,String content) {
-		if(!this.subManager.isValidTopic(topic)) {
+	public Promise<RespJRso<Integer>> publishString(String topic,String content) {
+		/*if(!this.subManager.isValidTopic(topic)) {
 			if(LG.isLoggable(MC.LOG_DEBUG)) {
 				LG.log(MC.LOG_DEBUG, this.getClass(), " PUB_TOPIC_INVALID for: " + topic);
 			}
 			return PubSubManager.PUB_TOPIC_INVALID;
-		}
+		}*/
 		
 		PSDataJRso item = new PSDataJRso();
 		item.setTopic(topic);
@@ -235,180 +241,193 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 		}
 	}
 	
-	/**
-	 * 同一主题的多个消息。
-	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
-	 */
-	@Override
-	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
-	public int publishItems(String topic,PSDataJRso[] items) {
-		
-		/*if(openDebug) {
-			logger.info("GOT: " + topic);
-		}*/
-		
-		/*boolean me = this.statusMonitorAdapter.monitoralbe;
-		ServiceCounter sc = this.statusMonitorAdapter.getServiceCounter();*/
+	private RespJRso<Integer> publishItems0(String topic, PSDataJRso[] items) {
+		/*
+		 * if(openDebug) { logger.info("GOT: " + topic); }
+		 */
+
+		/*
+		 * boolean me = this.statusMonitorAdapter.monitoralbe; ServiceCounter sc =
+		 * this.statusMonitorAdapter.getServiceCounter();
+		 */
+		RespJRso<Integer> r = new RespJRso<>();
+
 		long curTime = TimeUtils.getCurTime();
-		if(items != null && items.length > 0) {
-			/*if(me) {
-				sc.add(MC.Ms_ReceiveItemCnt,items.length);
-			}*/
-			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ReceiveItemCnt, 1);
+		if (items != null && items.length > 0) {
+			/*
+			 * if(me) { sc.add(MC.Ms_ReceiveItemCnt,items.length); }
+			 */
+			foreachItem(items, (pd) -> {
+				this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_ReceiveItemCnt, 1);
 			});
 		}
-		
-		if(!this.subManager.isValidTopic(topic)) {
-			/*if(me) {
-				sc.add(MC.Ms_TopicInvalid, items.length);
-			}*/
-			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_TopicInvalid, 1);
+
+		if (!this.subManager.isValidTopic(topic)) {
+			/*
+			 * if(me) { sc.add(MC.Ms_TopicInvalid, items.length); }
+			 */
+			foreachItem(items, (pd) -> {
+				this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_TopicInvalid, 1);
 			});
-			if(LG.isLoggable(MC.LOG_DEBUG)) {
+			if (LG.isLoggable(MC.LOG_DEBUG)) {
 				LG.log(MC.LOG_DEBUG, this.getClass(), " PUB_TOPIC_INVALID for: " + topic);
 			}
-			return PubSubManager.PUB_TOPIC_INVALID;
+			r.setData(PubSubManager.PUB_TOPIC_INVALID);
+			return r;
 		}
-		
-		if(items == null || StringUtils.isEmpty(topic) || items.length == 0) {
-			//无效消息
-			/*if(me) {
-				sc.add(MC.Ms_ServerDisgard, 1);
-			}*/
-			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerDisgard, 1);
+
+		if (items == null || StringUtils.isEmpty(topic) || items.length == 0) {
+			// 无效消息
+			/*
+			 * if(me) { sc.add(MC.Ms_ServerDisgard, 1); }
+			 */
+			foreachItem(items, (pd) -> {
+				this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_ServerDisgard, 1);
 			});
-			
-			if(LG.isLoggable(MC.LOG_DEBUG)) {
+
+			if (LG.isLoggable(MC.LOG_DEBUG)) {
 				LG.log(MC.LOG_DEBUG, this.getClass(), " PUB_SERVER_DISCARD null items for: " + topic);
 			}
-			
-			return PubSubManager.PUB_SERVER_DISCARD;
+			r.setData(PubSubManager.PUB_SERVER_DISCARD);
+			return r;
 		}
-		
+
 		long size = basketFactory.size() + items.length;
-		if(size > this.maxMemoryItem && (items.length + cacheItemsCnt.get()) > this.maxCachePersistItem) {
-			//无效消息
-			/*if(me) {
-				sc.add(MC.Ms_ServerBusy,1);
-			}*/
-			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_ServerBusy, 1);
+		if (size > this.maxMemoryItem && (items.length + cacheItemsCnt.get()) > this.maxCachePersistItem) {
+			// 无效消息
+			/*
+			 * if(me) { sc.add(MC.Ms_ServerBusy,1); }
+			 */
+			foreachItem(items, (pd) -> {
+				this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_ServerBusy, 1);
 			});
-			
-			if(LG.isLoggable(MC.LOG_WARN)) {
-				LG.log(MC.LOG_WARN, this.getClass(), " PUB_SERVER_BUSUY : " + topic +"send len: " + 
-						items.length+" max "+this.maxCachePersistItem);
+
+			if (LG.isLoggable(MC.LOG_WARN)) {
+				LG.log(MC.LOG_WARN, this.getClass(), " PUB_SERVER_BUSUY : " + topic + "send len: " + items.length
+						+ " max " + this.maxCachePersistItem);
 			}
-			
-			return PubSubManager.PUB_SERVER_BUSUY;
+			r.setData(PubSubManager.PUB_SERVER_BUSUY);
+			return r;
 		}
-		
-		if(!lastSendTimes.containsKey(topic)) {
+
+		if (!lastSendTimes.containsKey(topic)) {
 			lastSendTimes.put(topic, curTime);
 		}
-		
-		/*if(me) {
-			sc.add(MC.Ms_SubmitCnt, items.length);
-		}*/
-		
-		foreachItem(items,(pd)->{
-			this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_SubmitCnt, 1);
+
+		/*
+		 * if(me) { sc.add(MC.Ms_SubmitCnt, items.length); }
+		 */
+
+		foreachItem(items, (pd) -> {
+			this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_SubmitCnt, 1);
 		});
-		
-		//IBasket<PSDataJRso> b = this.basketFactory.borrowWriteBasket(true);
-		
-		if(size < this.maxMemoryItem) {
+
+		// IBasket<PSDataJRso> b = this.basketFactory.borrowWriteBasket(true);
+
+		if (size < this.maxMemoryItem) {
 			int pos = 0;
-			while(pos < items.length) {
-				IBasket<PSDataJRso>  b = basketFactory.borrowWriteBasket(true);
-				if(b != null) {
+			while (pos < items.length) {
+				IBasket<PSDataJRso> b = basketFactory.borrowWriteBasket(true);
+				if (b != null) {
 					int re = b.remainding();
 					int len = re;
-					if(items.length - pos < re) {
+					if (items.length - pos < re) {
 						len = items.length - pos;
-					}	
-					if(b.write(items,pos,len)) {
-						/*if(openDebug) {
-							logger.info("basket isEmpty: {}",b.isEmpty());
-						}*/
+					}
+					if (b.write(items, pos, len)) {
+						/*
+						 * if(openDebug) { logger.info("basket isEmpty: {}",b.isEmpty()); }
+						 */
 						boolean rst = basketFactory.returnWriteBasket(b, true);
-						if(rst) {
+						if (rst) {
 							pos += len;
 							continue;
-						}else {
-							/*if(me) {
-								sc.add(MC.Ms_FailReturnWriteBasket, 1);
-								sc.add(MC.Ms_FailItemCount, items.length);
-							}*/
-							foreachItem(items,(pd)->{
-								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
-								this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
+						} else {
+							/*
+							 * if(me) { sc.add(MC.Ms_FailReturnWriteBasket, 1); sc.add(MC.Ms_FailItemCount,
+							 * items.length); }
+							 */
+							foreachItem(items, (pd) -> {
+								this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
+								this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 							});
-							String errMsg = "Fail to return basket fail size: "+ (items.length - pos);
+							String errMsg = "Fail to return basket fail size: " + (items.length - pos);
 							LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
 							logger.error(errMsg);
 							break;
 						}
 					} else {
 						basketFactory.returnWriteBasket(b, true);
-						String errMsg = "Fail write basket size: "+ (items.length - pos);
+						String errMsg = "Fail write basket size: " + (items.length - pos);
 						LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
 						logger.error(errMsg);
-						/*if(me) {
-							//sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
-							sc.add(MC.Ms_FailItemCount, items.length - pos);
-						}*/
-						foreachItem(items,(pd)->{
-							this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
+						/*
+						 * if(me) { //sc.add(MonitorConstant.Ms_Fail2BorrowBasket, 1);
+						 * sc.add(MC.Ms_FailItemCount, items.length - pos); }
+						 */
+						foreachItem(items, (pd) -> {
+							this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 						});
 						break;
-					}	
+					}
 				} else {
-					/*if(me) {
-						sc.add(MC.Ms_FailReturnWriteBasket, 1);
-						sc.add(MC.Ms_FailItemCount, items.length);
-					}*/
-					foreachItem(items,(pd)->{
-						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
-						this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
+					/*
+					 * if(me) { sc.add(MC.Ms_FailReturnWriteBasket, 1); sc.add(MC.Ms_FailItemCount,
+					 * items.length); }
+					 */
+					foreachItem(items, (pd) -> {
+						this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_FailReturnWriteBasket, 1);
+						this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_FailItemCount, 1);
 					});
-					String errMsg = "Fail size: "+ (items.length - pos);
+					String errMsg = "Fail size: " + (items.length - pos);
 					LG.log(MC.LOG_ERROR, this.getClass(), errMsg);
 					logger.error(errMsg);
 					break;
 				}
 			}
 		} else {
-			this.cacheStorage.push(topic,items,0,items.length);
+			this.cacheStorage.push(topic, items, 0, items.length);
 			cacheItemsCnt.addAndGet(items.length);
-			/*if(me) {
-				sc.add(MC.Ms_Pub2Cache, items.length);
-			}*/
-			foreachItem(items,(pd)->{
-				this.sta.getSc(pd.getTopic(),pd.getSrcClientId()).add(MC.Ms_Pub2Cache, 1);
+			/*
+			 * if(me) { sc.add(MC.Ms_Pub2Cache, items.length); }
+			 */
+			foreachItem(items, (pd) -> {
+				this.sta.getSc(pd.getTopic(), pd.getSrcClientId()).add(MC.Ms_Pub2Cache, 1);
 			});
-			
-			String errMsg = "push to cache :"+items.length+",total:"+cacheItemsCnt.get();
+
+			String errMsg = "push to cache :" + items.length + ",total:" + cacheItemsCnt.get();
 			LG.log(MC.LOG_WARN, this.getClass(), errMsg);
 			logger.warn(errMsg);
 		}
-		
-		synchronized(syncLocker) {
+
+		synchronized (syncLocker) {
 			syncLocker.notifyAll();
 		}
-		
-		if(JMicroContext.get().isDebug()) {
-			JMicroContext.get().appendCurUseTime("pubsub server finishTime",true);
+
+		if (JMicroContext.get().isDebug()) {
+			JMicroContext.get().appendCurUseTime("pubsub server finishTime", true);
 		}
+
+		/*
+		 * if(openDebug) { logger.info("Resp OK: " + topic); }
+		 */
+		r.setData(PubSubManager.PUB_OK);
+		return r;
+	}
+	
+	/**
+	 * 同一主题的多个消息。
+	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
+	 */
+	@Override
+	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
+	public Promise<RespJRso<Integer>> publishItems(String topic,PSDataJRso[] items) {
+		return new Promise<RespJRso<Integer>>((suc,fail)->{
+			RespJRso<Integer> r = publishItems0(topic,items);
+			suc.success(r);
+		});
 		
-		/*if(openDebug) {
-			logger.info("Resp OK: " + topic);
-		}*/
 		
-		return PubSubManager.PUB_OK;
 	}
 	
 	private int writeBasket(PSDataJRso[] items,long curTime) {

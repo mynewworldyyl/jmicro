@@ -162,8 +162,13 @@ public final class Message {
 	public static final Byte EXTRA_KEY_MSG_ID = -117;
 	
 	public static final Byte EXTRA_KEY_LOGIN_SYS = -116;
-	
 	public static final Byte EXTRA_KEY_ARG_HASH= -115;
+	
+	public static final Byte EXTRA_KEY_PS_OP_CODE= -114;
+	public static final Byte EXTRA_KEY_PS_ARGS= -113;
+	
+	//服务器返回全局唯一标识ID
+	public static final Byte EXTRA_KEY_SMSG_ID= -112;
 	
 	//rpc method name
 	public static final Byte EXTRA_KEY_METHOD = 127;

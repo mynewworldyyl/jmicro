@@ -1407,11 +1407,11 @@ public class SimpleObjectFactory implements IObjectFactory {
 				f.setAccessible(true);
 			}
 			try {
-				if(f.getName().equals("respo")) {
+				/*if(f.getName().equals("respo")) {
 					ClassLoader cl0 = f.getDeclaringClass().getClassLoader();
 					ClassLoader cl1 = srv.getClass().getClassLoader();
 					logger.debug("test respo debug");
-				}
+				}*/
 				f.set(obj, srv);
 			} catch (IllegalArgumentException | IllegalAccessException e) {
 				throw new CommonException("",e);

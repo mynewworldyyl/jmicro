@@ -1,24 +1,5 @@
+package cn.jmicro.gateway.msg;
 
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package cn.jmicro.gateway;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -28,16 +9,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.annotation.SMethod;
-import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.net.IMessageHandler;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
@@ -54,19 +31,16 @@ import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
-import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 
 /**
- *     用于外部客户端订阅pubsub数据
- * 
+ * 消息网关，专门处理客户端转发消息
+ *
  * @author Yulei Ye
- * @date 2020年3月26日
+ * @date 2022年4月10日 上午8:28:52
  */
-@Component(side=Constants.SIDE_PROVIDER)
-@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallbackJMSrv.class)
-public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessageHandler{
+@Component
+public class MsgGatewayManager {
 
 	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
 	
@@ -80,6 +54,8 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 	private Map<String,Set<Registion>> topic2Sessions = new HashMap<>();
 	
 	private Map<Integer,String> id2Topic = new HashMap<>();
+	
+	private Map<Integer,Registion> actId2Sessions = new HashMap<>();
 	
 	@Cfg(value="/IGatewayMessageCallback/registSessionTimeout",defGlobal=true)
 	private long registSessionTimeout = 1000*60*10;
@@ -115,7 +91,27 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		}
 	};
 	
-	private int subscribe(ISession session, String topic, Map<String, Object> ctx,Message msg) {
+	public long forward(Message msg,Integer tactId) {
+		byte t = msg.getType();
+		
+		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+		
+		msg.setMsgId(idServer.getLongId(Message.class));
+		msg.putExtra(Message.EXTRA_KEY_SMSG_ID, msg.getMsgId());
+		
+		Registion r = this.actId2Sessions.get(tactId);
+		if(r == null) {
+			logger.warn("Act not online: " + tactId);
+			return -1;
+		}
+		
+		r.sess.write(msg);//直接转发消息
+		
+		msg.setType(t);
+		return msg.getMsgId();
+	}
+	
+	public int subscribe(ISession session, String topic,Message msg) {
 		if(StringUtils.isEmpty(topic)) {
 			logger.error("Topic cannot be NULL");
 			return -1;
@@ -193,12 +189,14 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 			}
 			
 			Registion r = new Registion();
-			r.ctx = ctx;
+			//r.ctx = ctx;
 			r.id = this.idServer.getIntId(MessageServiceImpl.class);
 			r.sess = session;
 			r.topic = topic;
+			r.actId = ai.getId();
 			r.clientId = ai.getClientId();
 			r.lastActiveTime = TimeUtils.getCurTime();
+			
 			sess.add(r);
 			Set<Integer> ids = session.getParam(MESSAGE_SERVICE_REG_ID);
 			if(ids == null) {
@@ -207,6 +205,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 			}
 			ids.add(r.id);
 			this.id2Topic.put(r.id, r.topic);
+			actId2Sessions.put(ai.getId(), r);
 			session.addSessionListener(seeesionListener);
 			return r.id;
 		}
@@ -214,7 +213,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		return -1;
 	}
 
-	private boolean unsubscribe(Integer id) {
+	public boolean unsubscribe(Integer id) {
 		String topic = this.id2Topic.get(id);
 		if(StringUtils.isEmpty(topic)) {
 			return true;
@@ -240,6 +239,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 			}
 		}*/
 		
+		
 		this.id2Topic.remove(id);
 		
 		if(rr != null) {
@@ -248,6 +248,7 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 				ids.remove(id);
 			}
 			sess.remove(rr);
+			this.actId2Sessions.remove(rr.actId);
 		}
 		
 		logger.debug("unregist topic:{} id:{} ",rr.topic,rr.id);
@@ -288,12 +289,8 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 		return true;
 	}
 	
-	@Override
-	public void onOnePSMessage(PSDataJRso item) {
-		publishOneMessage(item);
-	}
 
-	private void publishOneMessage(PSDataJRso i) {
+	public void publishOneMessage(PSDataJRso i) {
 		
 		try {
 			
@@ -351,20 +348,6 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 	
 	}
 
-	@Override
-	@SMethod(maxPacketSize=10240,asyncable=true,timeout=5000,retryCnt=0,needResponse=true,needLogin=false)
-	public void onPSMessage(PSDataJRso[] items) {
-		if(items == null || items.length == 0) {
-			logger.warn("Got items is null: ");
-			return;
-		}
-		
-		for(PSDataJRso i : items) {
-			 publishOneMessage(i);
-		}
-		
-	}
-	
 	private ITickerAction<Object> tickerAct = new ITickerAction<Object>() {
 		public void act(String key,Object attachement) {
 			Set<Integer> ids = new HashSet<>();
@@ -390,84 +373,21 @@ public class MessageServiceImpl implements IGatewayMessageCallbackJMSrv,IMessage
 	public void jready() {
 		TimerTicker timer = TimerTicker.getDefault(30*1000L);
 		timer.addListener(TIMER_KEY, null, tickerAct);
-		//-2120102654
-		//-1331833745
-		
-		/*
-		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "subscribe",
-				new Class[] {ISession.class,String.class,Map.class});
-		srvManager.registSmCode("cn.jmicro.gateway.MessageServiceImpl","mng", "0.0.1", "unsubscribe",
-				new Class[] {Integer.class});
-		*/
+
 	}
 
 	private class Registion{
 		public int id;
 		public int clientId;
+		public int actId;
+		
 		public ISession sess;
 		public String topic;
 		public Map<String,Object> ctx;
 		public long lastActiveTime = TimeUtils.getCurTime();
 	}
 
-	@Override
-	public Byte type() {
-		return Constants.MSG_TYPE_PUBSUB;
-	}
 
-	@Override
-	public boolean onMessage(ISession session, Message msg) {
-		ByteBuffer bb = (ByteBuffer)msg.getPayload();
-		String json = new String(bb.array(),0,bb.remaining());
-		Map<String,Object> params = JsonUtils.getIns().getStringKeyMap(json);
-		
-		Object op = params.get("op");
-		if( op == null) {
-			responseError(session,msg,RespJRso.SE_INVALID_OP_CODE,"Op code is null");
-			return true;
-		}
-		
-		params.remove("op");
-		
-		int opCode = new Double(Double.parseDouble(op.toString())).intValue();
-		if(opCode == 1) {
-			//订阅消息
-			String topic = (String)params.get("topic");
-			if(Utils.isEmpty(topic)) {
-				responseError(session,msg,RespJRso.SE_INVALID_TOPIC,"Topic is null");
-				return true;
-			}
-			params.remove("topic");
-			int subId = this.subscribe(session, topic, params,msg);
-			msg.setPayload(subId);
-		} else if(opCode == 2) {
-			//取消订阅消息
-			if(params.get("subId") == null || Utils.isEmpty(params.get("subId").toString())) {
-				responseError(session,msg,RespJRso.SE_INVALID_SUB_ID,"Invalid subscribe id");
-				return true;
-			}
-			String subId = params.get("subId").toString();
-			int sid = new Double(Double.parseDouble(subId)).intValue();
-			boolean suc = this.unsubscribe(sid);
-			msg.setPayload(suc);
-		}
-		msg.setError(false);
-		
-		msg.setType(Constants.MSG_TYPE_PUBSUB_RESP);
-		session.write(msg);
-		return true;
-	}
-
-	private void responseError(ISession s,Message msg,int seInvalidTopic, String msgStr) {
-		msg.setError(true);
-		RespJRso se = new RespJRso(seInvalidTopic,msgStr);
-		try {
-			byte[] d = JsonUtils.getIns().toJson(se).getBytes(Constants.CHARSET);
-			msg.setPayload(ByteBuffer.wrap(d));
-			s.write(msg);
-		} catch (UnsupportedEncodingException e) {
-			logger.error(se.toString(),e);
-		}
-	}
 	
+
 }

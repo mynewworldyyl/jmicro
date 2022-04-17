@@ -28,7 +28,10 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	
 	@Test
 	public void testPublishString() {
-		Assert.assertTrue(PubSubManager.PUB_OK == of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"));
+		of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server")
+		.success((rst,cxt)->{
+			Assert.assertTrue(PubSubManager.PUB_OK == rst.getData());
+		});
 		this.waitForReady(1);
 	}
 	
@@ -36,7 +39,11 @@ public class TestPubSubServer extends JMicroBaseTestCase{
 	public void testPublishString100() {
 		for(int i = 0; i < 100; i++ ) {
 			this.waitForReady(0.2F);
-			Assert.assertTrue(PubSubManager.PUB_OK == of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"+i));
+			of.get(PubSubServer.class).publishString(TOPIC,  "Hello pubsub server"+i)
+			.success((rst,cxt)->{
+				Assert.assertTrue(PubSubManager.PUB_OK == rst.getData());
+			});
+			//Assert.assertTrue(PubSubManager.PUB_OK == of.get(PubSubServer.class).publishString(TOPIC, "Hello pubsub server"+i));
 		}
 	}
 	

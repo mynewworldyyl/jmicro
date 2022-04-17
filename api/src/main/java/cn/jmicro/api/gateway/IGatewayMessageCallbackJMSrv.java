@@ -17,6 +17,8 @@
  */
 package cn.jmicro.api.gateway;
 
+import java.util.Set;
+
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
@@ -33,11 +35,30 @@ public interface IGatewayMessageCallbackJMSrv {
     public static final Integer MSG_TYPE_SENDER_CODE = 5555;//配送员端订单消息
 	public static final Integer MSG_TYPE_CUST_CODE = 5557;//配送服务客户端消息
 	
-	//账号消息前缀
-	public static final String TOPIC_PREFIX = "/__act/msg/";
+	public static final Integer MSG_OP_CODE_SUBSCRIBE = 1;//订阅消息
+	public static final Integer MSG_OP_CODE_UNSUBSCRIBE = 2;//取消订阅消息
+	public static final Integer MSG_OP_CODE_FORWARD = 3;//转发消息
 	
+	//账号消息前缀
+	public static final String USER_TOPIC_PREFIX = "/__act/msg/";
+	
+	/**
+	 * 多消息发送，基于每个消息都是不同主题
+	 * @param item
+	 */
 	void onPSMessage(PSDataJRso[] item);
 	
+	/**
+	 * 单消息发送
+	 * @param item
+	 */
 	void onOnePSMessage(PSDataJRso item);
+	
+	/**
+	 * 一个消息发给N个用户，群发消息
+	 * @param item
+	 * @param userIds
+	 */
+	void onPSMessage2Users(PSDataJRso item, Set<Integer> userIds);
 	
 }

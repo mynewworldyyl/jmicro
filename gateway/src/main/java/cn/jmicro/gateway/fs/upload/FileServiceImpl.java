@@ -58,10 +58,10 @@ import cn.jmicro.gateway.fs.api.IFileJMSrv;
 
 @Component
 @Service(version="0.0.1",retryCnt=0,external=true,showFront=false)
-public class FileService implements IFileJMSrv{
+public class FileServiceImpl implements IFileJMSrv{
 
 	//private static final String ID2NAME_SEP = PackageResource.ID2NAME_SEP;
-	private static final Logger LOG = LoggerFactory.getLogger(FileService.class);
+	private static final Logger LOG = LoggerFactory.getLogger(FileServiceImpl.class);
 	
 	@Cfg(value="/ResourceReponsitoryService/dataDir", defGlobal=true)
 	private String resDir = System.getProperty("user.dir") + "/resDataDir";

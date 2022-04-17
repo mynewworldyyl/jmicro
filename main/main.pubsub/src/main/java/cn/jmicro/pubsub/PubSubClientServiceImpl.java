@@ -1,10 +1,13 @@
 package cn.jmicro.pubsub;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.internal.pubsub.IInternalSubRpcJMSrv;
 import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.pubsub.IPubSubClientServiceJMSrv;
@@ -45,9 +48,13 @@ public class PubSubClientServiceImpl implements IPubSubClientServiceJMSrv {
 
 	@Override
 	@SMethod(perType=true,needLogin=true,maxSpeed=50,maxPacketSize=81920)
-	public int publishMutilItems(PSDataJRso[] items) {
+	public IPromise<RespJRso<Integer>>  publishMutilItems(PSDataJRso[] items) {
 		if(items.length == 0 || items.length > 10) {
-			return PSDataJRso.INVALID_ITEM_COUNT;
+			return new Promise<RespJRso<Integer>>((suc,fail)->{
+				RespJRso<Integer> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
+				r.setData(new Integer(PSDataJRso.INVALID_ITEM_COUNT));
+				suc.success(r);
+			}) ;
 		}
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
@@ -65,7 +72,7 @@ public class PubSubClientServiceImpl implements IPubSubClientServiceJMSrv {
 
 	@Override
 	@SMethod(perType=false,needLogin=true,maxSpeed=50,maxPacketSize=8192)
-	public int publishOneItem(PSDataJRso item) {
+	public IPromise<RespJRso<Integer>>  publishOneItem(PSDataJRso item) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		item.setFr(ai.getId()+"");
 		if(item.isPersist()) {

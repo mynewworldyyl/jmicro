@@ -24,7 +24,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.internal.pubsub.genclient.IInternalSubRpcJMSrv$JMAsyncClient;
+import cn.jmicro.api.internal.pubsub.IInternalSubRpcJMSrv;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.Message;
@@ -75,7 +75,7 @@ public class PubSubManager {
 	 * default pubsub server
 	 */
 	@Reference(namespace="*",version="0.0.1",required=false)
-	private IInternalSubRpcJMSrv$JMAsyncClient defaultServer;
+	private IInternalSubRpcJMSrv defaultServer;
 	
 	private ExecutorService executor = null;
 	
@@ -127,7 +127,7 @@ public class PubSubManager {
 	}
 	
 	public boolean hasTopic(String topic) {
-		return defaultServer.hasTopic(topic);
+		return defaultServer.hasTopic(topic).getResult().getData();
 	}
 	
 	public boolean isPubsubEnable(int itemNum) {
@@ -291,7 +291,7 @@ public class PubSubManager {
 			if(ai != null) {
 				item.setFr(ai.getId()+"");
 				item.setSrcClientId(ai.getClientId());
-			}else {
+			} else {
 				 ai = JMicroContext.get().getSysAccount();
 				 if(ai != null) {
 					 item.setFr(ai.getId()+"");
@@ -489,7 +489,7 @@ public class PubSubManager {
 				
 			for (Map.Entry<String, List<PSDataJRso>> e : ms.entrySet()) {
 				try {
-					List<PSDataJRso> l = e.getValue();
+					final List<PSDataJRso> l = e.getValue();
 					if (l == null || l.isEmpty()) {
 						continue;
 					}
@@ -504,7 +504,10 @@ public class PubSubManager {
 							// 大于0时表示客户端已经预设置值,给客户端一些选择，比如业务需要提前知道消息ID做关联记录的场景
 							psd.setId(idGenerator.getIntId(PSDataJRso.class));
 						}
-						defaultServer.publishItemJMAsync(psd,null).then(new AsyncCallback(l));
+						defaultServer.publishItem(psd)
+						.then((rst,fail,cxt)->{
+							onResult(l, rst.getData(), fail);
+						});
 					} else if (size > 1) {
 						Long[] ids = idGenerator.getLongIds(PSDataJRso.class.getName(), l.size());
 
@@ -518,7 +521,10 @@ public class PubSubManager {
 								pd[i].setId(ids[i]);
 							}
 						}
-						defaultServer.publishItemsJMAsync(e.getKey(), pd).then(new AsyncCallback(l));
+						defaultServer.publishItems(e.getKey(), pd)
+						.then((rst,fail,cxt)->{
+							onResult(l, rst.getData(), fail);
+						});
 					}
 					
 				} catch (Throwable ex) {
@@ -529,65 +535,56 @@ public class PubSubManager {
 		}
 	}
 	
-	private class AsyncCallback implements IAsyncCallback<Integer> {
+	public void onResult(List<PSDataJRso> list,Integer result, AsyncFailResult fail) {
 
-		private List<PSDataJRso> list;
+		curItemCount.addAndGet(-list.size());
 		
-		private AsyncCallback(List<PSDataJRso> l) {
-			this.list = l;
-		}
+		//logger.info("Got result: {}",result);
 		
-		public void onResult(Integer result, AsyncFailResult fail,Object context) {
-
-			curItemCount.addAndGet(-list.size());
-			
-			//logger.info("Got result: {}",result);
-			
-			if (PUB_SERVER_BUSUY == result) {
-				logger.warn("Got bussy result and sleep one seconds");
-				for(PSDataJRso d : list) {
-					if(d.getFailCnt() < 3) {
-						//重发3次
-						d.setFailCnt(d.getFailCnt()+1);
-						if((result = publish(d)) != PUB_OK) {
-							doCallback(d,result);
-							if(objStorage != null ) {
-								objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage._ID,true);
-							}
-						}
-					} else {
-						
+		if (PUB_SERVER_BUSUY == result) {
+			logger.warn("Got bussy result and sleep one seconds");
+			for(PSDataJRso d : list) {
+				if(d.getFailCnt() < 3) {
+					//重发3次
+					d.setFailCnt(d.getFailCnt()+1);
+					if((result = publish(d)) != PUB_OK) {
+						doCallback(d,result);
 						if(objStorage != null ) {
-							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage.ID,true);
-						}
-						
-						if(d.getLocalCallback() != null) {
-							d.getLocalCallback().call(result, d);
-						}else if(StringUtils.isNotEmpty(d.getCallback())) {
-							//消息通知
-							doCallback(d,result);
-						} else {
-							logger.error("Pubsub Server is busuy and retry failure :" + JsonUtils.getIns().toJson(d));
+							objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage._ID,true);
 						}
 					}
-				}
-			} else if (PubSubManager.PUB_SERVER_NOT_AVAILABALE == result
-					|| PubSubManager.PUB_SERVER_DISCARD == result
-					|| PubSubManager.PUB_TOPIC_INVALID == result) {
-				for(PSDataJRso d : list) {
+				} else {
 					
 					if(objStorage != null ) {
-						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage._ID,true);
+						objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage.ID,true);
 					}
 					
 					if(d.getLocalCallback() != null) {
-						//本地回调
 						d.getLocalCallback().call(result, d);
 					}else if(StringUtils.isNotEmpty(d.getCallback())) {
+						//消息通知
 						doCallback(d,result);
 					} else {
-						logger.error("Publish message failure with code:"+result +" ,topic:"+d.getTopic() +" , message: " + JsonUtils.getIns().toJson(d));
+						logger.error("Pubsub Server is busuy and retry failure :" + JsonUtils.getIns().toJson(d));
 					}
+				}
+			}
+		} else if (PubSubManager.PUB_SERVER_NOT_AVAILABALE == result
+				|| PubSubManager.PUB_SERVER_DISCARD == result
+				|| PubSubManager.PUB_TOPIC_INVALID == result) {
+			for(PSDataJRso d : list) {
+				
+				if(objStorage != null ) {
+					objStorage.updateOrSaveById(TABLE_PUBSUB_ITEMS,d,PSDataJRso.class,IObjectStorage._ID,true);
+				}
+				
+				if(d.getLocalCallback() != null) {
+					//本地回调
+					d.getLocalCallback().call(result, d);
+				}else if(StringUtils.isNotEmpty(d.getCallback())) {
+					doCallback(d,result);
+				} else {
+					logger.error("Publish message failure with code:"+result +" ,topic:"+d.getTopic() +" , message: " + JsonUtils.getIns().toJson(d));
 				}
 			}
 		}

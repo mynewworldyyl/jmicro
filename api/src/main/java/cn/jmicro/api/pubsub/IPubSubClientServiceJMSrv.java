@@ -1,5 +1,7 @@
 package cn.jmicro.api.pubsub;
 
+import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
@@ -12,7 +14,7 @@ public interface IPubSubClientServiceJMSrv {
 	
 	int publishBytes(String topic, byte[] content,byte flag, Map<String,Object> itemContext);*/
 	
-	int publishMutilItems(PSDataJRso[] items);
+	IPromise<RespJRso<Integer>>  publishMutilItems(PSDataJRso[] items);
 	
-	int publishOneItem(PSDataJRso item);
+	IPromise<RespJRso<Integer>>  publishOneItem(PSDataJRso item);
 }
