@@ -92,8 +92,10 @@ public class MsgGatewayManager {
 	};
 	
 	public long forward(Message msg,Integer tactId) {
+		//备份消息类型，返回给发消息发送者
 		byte t = msg.getType();
 		
+		//改为异步消息返回给目标用户
 		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 		
 		msg.setMsgId(idServer.getLongId(Message.class));
@@ -107,6 +109,7 @@ public class MsgGatewayManager {
 		
 		r.sess.write(msg);//直接转发消息
 		
+		//还原消息类型
 		msg.setType(t);
 		return msg.getMsgId();
 	}

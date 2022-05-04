@@ -276,7 +276,7 @@ public class ServiceManager {
 			lp.unlock();
 		}*/
 		
-		loadItem(child);
+		loadItem(child,false);
 		
 	}
 	
@@ -306,12 +306,12 @@ public class ServiceManager {
 		
 	}
 
-	private boolean loadItem(String child) {
+	private boolean loadItem(String child,boolean forceLoad) {
 		//已经加载，判断是否需要更新
 		String path = path(child);
 		String data = this.op.getData(path);
 		
-		if(!isChange(data, child)) {
+		if(!isChange(data, child,forceLoad)) {
 			//同时更新methodHash2Method列表
 			logger.warn("Service Item no change {}",child);//没数据变动
 			return false;
@@ -471,7 +471,7 @@ public class ServiceManager {
 		}
 		
 		//加载全量服务信息
-		this.loadItem(siKey.fullStringKey());
+		this.loadItem(siKey.fullStringKey(),true);
 		
 		return this.methodHash2Method.get(hash);
 		
@@ -480,7 +480,7 @@ public class ServiceManager {
 	public ServiceMethodJRso getServiceMethodByKey(UniqueServiceMethodKeyJRso key) {
 		ServiceItemJRso item = this.getServiceByKey(key.getUsk().fullStringKey());
 		if(item == null) {
-			this.loadItem(key.getUsk().fullStringKey());
+			this.loadItem(key.getUsk().fullStringKey(),true);
 			item = this.getServiceByKey(key.getUsk().fullStringKey());
 			if(item == null) return null;
 		};
@@ -536,7 +536,7 @@ public class ServiceManager {
 			return null;//无此服务存在
 		}
 		
-		this.loadItem(child);
+		this.loadItem(child,true);
 		return this.path2SrvItems.get(child);
 	}
 	
@@ -802,7 +802,7 @@ public class ServiceManager {
 
 				ServiceItemJRso si = path2SrvItems.get(skey.fullStringKey());
 				if (si == null) {
-					this.loadItem(skey.fullStringKey());
+					this.loadItem(skey.fullStringKey(),true);
 					si = path2SrvItems.get(skey.fullStringKey());
 					if (si == null) {
 						return sns;
@@ -862,7 +862,7 @@ public class ServiceManager {
 		String siKey = usm.getUsk().fullStringKey();
 		ServiceItemJRso item = this.path2SrvItems.get(siKey);
 		if(item == null) {
-			 this.loadItem(siKey);
+			 this.loadItem(siKey,true);
 			 item = this.path2SrvItems.get(siKey);
 		}
 		
@@ -877,7 +877,7 @@ public class ServiceManager {
 		String child = m.getKey().getUsk().fullStringKey();
 		ServiceItemJRso item = this.path2SrvItems.get(child);
 		if(item == null) {
-			loadItem(child);
+			loadItem(child,true);
 			item = this.path2SrvItems.get(child);
 			if(item == null) {
 				logger.error("Service [{}] not found",child);
@@ -905,7 +905,7 @@ public class ServiceManager {
 	public ServiceItemJRso getServiceByKey(String key) {
 		ServiceItemJRso item = this.path2SrvItems.get(key);
 		if(item == null) {
-			loadItem(key);
+			loadItem(key,true);
 		}
 		return this.path2SrvItems.get(key);
 	}
@@ -998,7 +998,7 @@ public class ServiceManager {
 			childrenAdd(child);
 		} else {
 			srvItem.formPersisItem(si);
-			if(this.isChange(data, child)) {
+			if(this.isChange(data, child,false)) {
 				//this.updateOrCreate(srvItem, srvPath, true);
 				si = srvItem;
 				this.notifyServiceChange(IServiceListener.DATA_CHANGE, srvItem.getKey(),srvItem,child);
@@ -1016,7 +1016,7 @@ public class ServiceManager {
 		return JsonUtils.getIns().fromJson(data, ServiceItemJRso.class);
 	}
 	
-	private  boolean isChange(String ndata,String child) {
+	private  boolean isChange(String ndata,String child,boolean forceLoad) {
 		
 		Integer nhash = HashUtils.FNVHash1(ndata);
 		
@@ -1041,7 +1041,7 @@ public class ServiceManager {
 		try {
 			l.lock();
 			
-			if(isMy || this.gatewayModel && nsi.isExternal()) {
+			if(forceLoad || isMy || this.gatewayModel && nsi.isExternal()) {
 				for(ServiceMethodJRso sm : nsi.getMethods()) {
 					int h = sm.getKey().getSnvHash();
 					if(!this.methodHash2Method.containsKey(h)) {
@@ -1085,7 +1085,7 @@ public class ServiceManager {
 		
 		boolean flag = this.path2SrvItems.containsKey(child);
 		
-		if(!this.isChange(data, child)) {
+		if(!this.isChange(data, child,false)) {
 			logger.warn("Service Item no change {}",child);
 			return;
 		}

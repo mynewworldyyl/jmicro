@@ -322,7 +322,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			
 			 if(msg.isOuterMessage() && msg.getType() != Constants.MSG_TYPE_PUBSUB) {
 				 //非订阅消息都经由网关转发到后台系统
-				gatewayHandler.onMessage(s, msg);
+				 gatewayHandler.onMessage(s, msg);
 			 } else {
 				 //全部后台系统或API网关内部服务走此代码
 				IMessageHandler h = handlers.get(msg.getType());

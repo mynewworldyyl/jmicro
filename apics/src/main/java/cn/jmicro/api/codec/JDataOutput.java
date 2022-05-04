@@ -82,22 +82,28 @@ public class JDataOutput implements DataOutput {
 	
 	@Override
 	public void writeByte(int v) throws IOException {
-		buf = checkCapacity(buf,Byte.BYTES);
-		buf.put((byte)v);
+		writeByte0((byte)v);
 	}
 	
 	public void writeByte(Byte v) throws IOException {
+		writeByte0(v);
+	}
+	
+	private void writeByte0(Byte v) throws IOException {
 		buf = checkCapacity(buf,Byte.BYTES);
 		buf.put((byte)v);
 	}
 
 	@Override
 	public void writeShort(int v) throws IOException {
-		buf = checkCapacity(buf,Short.BYTES);
-		buf.putShort((short)v);
+		writeShort0((short)v);
 	}
 	
 	public void writeShort(Short v) throws IOException {
+		writeShort0((short)v);
+	}
+	
+	private void writeShort0(Short v) throws IOException {
 		buf = checkCapacity(buf,Short.BYTES);
 		buf.putShort((short)v);
 	}
@@ -110,41 +116,56 @@ public class JDataOutput implements DataOutput {
 
 	@Override
 	public void writeInt(int v) throws IOException {
-		buf = checkCapacity(buf,Integer.BYTES);
-		buf.putInt(v);
-		//encodeInt(v);
+		writeInt0(v);
 	}
 	
 	public void writeInt(Integer v) throws IOException {
+		writeInt0(v);
+	}
+	
+	private void writeInt0(Integer v) throws IOException {
 		buf=checkCapacity(buf,Integer.BYTES);
 		buf.putInt(v);
-		//encodeInt(v);
 	}
 
 	@Override
 	public void writeLong(long v) throws IOException {
-		buf = checkCapacity(buf,Long.BYTES);
-		buf.putLong(v);
+		writeLong0(v);
 	}
 	
 	public void writeLong(Long v) throws IOException {
+		writeLong0(v);
+	}
+	
+	private void writeLong0(Long v) throws IOException {
 		buf=checkCapacity(buf,Long.BYTES);
 		buf.putLong(v);
 	}
 
 	@Override
 	public void writeFloat(float v) throws IOException {
+		writeFloat0(v);
+	}
+
+	public void writeFloat(Float v) throws IOException {
+		writeFloat0(v);
+	}
+	
+	private void writeFloat0(Float v) throws IOException {
 		buf=checkCapacity(buf,Float.BYTES);
 		buf.putFloat(v);
 	}
 
 	@Override
 	public void writeDouble(double v) throws IOException {
-		buf=checkCapacity(buf,Double.BYTES);
-		buf.putDouble(v);
+		writeDouble0(v);
 	}
 	
 	public void writeDouble(Double v) throws IOException {
+		writeDouble0(v);
+	}
+	
+	private void writeDouble0(Double v) throws IOException {
 		buf=checkCapacity(buf,Double.BYTES);
 		buf.putDouble(v);
 	}
@@ -262,12 +283,13 @@ public class JDataOutput implements DataOutput {
 		 Message.writeUnsignedShort(buf,v);
 	}
 	
+	/*
 	public void writeUnsignedInt(long v){
 		 Message.writeUnsignedInt(this.buf,v);
 	}
 	
 	public void writeUnsignedLong(long v){
 		 Message.wiriteUnsignedLong(buf, v);
-	}
+	}*/
 	
 }

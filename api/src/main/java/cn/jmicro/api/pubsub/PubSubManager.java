@@ -221,17 +221,17 @@ public class PubSubManager {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		ActInfoJRso sai = JMicroContext.get().getSysAccount();
 		for(PSDataJRso item : items) {
-			if(Utils.isEmpty(item.getFr())) {
+			if(item.getFr() == 0) {
 				//设置消息来源账号ID
 				if(ai != null) {
-					item.setFr(ai.getId()+"");
+					item.setFr(ai.getId());
 					item.setSrcClientId(ai.getClientId());
 				}else {
 					 if(sai != null) {
-						 item.setFr(sai.getId()+"");
+						 item.setFr(sai.getId());
 						 item.setSrcClientId(sai.getClientId());
 					 } else {
-						 item.setFr(""+Config.getClientId());
+						 item.setFr(Config.getClientId());
 						 item.setSrcClientId(Config.getClientId());
 					 }
 				}
@@ -285,19 +285,19 @@ public class PubSubManager {
 			 startChecker();
 		}
 		
-		if(Utils.isEmpty(item.getFr())) {
+		if(item.getFr() == 0) {
 			//设置消息来源账号ID
 			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai != null) {
-				item.setFr(ai.getId()+"");
+				item.setFr(ai.getId());
 				item.setSrcClientId(ai.getClientId());
 			} else {
 				 ai = JMicroContext.get().getSysAccount();
 				 if(ai != null) {
-					 item.setFr(ai.getId()+"");
+					 item.setFr(ai.getId());
 					 item.setSrcClientId(ai.getClientId());
 				 } else {
-					 item.setFr(""+Config.getClientId());
+					 item.setFr(Config.getClientId());
 					 item.setSrcClientId(Config.getClientId());
 				 }
 			}

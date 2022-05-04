@@ -158,8 +158,8 @@ public class ClassScannerUtils {
 	public Set<Class<?>> getComponentClass(){
 		initLoad();
 		
-		logger.debug("Test: " + Service.class.getClassLoader().getClass().getName()+",ID:"+Service.class.getClassLoader());
-		logger.debug("Test: " + this.getClass().getClassLoader().getClass().getName()+",ID:"+this.getClass().getClassLoader());
+		//logger.debug("Test: " + Service.class.getClassLoader().getClass().getName()+",ID:"+Service.class.getClassLoader());
+		//logger.debug("Test: " + this.getClass().getClassLoader().getClass().getName()+",ID:"+this.getClass().getClassLoader());
 		
 		Set<Class<?>> clazzes = new HashSet<>();
 		for(Class<?> c : getAll()){
@@ -271,8 +271,8 @@ public class ClassScannerUtils {
 	}
 	
 	private boolean isComponentClass(Class<?> cls){
-		logger.info(Component.class.getClassLoader().getClass().getName());
-		logger.info(cls.isAnnotationPresent(Component.class)+"");
+		//logger.info(Component.class.getClassLoader().getClass().getName());
+		//logger.info(cls.isAnnotationPresent(Component.class)+"");
 		return  cls.isAnnotationPresent(Component.class)
 				||cls.isAnnotationPresent(Service.class)
 				||cls.isAnnotationPresent(PostListener.class)

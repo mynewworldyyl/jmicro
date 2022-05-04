@@ -36,6 +36,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.codegenerator.AsyncClientProxy;
@@ -72,6 +73,9 @@ public class RpcClassLoaderHelper {
     
     @Inject
     private IRegistry registry;
+    
+    @Inject
+    private ServiceManager srvMng;
     
     @Reference(required = false,namespace="*",version="0.0.1")
     private IClassloaderRpcJMSrv$JMAsyncClient rpcLlassloader = null;
@@ -512,7 +516,8 @@ public class RpcClassLoaderHelper {
 			}
 			
 			if (directItem != null) {
-				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
+				ServiceItemJRso si = this.srvMng.getServiceByKey(directItem);
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
 				 p = this.rpcLlassloader.getClassDataJMAsync(originClsName,0,false);
 			}else {
 				String desc = "Owner server not found for resource ["+originClsName+"]";
@@ -574,7 +579,8 @@ public class RpcClassLoaderHelper {
 			}
 			
 			if (directItem != null) {
-				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, directItem);
+				ServiceItemJRso si = this.srvMng.getServiceByKey(directItem);
+				JMicroContext.get().setParam(Constants.DIRECT_SERVICE_ITEM, si);
 				 p = this.rpcLlassloader.getClassDataJMAsync(originClsName,0,false);
 			}else {
 				String desc = "Owner server not found for resource ["+originClsName+"]";

@@ -106,6 +106,9 @@
 				<Label for="Key">{{'Key'|i18n}}</Label>
 				<Input id="Key" v-model="ic.key" />
 
+				<Label for="desc">{{'desc'|i18n}}</Label>
+				<Input id="desc" v-model="ic.desc" />
+				
 				<Label for="attr0">{{'attr0'|i18n}}</Label>
 				<Input id="attr0" v-model="ic.attr0" />
 
@@ -149,6 +152,9 @@
 				
 				<Label for="Key">{{'Key'|i18n}}</Label>
 				<Input :disabled="true" id="Key" v-model="ic.key" />
+		
+				<Label for="Desc">{{'Desc'|i18n}}</Label>
+				<Input :disabled="true" id="Desc" v-model="ic.desc" />
 		
 				<Label for="Pid">{{'Pid'|i18n}}</Label>
 				<Input :disabled="true" id="Pid" v-model="ic.pid" />

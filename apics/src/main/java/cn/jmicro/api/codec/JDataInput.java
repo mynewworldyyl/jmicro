@@ -64,10 +64,15 @@ public class JDataInput implements DataInput {
 		return Message.readUnsignedShort(buf);
 	}
 	
+	/*
 	public long readUnsignedInt() throws IOException{
 		return Message.readUnsignedInt(this.buf);
 	}
 
+	public long readUsignedLong() {
+		return Message.readUnsignedLong(buf);
+	}*/
+	
 	@Override
 	public short readShort() throws IOException {
 		return buf.getShort();
@@ -82,22 +87,6 @@ public class JDataInput implements DataInput {
 	public int readInt() throws IOException {
 		return buf.getInt();
 		//return readInt0();
-	}
-	
-	public long readUsignedLong() {
-		return Message.readUnsignedLong(buf);
-	}
-	
-	public void writeUsignedLong(long v) {
-		 /*this.buf.put((byte)((v >>> 56)&0xFF));
-		 this.buf.put((byte)((v >>> 48)&0xFF));
-		 this.buf.put((byte)((v >>> 40)&0xFF));
-		 this.buf.put((byte)((v >>> 32)&0xFF));
-		 this.buf.put((byte)((v >>> 24)&0xFF));
-		 this.buf.put((byte)((v >>> 16)&0xFF));
-		 this.buf.put((byte)((v >>> 8)&0xFF));
-		 this.buf.put((byte)((v >>> 0)&0xFF));*/
-		 Message.wiriteUnsignedLong(buf, v);
 	}
 
 	@Override

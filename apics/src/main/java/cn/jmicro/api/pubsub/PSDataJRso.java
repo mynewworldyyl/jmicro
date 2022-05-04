@@ -100,9 +100,9 @@ public class PSDataJRso implements Serializable{
 	
 	private int srcClientId;
 	
-	private String fr;
+	private Integer fr;
 	
-	private String to;
+	private Integer to;
 	
 	private Object data;
 	

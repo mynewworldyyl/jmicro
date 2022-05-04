@@ -499,6 +499,7 @@ public final class Message {
 			String json = JsonUtils.getIns().toJson(this.getPayload());
 			try {
 				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
+				this.setDownProtocol(PROTOCOL_JSON);;//强接收者使用JSON解析数
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
@@ -961,27 +962,27 @@ public final class Message {
 				| (((long) b1 & 0xff) << 8) | (((long) b0 & 0xff)));
 	}
 	 
-	 public static long readUnsignedLong(ByteBuffer b) {
-			int firstByte = (0xFF & ((int)b.get()));
-			int secondByte = (0xFF & ((int)b.get()));
-			int thirdByte = (0xFF & ((int)b.get()));
-			int fourByte = (0xFF & ((int)b.get()));
+	/*private static long readUnsignedLong(ByteBuffer b) {
+		 long firstByte = (0xFF & ((long)b.get()));
+		 long secondByte = (0xFF & ((long)b.get()));
+		 long thirdByte = (0xFF & ((long)b.get()));
+		 long fourByte = (0xFF & ((long)b.get()));
 			
-			int fiveByte = (0xFF & ((int)b.get()));
-			int sixByte = (0xFF & ((int)b.get()));
-			int sevenByte = (0xFF & ((int)b.get()));
-			int eigthByte = (0xFF & ((int)b.get()));
+		 long fiveByte = (0xFF & ((long)b.get()));
+		 long sixByte = (0xFF & ((long)b.get()));
+		 long sevenByte = (0xFF & ((long)b.get()));
+		 long eigthByte = (0xFF & ((long)b.get()));
 			
-			int anUnsignedShort  = (int) (
+			long anUnsignedShort  = (long) (
 					firstByte << 56 | secondByte<<48
 					| thirdByte << 40 | fourByte<<32
 					| fiveByte << 24 | sixByte<<16
 					| sevenByte << 8 | eigthByte
 					);
 	        return anUnsignedShort;
-	}
+	}*/
 	 
-	 public static void wiriteUnsignedLong(ByteBuffer b,long val) {
+	/*private static void wiriteUnsignedLong(ByteBuffer b,long val) {
 			
 		    b.put((byte)(0xFF & (val >> 56)));
 			b.put((byte)(0xFF & (val >> 48)));
@@ -994,7 +995,7 @@ public final class Message {
 			b.put((byte)(0xFF & (val >> 0)));
 			
 			return;
-	}
+	}*/
 	
 	public static void writeUnsignedByte(ByteBuffer b,short v) {
 		if(v > MAX_BYTE_VALUE) {
@@ -1022,7 +1023,7 @@ public final class Message {
 	        
 	  }
     
-    public static long readUnsignedInt(ByteBuffer b) {
+    /*private static long readUnsignedInt(ByteBuffer b) {
     	int firstByte = (0xFF & ((int)b.get()));
 		int secondByte = (0xFF & ((int)b.get()));
 		int thirdByte = (0xFF & ((int)b.get()));
@@ -1033,33 +1034,9 @@ public final class Message {
 				| thirdByte << 8 | fourByte
 				);
         return anUnsignedShort;
-    	
-    	/*int b = buf.get() & 0xff;
-		int n = b & 0x7f;
-		if (b > 0x7f) {
-			b = buf.get() & 0xff;
-			n ^= (b & 0x7f) << 7;
-			if (b > 0x7f) {
-				b = buf.get() & 0xff;
-				n ^= (b & 0x7f) << 14;
-				if (b > 0x7f) {
-					b = buf.get() & 0xff;
-					n ^= (b & 0x7f) << 21;
-					if (b > 0x7f) {
-						b = buf.get() & 0xff;
-						n ^= (b & 0x7f) << 28;
-						if (b > 0x7f) {
-							throw new CommonException("Invalid int encoding");
-						}
-					}
-				}
-			}
-		}
-		return (n >>> 1) ^ -(n & 1);*/
-		
-    }
+    }*/
     
-    public static void writeUnsignedInt(ByteBuffer b,long v) {
+    private static void writeUnsignedInt(ByteBuffer b,long v) {
     	if(v > MAX_INT_VALUE) {
     		throw new CommonException("Max int value is :"+MAX_INT_VALUE+", but value "+v);
     	}

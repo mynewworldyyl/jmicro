@@ -59,7 +59,7 @@ public class PubSubClientServiceImpl implements IPubSubClientServiceJMSrv {
 		
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		for(PSDataJRso i : items) {
-			i.setFr(ai.getId()+"");
+			i.setFr(ai.getId());
 		}
 
 		if(pm.getVal(ai.getClientId(),  PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
@@ -74,7 +74,7 @@ public class PubSubClientServiceImpl implements IPubSubClientServiceJMSrv {
 	@SMethod(perType=false,needLogin=true,maxSpeed=50,maxPacketSize=8192)
 	public IPromise<RespJRso<Integer>>  publishOneItem(PSDataJRso item) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
-		item.setFr(ai.getId()+"");
+		item.setFr(ai.getId());
 		if(item.isPersist()) {
 			if(pm.getVal(item.getSrcClientId(), PubSubManager.PROFILE_PUBSUB, "needPersist",false, Boolean.class)) {
 				psMng.persit2Db(ai.getClientId(),item);

@@ -58,11 +58,12 @@ public final class ApiRequestJRso implements IReq {
 	
 	public ByteBuffer encode() {
 		JDataOutput jo = new JDataOutput(1024);
-		jo.writeUnsignedLong(this.reqId);
-		
-		jo.writeUnsignedInt(params.size());
 		
 		try {
+			jo.writeLong(this.reqId);
+			
+			jo.writeInt(params.size());
+			
 			for(Map.Entry<String, Object> e : params.entrySet()) {
 				jo.writeUTF(e.getKey());
 				if(e.getValue() == null) {
@@ -73,9 +74,9 @@ public final class ApiRequestJRso implements IReq {
 			}
 			
 			if(args == null || args.length == 0) {
-				jo.writeUnsignedInt(0);
+				jo.writeInt(0);
 			}else {
-				jo.writeUnsignedInt(args.length);
+				jo.writeInt(args.length);
 				for(Object a : args) {
 					if(a == null) {
 						throw new CommonException("Argument cannot be null");
@@ -102,11 +103,11 @@ public final class ApiRequestJRso implements IReq {
 						jo.writeLong(Long.parseLong(a.toString()));
 					}else if(cls == new byte[0].getClass()) {
 						byte[] data = (byte[])a;
-						jo.writeUnsignedInt(data.length);
+						jo.writeInt(data.length);
 						jo.write(data, 0, data.length);
 					}else if(cls == ByteBuffer.class) {
 						ByteBuffer data = (ByteBuffer)a;
-						jo.writeUnsignedInt(data.remaining());
+						jo.writeInt(data.remaining());
 						jo.write(data.array(), data.position(), data.remaining());
 					}
 				}

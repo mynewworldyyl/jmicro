@@ -104,7 +104,7 @@ public interface IServer{
 			// req.setVersion(ji.readUTF());
 			// req.setMethod(ji.readUTF());
 
-			int len = (int) ji.readUnsignedInt();
+			int len = (int) ji.readInt();
 			if (len > 0) {
 				for (int i = 0; i < len; i++) {
 					String k = ji.readUTF();
@@ -117,7 +117,7 @@ public interface IServer{
 			// sm = getServiceMethod(si,req);
 			Class<?>[] paramsCls = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 
-			int argLen = (int) ji.readUnsignedInt();
+			int argLen = (int) ji.readInt();
 			if (argLen > 0) {
 				req.setArgs(getArgs(paramsCls, ji));
 			}
@@ -171,7 +171,7 @@ public interface IServer{
 				} else if (pt == String.class) {
 					a = ji.readUTF();
 				} else if (Map.class.isAssignableFrom(pt)) {
-					int len = (int) ji.readUnsignedInt();
+					int len = (int) ji.readInt();
 					if (len > 0) {
 						Map<String, String> data = new HashMap<>();
 						for (int x = 0; x < len; x++) {
@@ -182,7 +182,7 @@ public interface IServer{
 						a = data;
 					}
 				} else if (pt == new byte[0].getClass()) {
-					int len = (int) ji.readUnsignedInt();
+					int len = (int) ji.readInt();
 					if (len > 0) {
 						byte[] data = new byte[len];
 						ji.readFully(data, 0, len);
