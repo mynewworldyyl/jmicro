@@ -465,6 +465,7 @@ ext/simple.security/src/main/resources/META-INF/keys/
 ext/bbs/
 ext/security/
 ext/dataservice/
+ext/payservice/
 agent/target/
 agent/.classpath
 agent/.project
