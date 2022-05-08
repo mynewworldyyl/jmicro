@@ -18,10 +18,11 @@ import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.IProfileServiceJMSrv;
 
 @Component
-@Service(version="0.0.1",retryCnt=0,external=true,debugMode=0,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",namespace=Namespace.NS,retryCnt=0,external=true,debugMode=0,showFront=false,logLevel=MC.LOG_NO)
 public class ProfileServiceImpl implements IProfileServiceJMSrv {
 
 	@Inject

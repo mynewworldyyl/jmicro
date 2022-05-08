@@ -26,10 +26,11 @@ import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.ILogWarningConfigJMSrv;
 
 @Component
-@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",namespace=Namespace.NS,external=true,timeout=10000,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
 public class LogWarningConfigImpl implements ILogWarningConfigJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(LogWarningConfigImpl.class);

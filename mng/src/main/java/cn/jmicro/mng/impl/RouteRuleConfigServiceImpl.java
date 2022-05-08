@@ -23,10 +23,11 @@ import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.IRouteRuleConfigServiceJMSrv;
 
 @Component
-@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false)
+@Service(version="0.0.1",namespace=Namespace.NS,external=true,timeout=10000,debugMode=1,showFront=false)
 public class RouteRuleConfigServiceImpl implements IRouteRuleConfigServiceJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(RouteRuleConfigServiceImpl.class);

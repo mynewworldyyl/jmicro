@@ -30,6 +30,7 @@ import cn.jmicro.api.timer.ITickerAction;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
+import cn.jmicro.mng.Namespace;
 
 /**
  *   负责启一个定时器，从ServiceReqMonitor取统计数据并publish出去，从而使订阅者定时获得
@@ -41,7 +42,7 @@ import cn.jmicro.common.Constants;
  * @date 2020年3月27日
  */
 @Component(level=1001)
-@Service(version="0.0.1",external=true,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",namespace=Namespace.NS,external=true,showFront=false,logLevel=MC.LOG_NO)
 public class StatisMonitorImpl implements IStatisMonitorJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(StatisMonitorImpl.class);

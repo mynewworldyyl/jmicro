@@ -23,10 +23,11 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.Constants;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.IPSStatisServiceJMSrv;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",namespace=Namespace.NS, external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
 public class PSStatisServiceImpl implements IPSStatisServiceJMSrv {
 
 	public static final String PUTSUB_TOTAL = "t_pubsub_total";

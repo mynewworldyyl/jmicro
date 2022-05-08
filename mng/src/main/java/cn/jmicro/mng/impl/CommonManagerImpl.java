@@ -18,9 +18,10 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.Utils;
+import cn.jmicro.mng.Namespace;
 
 @Component
-@Service(version="0.0.1",external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO,namespace=Namespace.NS)
 public class CommonManagerImpl implements ICommonManagerJMSrv {
 
 	@Cfg("/notLonginClientId")

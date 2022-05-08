@@ -29,6 +29,7 @@ import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv;
 import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.common.Constants;
+import cn.jmicro.gateway.Namespace;
 
 /**
  *用于外部客户端发送pubsub数据
@@ -37,7 +38,7 @@ import cn.jmicro.common.Constants;
  * @date 2020年3月26日
  */
 @Component(side=Constants.SIDE_PROVIDER)
-@Service(version="0.0.1",showFront=false,external=false,infs=IGatewayMessageCallbackJMSrv.class)
+@Service(version="0.0.1",namespace=Namespace.NS,showFront=false,external=false,infs=IGatewayMessageCallbackJMSrv.class)
 public class PsItemGatewayServiceImpl implements IGatewayMessageCallbackJMSrv{
 
 	private final static Logger logger = LoggerFactory.getLogger(PsItemGatewayServiceImpl.class);

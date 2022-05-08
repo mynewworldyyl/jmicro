@@ -12,6 +12,11 @@ import cn.jmicro.common.Utils;
 @SO
 public class ActInfoJRso {
 	
+	public static final byte LV_NORMAL = 0;// 0 普通用户
+	public static final byte LV_VIP = 1;//1 VIP用户
+	public static final byte LV_PROXY = 2;//2 区域代理用户
+	public static final byte ST_APPLY_PROXY = 3;
+	
 	public static final byte SC_WAIT_ACTIVE = 1;
 	
 	public static final byte SC_ACTIVED = 2;

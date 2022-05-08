@@ -401,9 +401,14 @@ public class ServiceLoader{
 		if(!interfacez.isInterface()) {
 			logger.error("RPC service have to be public interface: "+interfacez.getName());
 		}
+		
 		//ServiceItem 
 		ServiceItemJRso si = null;
 		if(interfacez.isAnnotationPresent(Service.class)) {
+			Service annSrv = interfacez.getAnnotation(Service.class);
+			if(Utils.isEmpty(annSrv.namespace())) {
+				ns = annSrv.namespace();
+			}
 			si = this.getServiceItems(interfacez,ns,ver);
 			if(StringUtils.isNotEmpty(impl)) {
 				si.setImpl(impl);
@@ -569,13 +574,21 @@ public class ServiceLoader{
 		usk.setInstanceName(Config.getInstanceName());
 		usk.setHost(Config.getExportSocketHost());
 		
-		if(Utils.isEmpty(ns)) {
-			usk.setNamespace(Config.getNamespace());
-		}else if(Config.isOwnerRes()) {
-			usk.setNamespace(ns);
-		} else {
-			usk.setNamespace(ns + "." + Config.getAccountName());
+		if(anno != null && !Utils.isEmpty(anno.namespace())) {
+			ns = anno.namespace();
+		} else if(intAnno != null && !Utils.isEmpty(intAnno.namespace())) {
+			ns = intAnno.namespace();
+		}else {
+			if(Utils.isEmpty(ns)) {
+				ns = Config.getNamespace();
+			}else if(Config.isOwnerRes()) {
+				//usk.setNamespace(ns);
+			} else {
+				ns = ns + "." + Config.getAccountName();
+			}
 		}
+		
+		usk.setNamespace(ns);
 		
 		if(StringUtils.isNotEmpty(version)) {
 			usk.setVersion(UniqueServiceKeyJRso.version(version));

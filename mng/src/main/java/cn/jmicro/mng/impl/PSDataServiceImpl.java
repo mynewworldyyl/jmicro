@@ -26,11 +26,12 @@ import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.pubsub.PubSubManager;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.IPSDataServiceJMSrv;
 import cn.jmicro.mng.api.PSDataVoJRso;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",namespace=Namespace.NS, external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
 public class PSDataServiceImpl implements IPSDataServiceJMSrv {
 
 	private JsonWriterSettings settings = JsonWriterSettings.builder()

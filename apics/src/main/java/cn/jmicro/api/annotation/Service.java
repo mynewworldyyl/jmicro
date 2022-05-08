@@ -64,7 +64,7 @@ public @interface Service {
 	 * 服务命名空间，服务之间以命名空间作为区别，如出库单服务，入库单服务可以用不同的命名空间相区别，利于服务管理
 	 * 客户端使用服务时，可以指定命名空间
 	 */
-	//public String namespace() default "";
+	public String namespace() default "";
 
 	/**
 	 * 服务版本，每个服务接口可以有多个版本，版本格式为 DD.DD.DD,6个数字用英方步点号隔开

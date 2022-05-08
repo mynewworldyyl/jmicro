@@ -16,7 +16,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.util.HashUtils;
 
-@Service(external=true,version="0.0.1",logLevel=MC.LOG_NO,showFront=false)
+@Service(external=true,version="0.0.1",logLevel=MC.LOG_NO,showFront=false,namespace=Namespace.NS)
 @Component
 public class BaseGatewayServiceImpl implements IBaseGatewayServiceJMSrv {
 

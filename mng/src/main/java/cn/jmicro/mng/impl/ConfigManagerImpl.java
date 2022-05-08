@@ -22,10 +22,11 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.Namespace;
 
 @Component
 @Service(version="0.0.1",retryCnt=0,external=true,timeout=10000,debugMode=1,
-showFront=false,logLevel=MC.LOG_NO)
+showFront=false,logLevel=MC.LOG_NO,namespace=Namespace.NS)
 public class ConfigManagerImpl implements IConfigManagerJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(ConfigManagerImpl.class);

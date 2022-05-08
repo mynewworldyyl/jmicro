@@ -27,9 +27,10 @@ import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.Namespace;
 
 @Component
-@Service(version="0.0.1",debugMode=1,timeout=10000,logLevel=MC.LOG_NO,
+@Service(version="0.0.1",namespace=Namespace.NS,debugMode=1,timeout=10000,logLevel=MC.LOG_NO,
 monitorEnable=0,retryCnt=0, external=true,showFront=false)
 public class MonitorServerManagerImpl implements IMonitorServerManagerJMSrv{
 	

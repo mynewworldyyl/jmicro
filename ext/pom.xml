@@ -20,7 +20,8 @@
 		<module>simple.security</module>
 		<module>pagehelper</module>
 		<module>druid</module>
-		<!-- <module>dataservice</module> -->
+		<module>dataservice</module>
+		<module>payservice</module>
 	</modules>
 	<dependencies>
 		<dependency>

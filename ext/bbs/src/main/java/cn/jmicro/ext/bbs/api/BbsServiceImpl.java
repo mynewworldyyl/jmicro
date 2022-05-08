@@ -28,12 +28,13 @@ import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.ext.bbs.Namespace;
 import cn.jmicro.ext.bbs.entities.NoteJRso;
 import cn.jmicro.ext.bbs.entities.TopicJRso;
 import cn.jmicro.ext.bbs.entities.TopicVoJRso;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false,namespace=Namespace.NS)
 public class BbsServiceImpl implements IBbsServiceJMSrv {
 
 	@Inject

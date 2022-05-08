@@ -23,6 +23,7 @@
 		<module>main.limit</module>
 		<module>main.resource</module>
 		<module>main.tx</module>
+		<module>main.standalone</module>
     </modules>
     <dependencies>
 		<dependency>

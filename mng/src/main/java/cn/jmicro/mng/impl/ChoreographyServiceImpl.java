@@ -42,9 +42,10 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.Namespace;
 
 @Component
-@Service(version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",retryCnt=0,external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO,namespace=Namespace.NS)
 public class ChoreographyServiceImpl implements IChoreographyServiceJMSrv {
 
 	private final static Logger logger = LoggerFactory.getLogger(ChoreographyServiceImpl.class);

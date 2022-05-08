@@ -16,9 +16,10 @@ import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.registry.UniqueServiceKeyJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.ServiceManager;
+import cn.jmicro.mng.Namespace;
 
 @Component
-@Service(version="0.0.1",external=true,timeout=10000,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",namespace=Namespace.NS,external=true,timeout=10000,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
 public class ManageServiceImpl implements IManageServiceJMSrv {
 
 	@Inject

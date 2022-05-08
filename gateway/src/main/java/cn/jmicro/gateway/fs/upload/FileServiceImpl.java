@@ -53,11 +53,12 @@ import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
+import cn.jmicro.gateway.Namespace;
 import cn.jmicro.gateway.fs.api.FileJRso;
 import cn.jmicro.gateway.fs.api.IFileJMSrv;
 
 @Component
-@Service(version="0.0.1",retryCnt=0,external=true,showFront=false)
+@Service(version="0.0.1",retryCnt=0,external=true,showFront=false,namespace=Namespace.NS)
 public class FileServiceImpl implements IFileJMSrv{
 
 	//private static final String ID2NAME_SEP = PackageResource.ID2NAME_SEP;

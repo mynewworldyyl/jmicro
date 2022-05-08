@@ -30,12 +30,13 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.ext.mongodb.CRUDService;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.INI8NMngJMSrv;
 import cn.jmicro.mng.vo.I18nJRso;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
-@Service(version = "0.0.1", debugMode = 1,logLevel=MC.LOG_NO,timeout=10000,
+@Service(version = "0.0.1",namespace=Namespace.NS, debugMode = 1,logLevel=MC.LOG_NO,timeout=10000,
 monitorEnable=0, retryCnt = 0, external=true, showFront=false)
 @Slf4j
 public class NI8NMngJMSrvImpl implements INI8NMngJMSrv{

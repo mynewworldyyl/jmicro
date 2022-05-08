@@ -45,10 +45,11 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.ext.mongodb.MongodbBaseObjectStorage;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.ILogServiceJMSrv;
 
 @Component
-@Service(version="0.0.1",external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1",external=true,debugMode=1,showFront=false,logLevel=MC.LOG_NO,namespace=Namespace.NS)
 public class LogServiceImpl implements ILogServiceJMSrv {
 
 	private static final int FLAT_LOG = 1;

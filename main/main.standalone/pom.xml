@@ -7,7 +7,7 @@
 		<artifactId>jmicro.main</artifactId>
 		<version>0.0.5-SNAPSHOT</version>
 	</parent>
-	<artifactId>jmicro.main.mng</artifactId>
+	<artifactId>main.standalone</artifactId>
 	<packaging>jar</packaging>
 	<name>${project.artifactId}</name>
 	<description>Jmicro mng server starter</description>
@@ -22,6 +22,25 @@
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.mng</artifactId>
 		</dependency>
+		
+		 <dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.dataservice</artifactId>
+		</dependency>
+		
+		 <dependency>
+			<groupId>cn.jmicro</groupId>
+			<version>0.0.5-SNAPSHOT</version>
+			<artifactId>jmicro.main.apigateway</artifactId>
+		</dependency>
+		
+		<!--
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			 <version>0.0.5-SNAPSHOT</version>
+			<artifactId>jmicro.security</artifactId>
+		</dependency>
+		 -->
 		
 	    <dependency>
 			<groupId>cn.jmicro</groupId>

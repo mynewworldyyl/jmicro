@@ -1,4 +1,4 @@
-package cn.jmicro.ext.bbs.api;
+package cn.jmicro.ext.bbs;
 
 import cn.jmicro.api.JMicro;
 import cn.jmicro.common.Utils;

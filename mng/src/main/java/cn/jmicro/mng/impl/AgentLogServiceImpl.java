@@ -23,10 +23,11 @@ import cn.jmicro.api.mng.LogFileEntryJRso;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.IServiceListener;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.IAgentLogServiceJMSrv;
 
 @Component(level=20001)
-@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO)
+@Service(version="0.0.1", external=true, debugMode=0, showFront=false,logLevel=MC.LOG_NO,namespace=Namespace.NS)
 public class AgentLogServiceImpl implements IAgentLogServiceJMSrv {
 
 	private final Logger logger = LoggerFactory.getLogger(AgentLogServiceImpl.class);

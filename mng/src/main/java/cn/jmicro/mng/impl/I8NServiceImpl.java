@@ -16,13 +16,14 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.ext.mongodb.CRUDService;
+import cn.jmicro.mng.Namespace;
 import cn.jmicro.mng.api.II8NServiceJMSrv;
 import cn.jmicro.mng.api.INI8NMngJMSrv;
 import cn.jmicro.mng.i18n.I18NManager;
 import cn.jmicro.mng.vo.I18nJRso;
 
 @Component
-@Service(external=true,showFront=false,version="0.0.1",logLevel=MC.LOG_NO)
+@Service(external=true,showFront=false,version="0.0.1",logLevel=MC.LOG_NO,namespace=Namespace.NS)
 public class I8NServiceImpl implements II8NServiceJMSrv {
 
 	@Inject

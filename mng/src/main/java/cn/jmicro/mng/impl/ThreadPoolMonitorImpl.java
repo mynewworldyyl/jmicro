@@ -22,10 +22,11 @@ import cn.jmicro.api.objectfactory.AbstractClientServiceProxyHolder;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.mng.Namespace;
 
 @Component
 @Service(version="0.0.1",debugMode=1,
-monitorEnable=0,logLevel=MC.LOG_NO,retryCnt=0,external=true,timeout=3000,showFront=false)
+monitorEnable=0,logLevel=MC.LOG_NO,namespace=Namespace.NS,retryCnt=0,external=true,timeout=3000,showFront=false)
 public class ThreadPoolMonitorImpl implements IThreadPoolMonitorJMSrv {
 
 	private static final Logger logger = LoggerFactory.getLogger(ThreadPoolMonitorImpl.class);
