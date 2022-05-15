@@ -20,28 +20,50 @@
                 <tr><td colspan="2">{{msg}}</td></tr>
             </table>
         </Modal>
+		
+		<Modal v-model="showAddModule" :loading="true" width="360" 
+			@on-cancel="showAddModule=false" @on-ok="doAddModule()" ref="addMobule">
+		    <table>
+				<tr><td>{{'Module'|i18n}}</td><td><input readonly="true" type="input" v-model="mod.module"/></td></tr>
+				<tr v-if="isAdmin"><td>{{'ClientId'|i18n}}</td><td><input  type="input"   v-model="mod.clientId"/></td></tr>
+				<tr><td>{{'Key'|i18n}}</td><td><input  type="input"   v-model="mod.key"/></td></tr>
+		        <tr><td>{{'Value'|i18n}}</td><td><input  type="input"  v-model="mod.val"/></td></tr>
+				<tr><td>{{'Type'|i18n}}</td><td>
+					<Select v-model="mod.type">
+						<Option v-for="(val,key) in type2Desc" :value="key" :key="key">{{val | i18n}}</Option>
+					</Select>
+				</td></tr>
+		    </table>
+		</Modal>
 
     </div>
 </template>
 
 <script>
     import profile from "@/rpcservice/profile"
-    
+    import {Constants} from "@/rpc/message"
+	
     const cid = 'userProfile';
 
     export default {
         name: 'JUserProfileEditor',
         data () {
+			let au = this.$jr.auth
+			console.log(this.item)
             return {
+				isAdmin:au.isAdmin(),
+				showAddModule:false,
+				type2Desc:Constants.PREFIX_TYPE_2DESC,
                 isLogin:false,
                 modifyDialog:false,
                 modifyProfile:null,
                 msg:'',
+				mod:{clientId:au.actInfo.clientId,module:this.item.id}
             }
         },
 
         props:{
-            item : {type: Object,required: true},
+            item : {type: Object, required: true},
         },
 
         watch:{
@@ -73,6 +95,39 @@
                         self.$Message.info(err || "error");
                 });
             },
+			
+			async doAddModule(){
+				
+				if(!this.mod.key) {
+					this.$Message.error("名称不能为空")
+					return
+				}
+				
+				if(!this.mod.val) {
+					this.$Message.error("值不能为空")
+					return
+				}
+				
+				if(!this.mod.type) {
+					this.$Message.error("值类型不能为空")
+					return
+				}
+				
+				if(!this.$jr.auth.isAdmin() || !this.mod.clientId) {
+					this.mod.clientId = this.$jr.auth.actInfo.clientId
+				}
+				
+				this.mod.module = this.item.id
+				
+				let rst = await profile.addKv(this.mod.clientId, this.mod.module,
+					this.mod.key, this.mod.val, this.mod.type)
+				if(rst.code != 0) {
+					 this.$Message.error(rst.msg || "失败")
+				}else{
+					 this.showAddModule=false
+					 this.$Message.info("成功")
+				}
+			},
 
             save() {
 
@@ -85,17 +140,16 @@
 
             doUpdate() {
                 this.$refs.modifyDialog.buttonLoading = false;
-
                 let self = this;
                 profile.updateKv(this.item.id,this.modifyProfile)
-                    .then((resp,errmsg)=>{
-                        if(resp.data) {
-                            self.$Message.success("Update successfully")
-                            self.modifyDialog = false;
-                        }else {
-                            self.msg = errmsg;
-                        }
-                    });
+				.then((resp,errmsg)=>{
+					if(resp.data) {
+						self.$Message.success("Update successfully")
+						self.modifyDialog = false;
+					}else {
+						self.msg = errmsg;
+					}
+				});
             }
 
         },
@@ -107,6 +161,7 @@
             this.$bus.$emit("editorOpen",
                 {"editorId":cid,
                     "menus":[{name:"Save",label:"Save",icon:"ios-cog",call: ()=>{ self.save();}},
+						{name:"Add",label:"Add",icon:"ios-cog",call: ()=>{ self.showAddModule = true}},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
 

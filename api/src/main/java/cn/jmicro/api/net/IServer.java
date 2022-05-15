@@ -52,46 +52,42 @@ public interface IServer{
 	String port();
 	
 	public static boolean apiGatewayMsg(Message msg) {
-		return msg.isOuterMessage() && msg.getType() != Constants.MSG_TYPE_PUBSUB;
+		return msg.isOuterMessage() && msg.getType() == Constants.MSG_TYPE_REQ_JRPC;
 	}
 	
-	public static String cacheKey(RpcClassLoader rpcClassloader,Message msg,ServiceMethodJRso sm,ICodecFactory codecFactory) {
-		String mcode = null;
+	public static String cacheKey(RpcClassLoader rpcClassloader, Message msg, ServiceMethodJRso sm, ICodecFactory codecFactory) {
+		
+		String mcode = sm.getKey().getSnvHash() + ":";
 		if(Constants.CACHE_TYPE_MCODE == sm.getCacheType()) {
-			 mcode = sm.getKey().getSnvHash()+"";
+			//mcode +=  ah;
 		}else if(Constants.CACHE_TYPE_ACCOUNT == sm.getCacheType()) {
 			ActInfoJRso ai = JMicroContext.get().getAccount();
 			if(ai == null) {
 				return null;
 			}
-			mcode = sm.getKey().getSnvHash()+":"+ai.getId();
-		} else {
-			return null;
-		}
-		
-		Integer ah = msg.getExtra(Message.EXTRA_KEY_ARG_HASH);
-		if(ah == null) {
-			if(apiGatewayMsg(msg)) {
+			mcode = sm.getKey().getSnvHash() + ":" + ai.getId();
+		} else if(Constants.CACHE_TYPE_PAYLOAD == sm.getCacheType()) {
+			Integer ah = msg.getExtra(Message.EXTRA_KEY_ARG_HASH);
+			if(ah == null) {
 				 ByteBuffer sb = (ByteBuffer)msg.getPayload();
 				 sb.mark();
 				 RpcRequestJRso req;
 				 if(msg.isFromApiGateway() && msg.getUpProtocol() == Message.PROTOCOL_BIN) {
 					 req = parseApiGatewayRequest(rpcClassloader,msg, sm);
-				 }else {
-					 req = ICodecFactory.decode(codecFactory, sb,
-								RpcRequestJRso.class, msg.getUpProtocol());
+				 } else {
+					 req = ICodecFactory.decode(codecFactory, sb,RpcRequestJRso.class, msg.getUpProtocol());
 				 }
-				 
 				 sb.reset();
-				 msg.setReq(req);//JRPCReqRespHandler中不用重复解码数据
+				 msg.setReq(req);
 				 ah = HashUtils.argHash(req.getArgs());
 				 msg.putExtra(Message.EXTRA_KEY_ARG_HASH, ah);
 			}
+			mcode =  mcode + ":" + ah;
+		} else {
+			return null;
 		}
 		
-		if(ah == null) ah = 0;
-		
-		return Constants.CACHE_DIR_PREFIX + mcode + ":" + ah;
+		return Constants.CACHE_DIR_PREFIX + mcode;
 	}
 	
 	public static RpcRequestJRso parseApiGatewayRequest(RpcClassLoader rpcClassloader,Message msg, ServiceMethodJRso sm) {

@@ -72,18 +72,16 @@ rpc.init({
 	(isLogin) => {
 		console.log("login rst: " + isLogin)
 		let vue = new Vue({
-			  beforeCreate(){
-				  Vue.prototype.$bus = this
-				  console.log("set event bus to:",this)
-				},
-			  render: h => h(App),
-			  router,
+			beforeCreate(){
+				Vue.prototype.$bus = this
+				console.log("set event bus to:",this)
+			},
+			render: h => h(App),
+			router,
 		 });
 		 vue.$mount('#app')
 	}
 );
-
-
 
 //window.vue = this;
 //window.vue.jm = window.jm;

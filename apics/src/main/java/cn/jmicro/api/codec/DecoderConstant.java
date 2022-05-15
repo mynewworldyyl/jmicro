@@ -16,6 +16,8 @@
  */
 package cn.jmicro.api.codec;
 
+import cn.jmicro.common.CommonException;
+
 /**
  * 
  * @author Yulei Ye
@@ -29,7 +31,7 @@ public class DecoderConstant {
 	
 	//FINAL
 	public static final byte PREFIX_TYPE_FINAL = PREFIX_TYPE_ID++;
-		
+
 	//类型编码写入编码中
 	public static final byte PREFIX_TYPE_SHORT = PREFIX_TYPE_ID++;
 	//全限定类名作为前缀串写入编码中
@@ -58,5 +60,30 @@ public class DecoderConstant {
 	public static final byte PREFIX_TYPE_REQUEST = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_RESPONSE = PREFIX_TYPE_ID++;
 	public static final byte PREFIX_TYPE_PROXY = PREFIX_TYPE_ID++;
+	
+	@SuppressWarnings("unchecked")
+	public static final <T> T getValFromString(Short type, String strVal) {
+		if(PREFIX_TYPE_BYTE == type) {
+			return (T)new Byte(Byte.parseByte(strVal));
+		}else if(PREFIX_TYPE_SHORTT == type) {
+			return (T)new Short(Short.parseShort(strVal));
+		}else if(PREFIX_TYPE_INT == type) {
+			return (T)new Integer(Integer.parseInt(strVal));
+		}else if(PREFIX_TYPE_LONG == type) {
+			return (T)new Long(Long.parseLong(strVal));
+		}else if(PREFIX_TYPE_FLOAT == type) {
+			return (T)new Float(Float.parseFloat(strVal));
+		}else if(PREFIX_TYPE_DOUBLE == type) {
+			return (T)new Double(Double.parseDouble(strVal));
+		}else if(PREFIX_TYPE_CHAR == type) {
+			return (T)new Character(strVal.length() == 0 ? 0 : strVal.charAt(0)); 
+		}else if(PREFIX_TYPE_BOOLEAN == type) {
+			return (T)new Boolean(Boolean.parseBoolean(strVal));
+		}else if(PREFIX_TYPE_STRINGG == type) {
+			return (T)strVal;
+		}else {
+			throw new CommonException("Not support type code: " + type + " with value: " + strVal);
+		}
+	}
 	
 }

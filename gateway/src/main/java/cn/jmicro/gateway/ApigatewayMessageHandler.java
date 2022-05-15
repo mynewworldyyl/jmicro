@@ -117,14 +117,17 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		msg.setFromApiGateway(true);
 		
 		if(fromCache(session,msg)) {
+			//直接从缓存返回数据给客户端
 			return true;
 		}
 	
+		//从路由表查找目标机器
 		MessageRouteRow r = findTarget(session,msg);
 		if(r == null) {
 			return true;
 		}
 		
+		//与内服务器连接
 		ISession cs = sessionManager.getOrConnect(r.getInsName(), r.getIp(), r.getPort());
 		if(cs == null) {
 			respError(session,msg,RespJRso.SE_SERVICE_NOT_FOUND,"Connection refuse");
@@ -134,7 +137,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		if(msg.getRespType() == Message.MSG_TYPE_NO_RESP) {
 			msg.setMsgId(idGenerator.getLongId(Message.class));
 			cs.write(msg);
-			//单向消息
+			//单向消息，不需要接收者响应最终结果
 			return true;
 		}
 		
@@ -145,10 +148,12 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 			extraMap.remove(Message.EXTRA_KEY_SIGN);
 		}
 		
+		//建立响应链路
 		linkMng.createLinkNode(session,msg);
 		msg.setInsId(pi.getId());
 		msg.setOuterMessage(false);
 		if(msg.isUpSsl() || msg.isDownSsl()) {
+			//通过网关后，默认内网是安全的，在此可以不用加密数据
 			this.secretMng.signAndEncrypt(msg, r.getInsId());
 		}
 		

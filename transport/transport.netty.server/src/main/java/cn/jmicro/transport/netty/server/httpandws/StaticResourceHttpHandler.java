@@ -76,17 +76,8 @@ public class StaticResourceHttpHandler  {
 	
 	private Map<String,byte[]> contents = new HashMap<>();
 	
-	@Inject(required=false)
-	private Map<String,IHttpRequestHandler> handlers = new HashMap<>();
-	
-	@Inject(required=false)
-	private Set<IHttpRequestHandler> pathMatchHandler = new HashSet<>();
-	
-	public boolean canhandle(FullHttpRequest request){
-		return request.method().equals(HttpMethod.GET);
-	}
-
-	public void handle(ChannelHandlerContext ctx,FullHttpRequest request) throws IOException {
+	public boolean handle(ChannelHandlerContext ctx,FullHttpRequest request) throws IOException {
+		//其他静态资源
 		String path = request.uri();
 		if(path.contains("?")) {
 			path = path.substring(0,path.indexOf("?"));
@@ -94,48 +85,16 @@ public class StaticResourceHttpHandler  {
 		
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		//response.headers().set("content-Type",getContentType(path));
-		
-		//LOG.debug(path);
-		boolean hsuc = false;
-		String key = request.headers().get(IHttpRequestHandler.HANDLER_KEY);
-	
-		JMicroNettyHttpRequest rr = new JMicroNettyHttpRequest(request);
-		if(key == null) {
-			key = rr.getReqParam(IHttpRequestHandler.HANDLER_KEY);
-		}
-		
-		if(key != null && handlers.containsKey(key)) {
-			//基于头部KEY匹配
-			
-			handlers.get(key).handler(rr, new JMicroNettyHttpResponse(response,ctx));
-			//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-			hsuc = true;
-		} else {
-			if(!pathMatchHandler.isEmpty()) {
-				//基于路径匹配
-				for(IHttpRequestHandler h : pathMatchHandler) {
-					if(h.match(rr) ) {
-						h.handler(rr, new JMicroNettyHttpResponse(response,ctx));
-						//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-						hsuc = true;
-						break;
-					}
-				}
-			}
-		}
-		
-		if(!hsuc) {
 
-			//其他静态资源
-			String path0 = URLDecoder.decode(path, Constants.CHARSET);
-			byte[] content = this.getContent(path0,request,response);
-			response.headers().set("Content-Length",content.length);
-			ByteBuf responseBuf = Unpooled.copiedBuffer(content);
-			response.content().writeBytes(responseBuf);
-			responseBuf.release();
-			ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-		}
+		String path0 = URLDecoder.decode(path, Constants.CHARSET);
+		byte[] content = this.getContent(path0,request,response);
+		response.headers().set("Content-Length",content.length);
+		ByteBuf responseBuf = Unpooled.copiedBuffer(content);
+		response.content().writeBytes(responseBuf);
+		responseBuf.release();
+		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 		
+		return true;
 	}
 
 	private String getContentType(String path) {

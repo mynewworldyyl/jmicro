@@ -40,13 +40,13 @@ public interface IObjectStorage {
 	public static final byte UPDATE_TYPE_ID = 1;
 	public static final byte UPDATE_TYPE_FILTER = 2;
 	
-	<T> boolean  save(String table,T val,Class<T> cls,boolean async,boolean toDocument);
+	<T> boolean  save(String table,T val,Class<T> cls,boolean async);
 	
 	<T> boolean  saveSync(String table,T val,Class<T> cls);
 	
-	<T> boolean  save(String table,List<T> val,Class<T> cls,boolean async,boolean toDocument);
+	<T> boolean  save(String table,List<T> val,Class<T> cls,boolean async);
 	
-	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async,boolean toDocument);
+	<T> boolean  save(String table,T[] val,Class<T> cls,boolean async);
 	
 	<T> boolean updateById(String table,T val,Class<T> targetClass,String idName, boolean async);
 	

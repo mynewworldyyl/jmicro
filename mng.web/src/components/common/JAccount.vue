@@ -30,7 +30,10 @@
                 </td></tr>
                 <tr>
                     <td><input type="checkbox"  v-model="rememberPwd" @change="rememberPwdChange()"/>{{'RememberPwd'|i18n}}</td>
-                    <td><a href="javascript:void(0)" @click="resetPasswordEmail()">{{'ResetPassword'|i18n}}</a></td>
+                    <td>
+						<a href="javascript:void(0)" @click="resetPasswordEmail()">{{'ResetPassword'|i18n}}</a>&nbsp;&nbsp;
+						<a v-if="showResendEmail" href="javascript:void(0)" @click="sendActiveEmail()">{{'ResendEmail'|i18n}}</a>
+					</td>
                 </tr>
 
                <!-- <tr><td>
@@ -124,11 +127,13 @@ export default {
             vcodeId:null,
             codeUrl:null,
 
-            actInfo : {},
+            actInfo : null,
             isLogin:false,
             msg:'',
 
             rememberPwd:true,
+			
+			showResendEmail : false
         };
     },
 
@@ -171,17 +176,25 @@ export default {
     },
 
     methods: {
-
+		async sendActiveEmail(){
+			let rst = await act.resendActiveEmail(this.actName)
+			if(rst.code == 0) {
+				 this.showResendEmail = false
+				 this.$Message.info("邮件发送成功，请打开注册邮箱激活账号");
+			} else {
+				 this.$Message.info(rst.msg || "邮件发送失败");
+			}
+		},
+		
         doChangeClient(){
             //let req = this.$jr.this.$jr.rpccreq(act.sn,act.ns,act.v,'changeCurClientId',[this.selectClientId])
             this.$jr.rpc.callRpcWithParams(act.sn,act.ns,act.v,'changeCurClientId',[this.selectClientId])
-                .then(( resp )=>{
+                .then((resp)=>{
                     if(resp && resp.code == 0) {
-                        this.$jr.auth.actInfo = resp.data
                         this.actInfo = resp.data
                         this.clientListDialog = false
                         this.selectClientId = this.actInfo.clientId+""
-                        this.$jr.rpc_notify(Constants.LOGIN);
+                        this.$jr.auth.setActInfo(resp.data)
                     } else {
                         console.log(resp);
                     }
@@ -218,7 +231,7 @@ export default {
         },
 
         doLoginOrLogout(){
-            if(this.actInfo) {
+            if(this.$jr.auth.isLogin()) {
                 this.doLogout();
             } else {
                //this.getCode();
@@ -272,10 +285,10 @@ export default {
             let self = this;
             act.resetPwd(this.actName,this.checkCode,this.pwd)
             .then((resp)=>{
-                    if(resp.code != 0 ) {
-                        self.$Message.error(resp.msg);
-                        return;
-                    }
+				if(resp.code != 0 ) {
+					self.$Message.error(resp.msg);
+					return;
+				}
 
                 self.resetPwdDialog = false;
                 self.reset();
@@ -415,7 +428,7 @@ export default {
 
             this.msg = "";
 
-            let self = this;
+            let self = this
             act.regist(this.actName,this.pwd,this.email,this.mobile,(state,errmsg)=>{
                 if(state) {
                     self.$Message.success("Regist successfully")
@@ -459,50 +472,43 @@ export default {
                 pwd = ""
             }
 			
-			this.$jr.auth.login(actName,pwd,vcode,vcodeId)
-
-            let self = this
-            let req = this.$jr.rpc.cmreq(1526369786,[actName,pwd,vcode,vcodeId])
-            //req.serviceName = 'cn.jmicro.api.security.IAccountServiceJMSrv';
-            this.$jr.rpc.callRpc(req)
-                .then(( resp )=>{
-                    if(resp.code == 0) {
-                        this.$jr.auth.setActInfo(resp.data)
-                        localStorage.set(Constants.ACT_NAME_KEY,self.actInfo.actName)
-                        self.codeUrl =null
-                        self.vcodeId = null
-                        let rememberPwd = localStorage.get(Constants.ACT_REM_PWD_KEY)
-                        if(rememberPwd || this.$jr.auth.actInfo.actName.startWith("guest_")) {
-                            localStorage.set(Constants.ACT_PWD_KEY,pwd)
-                        }
-
-                        if(this.$jr.auth.actInfo.actName.startWith("guest_")) {
-                            localStorage.set(Constants.ACT_GUEST_NAME_KEY,this.$jr.auth.actInfo.actName)
-                        }
-
-                        if(cb)
-                            cb(this.$jr.auth.actInfo,null)
-                    } else if( resp.code == 4) {
-                        let arr = resp.msg.split('$@$')
-                        self.codeUrl = 'data:image/gif;base64,' + arr[0]
-                        self.vcodeId = arr[1]
-                    }else {
-                        if(cb) {
-                            cb(null,resp.msg)
-                        }
-                    }
-                }).catch((err)=>{
-                if(err && err.code == 4) {
-                    let arr = err.msg.split('$@$')
-                    self.codeUrl = 'data:image/gif;base64,' + arr[0]
-                    self.vcodeId = arr[1]
-                } else {
-                    console.log(err)
-                    if(cb) {
-                        cb(null,err)
-                    }
-                }
-            });
+			 let self = this
+			 this.$jr.auth.login(actName,pwd,vcode,vcodeId,false)
+			.then(( resp )=>{
+				if(resp.code == 0) {
+					self.codeUrl =null
+					self.vcodeId = null
+					
+					if(this.$jr.auth.actInfo.actName.startWith("guest_")) {
+						localStorage.set(Constants.ACT_GUEST_NAME_KEY,this.$jr.auth.actInfo.actName)
+					}
+		
+					if(cb)
+						cb(this.$jr.auth.actInfo,null)
+				} else if(resp.code == 4) {
+					self.codeUrl = 'data:image/gif;base64,' + resp.vcode
+					self.vcodeId = resp.vcodeId
+				}else {
+					if(resp.key && resp.key == '1') {
+						self.showResendEmail = true
+					}
+					if(cb) {
+						cb(null,resp.msg)
+					}
+				}
+			}).catch((err)=>{
+					if(err && err.code == 4) {
+						let arr = err.msg.split('$@$')
+						self.codeUrl = 'data:image/gif;base64,' + arr[0]
+						self.vcodeId = arr[1]
+					} else {
+						console.log(err)
+						if(cb) {
+							cb(null,err)
+						}
+					}
+			});
+                
         },
 
         doLogin(){
@@ -518,7 +524,8 @@ export default {
             }
 
             self.msg = ''
-            self.login(this.actName,this.pwd,this.vcode,this.vcodeId,(actInfo,err)=>{
+            self.login(this.actName,this.pwd,this.vcode,this.vcodeId,
+				(actInfo,err)=>{
                 self.vcode = null
                 self.vcodeId = null
                 self.codeUrl=null

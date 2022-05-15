@@ -31,6 +31,8 @@ public class ApiGatewayConfig {
 	private String host = null;
 	private String port= "9090";
 	
+	private Integer clientId = 255;
+	
 	private boolean debug = true;
 	
 	private boolean upSsl = false;
@@ -166,4 +168,14 @@ public class ApiGatewayConfig {
 	public void setMyPriKeyPwd(String myPriKeyPwd) {
 		this.myPriKeyPwd = myPriKeyPwd;
 	}
+
+	public Integer getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(Integer clientId) {
+		this.clientId = clientId;
+	}
+	
+	
 }

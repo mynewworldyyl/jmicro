@@ -124,6 +124,12 @@
 						<Menu-item name="__serviceMethodList">
 							<Icon type="ios-cog"></Icon>{{"serviceMethodList"|i18n}}
 						</Menu-item>
+						<Menu-item name="__permissionApproveList">
+							<Icon type="ios-cog"></Icon>{{"permissionApproveList"|i18n}}
+						</Menu-item>
+						<Menu-item name="__roleApproveList">
+							<Icon type="ios-cog"></Icon>{{"roleApproveList"|i18n}}
+						</Menu-item>
 						<Menu-item name="__flow">
 							<Icon type="ios-alert" />{{"flow"|i18n}}
 						</Menu-item>
@@ -310,16 +316,6 @@
 					self.selectMenu(self.activeEditorId);
 				}
 			});
-
-			rpc.init({
-					mod: 'jmng',
-					useWs: true,
-					clientId: 1
-				},
-				(isLogin) => {
-
-				}
-			);
 
 			this.$bus.$on('editorOpen', function(opts) {
 				if (!opts.editorId) {

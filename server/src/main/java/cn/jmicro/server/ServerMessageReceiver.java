@@ -324,13 +324,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				 //非订阅消息都经由网关转发到后台系统
 				 gatewayHandler.onMessage(s, msg);
 			 } else {
-				 //全部后台系统或API网关内部服务走此代码
+				//全部后台系统或API网关内部服务走此代码
 				IMessageHandler h = handlers.get(msg.getType());
 				if(h == null) {
 					String errMsg = "Message type ["+Integer.toHexString(msg.getType())+"] handler not found!"+",from insId: " + msg.getInsId();
 					MT.rpcEvent(MC.MT_HANDLER_NOT_FOUND);
-					LG.log(MC.LOG_ERROR, TAG,errMsg,null);
-					responseException(msg,s,null,task.sm);
+					LG.log(MC.LOG_ERROR, TAG, errMsg, null);
+					responseException(msg, s, null, task.sm);
 					JMicroContext.get().submitMRpcItem();
 				} else {
 					h.onMessage(s, msg);

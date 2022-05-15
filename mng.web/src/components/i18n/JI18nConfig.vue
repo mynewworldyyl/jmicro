@@ -48,7 +48,7 @@
 
         <!--  创建 或 更新 -->
         <Drawer  v-model="addDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
-                :draggable="true" :scrollable="true" width="50" :mask-closable="false">
+                :draggable="true" :scrollable="true" width="50" :mask-closable="true">
             <div class="error">{{errMsg}}</div>
             <div class="addClientcls">
                 <a v-if="actInfo  && !importFileModel" @click="doAdd()">{{'Confirm'|i18n}}</a>

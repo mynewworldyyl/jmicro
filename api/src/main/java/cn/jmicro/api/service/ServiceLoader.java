@@ -16,7 +16,9 @@
  */
 package cn.jmicro.api.service;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.util.Arrays;
@@ -36,6 +38,7 @@ import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.annotation.JParam;
 import cn.jmicro.api.annotation.SBreakingRule;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
@@ -776,6 +779,32 @@ public class ServiceLoader{
 				sm.setCacheType(manno.cacheType());
 				sm.setCacheExpireTime(manno.cacheExpireTime());
 				
+				if(!Utils.isEmpty(manno.httpPath())) {
+					//可处理HTTP请求
+					sm.setHttpMethod(manno.httpMethod());
+					sm.setHttpPath(manno.httpPath());
+					sm.setHttpReqContentType(manno.httpReqContentType());
+					sm.setHttpReqBody(manno.httpReqBody());
+				}
+				
+				Parameter[] ps = srvMethod.getParameters();
+				//Annotation[][] pas = srvMethod.getParameterAnnotations();
+				
+				if(ps != null && ps.length > 0) {
+					String[] mns = new String[ps.length];
+					if(ps != null && ps.length > 0) {
+						for(int i = 0; i < ps.length; i++) {
+							JParam p = ps[i].getAnnotation(JParam.class);
+							if(p == null) {
+								mns[i] = ps[i].getName();
+							}else {
+								mns[i] = p.value();
+							}
+						}
+					}
+					sm.setParamNames(mns);
+				}
+				
 				sm.setExternal(item.isExternal() ? (manno.external() == 0 ? true : manno.external() == 1) : false);
 				
 				if(sm.getTimeout() <= 0) {
@@ -819,7 +848,7 @@ public class ServiceLoader{
 			Set<Class<?>> clses = new HashSet<>();
 			
 			//Type[] types = m.getGenericParameterTypes();
-			 Class<?>[]  pts = m.getParameterTypes();
+			Class<?>[]  pts = m.getParameterTypes();
 			 
 			for(int i = 0; i < types.length; i++) {
 				//needRegist(pts[i]/*,types[i]*/);

@@ -338,7 +338,7 @@ public class FileServiceImpl implements IFileJMSrv{
 			pr.setFinishBlockNum(0);
 			pr.setTotalBlockNum(getBlockNum(pr.getSize()));
 			
-			os.save(FileJRso.TABLE, pr, FileJRso.class, false, false);
+			os.save(FileJRso.TABLE, pr, FileJRso.class, false);
 			
 			LOG.info("Add resource: " + pr.toString());
 			resp.setCode(RespJRso.CODE_SUCCESS);

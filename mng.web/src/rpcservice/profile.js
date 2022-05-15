@@ -14,12 +14,20 @@ export default {
       return rpc.callRpc(this.__actreq( 'getModuleList', []))
   },
 
-  getModuleKvs : function (module) {
-      return rpc.callRpc(this.__actreq( 'getModuleKvs', [module]))
+  getModuleKvs : function (md) {
+      return rpc.callRpc(this.__actreq( 'getModuleKvs', [md]))
   },
 
-  updateKv : function (module,kv) {
-      return rpc.callRpc(this.__actreq( 'updateKv', [module,kv]))
+  updateKv : function (md,kv) {
+     return rpc.callRpc(this.__actreq( 'updateKv', [md,kv]))
+  },
+  
+  addKv : function (scid,md,key,val,type) {
+      return rpc.callRpc(this.__actreq('addKv', [scid,md,key,val,type]))
+  },
+  
+  addModule : function (scid,md) {
+      return rpc.callRpc(this.__actreq('addModule', [scid,md]))
   },
 
   sn:'cn.jmicro.mng.api.IProfileServiceJMSrv',

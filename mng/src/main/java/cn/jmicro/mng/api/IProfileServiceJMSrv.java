@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.profile.KVJRso;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
@@ -18,4 +19,7 @@ public interface IProfileServiceJMSrv {
 	
 	RespJRso<Boolean> updateKv(String module,KVJRso kv);
 	
+	IPromise<RespJRso<Boolean>> addKv(Integer scid, String module, String key, String valStr, Short type);
+	
+	IPromise<RespJRso<Boolean>> addModule(Integer scid, String module);
 }

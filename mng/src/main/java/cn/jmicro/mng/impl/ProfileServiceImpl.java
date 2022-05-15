@@ -11,6 +11,9 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
+import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.codec.DecoderConstant;
+import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.profile.KVJRso;
 import cn.jmicro.api.profile.ProfileManager;
@@ -44,7 +47,8 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 			return resp;
 		}
 		
-		String path = ProfileManager.ROOT + "/" + ai.getClientId();
+		String path = ProfileManager.profileRoot(ai.getClientId());
+		path = path.substring(0, path.length()-1);
 		if(op.exist(path)) {
 			Set<String> modules = op.getChildren(path,false);
 			resp.setData(modules);
@@ -62,7 +66,6 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=256)
 	public RespJRso<Set<KVJRso>> getModuleKvs(String module) {
-
 		RespJRso<Set<KVJRso>> resp = new RespJRso<>();
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		if(ai == null) {
@@ -73,7 +76,7 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 			return resp;
 		}
 		
-		String mpath = ProfileManager.ROOT + "/" + ai.getClientId()+"/"+module;
+		String mpath = ProfileManager.profileRoot(ai.getClientId()) + module;
 		if(!op.exist(mpath)) {
 			resp.setData(null);
 			resp.setCode(1);
@@ -99,7 +102,6 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 		resp.setCode(0);
 		return resp;
 	}
-	
 
 	@Override
 	@SMethod(needLogin=true,maxSpeed=5,maxPacketSize=256)
@@ -114,7 +116,7 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 			return resp;
 		}
 		
-		String path = ProfileManager.ROOT + "/" + ai.getClientId();
+		String path = ProfileManager.profileRoot(ai.getClientId());
 		Set<String> modules = op.getChildren(path, false);
 		if(modules == null || modules.isEmpty()) {
 			resp.setData(null);
@@ -163,6 +165,34 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 		resp.setCode(0);
 		resp.setData(true);
 		return resp;
+	}
+
+	@Override
+	public IPromise<RespJRso<Boolean>> addKv(Integer scid, String module, String key, String valStr, Short type) {
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
+			RespJRso<Boolean> r = new RespJRso<Boolean>(RespJRso.CODE_SUCCESS,true);
+			Object val = DecoderConstant.getValFromString(type, valStr);
+			pm.setVal(scid, module, key, val);
+			suc.success(r);
+		});
+	}
+	
+	@Override
+	public IPromise<RespJRso<Boolean>> addModule(Integer scid, String module) {
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
+			RespJRso<Boolean> r = new RespJRso<Boolean>(RespJRso.CODE_FAIL,false);
+			String mpath = ProfileManager.profileRoot(scid) + module;
+			if(op.exist(mpath)) {
+				r.setMsg(module +" exist for clientId: " + scid);
+				return;
+			}
+			
+			op.createNodeOrSetData(mpath, "", false);
+			r.setCode(RespJRso.CODE_SUCCESS);
+			r.setData(true);
+			
+			suc.success(r);
+		});
 	}
 
 }

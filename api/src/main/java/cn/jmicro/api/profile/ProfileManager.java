@@ -16,12 +16,18 @@ import cn.jmicro.common.util.StringUtils;
 @Component
 public class ProfileManager {
 	
-	public static final String ROOT = Config.getRaftBasePath("") + "/profiles";
+	public static final String PREFIX = "profiles/";
+	
+	public static final String ROOT = Config.BASE_DIR;
 
 	private Map<String,Object> cacheValues = new HashMap<>();
 	
 	@Inject
 	private IDataOperator op;
+	
+	public static String profileRoot(Integer cid) {
+		return ROOT + cid + "/" + PREFIX;
+	}
 	
 	public <T> T getVal(String module,String key, T defaultVal, Class<T> type) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
@@ -36,7 +42,7 @@ public class ProfileManager {
 	}
 	
 	public void setVal(Integer clientId,String module,String key,Object val) {
-		String path = ROOT + "/" + clientId + "/" + module + "/" + key;
+		String path = profileRoot(clientId) + module + "/" + key;
 		
 		KVJRso kv = new KVJRso();
 		kv.setKey(key);
@@ -51,7 +57,7 @@ public class ProfileManager {
 	}
 
 	private <T> T  getFromZK(Integer clientId, String module,String key, T defaultVal,Class<T> type) {
-		String path = ROOT + "/" + clientId + "/" + module + "/" + key;
+		String path = profileRoot(clientId) + module + "/" + key;
 		if(this.cacheValues.containsKey(path)) {
 			return (T)this.cacheValues.get(path);
 		}

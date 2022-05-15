@@ -2,11 +2,15 @@ package cn.jmicro.api.http;
 
 import java.util.Map;
 
+import cn.jmicro.api.net.ISession;
+
 public interface HttpRequest {
 
+	String getUri();
+	
 	String getMethod();
 	
-	String getUri();
+	String getContentType();
 	
 	String getReqParam(String headerName);
 	
@@ -15,5 +19,21 @@ public interface HttpRequest {
 	String getHeaderParam(String headerName);
 	
 	Map<String,String> getHeaderParams();
+	
+	//public boolean isSuccess();
+
+	String getTextBody();
+
+	boolean isKv();
+	
+	String getPath();
+	
+	String getQryParams();
+	
+	ISession getSession();
+	
+	int getContentLen();
+
+	//public String getRetMsg();
 	
 }

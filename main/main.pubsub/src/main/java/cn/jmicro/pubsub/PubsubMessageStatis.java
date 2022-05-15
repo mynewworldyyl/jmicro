@@ -157,8 +157,8 @@ public class PubsubMessageStatis {
 			
 		}
 		
-		os.save(PUBSUB_BASE_DATA, baseData,Document.class, true,true);
-		os.save(PUBSUB_QPS_DATA, qpsData,Document.class, true,true);
+		os.save(PUBSUB_BASE_DATA, baseData,Document.class, true);
+		os.save(PUBSUB_QPS_DATA, qpsData,Document.class, true);
 		
 	}
 

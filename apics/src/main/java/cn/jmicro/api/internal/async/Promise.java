@@ -110,7 +110,8 @@ public class Promise<R> implements IPromise<R>{
 			cb.fail(fail.getCode(),fail.getMsg(),context);
 		} else {
 			if(custCb == null) {
-				synchronized(cbLocker) {//大部份情况下在偏向锁下情况下工作
+				synchronized(cbLocker) {
+					//大部份情况下在偏向锁情况下工作
 					if(custCb == null) {
 						custCb = new SuccessCallback<R>();
 					}

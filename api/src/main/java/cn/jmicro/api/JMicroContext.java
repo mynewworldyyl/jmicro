@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
+import cn.jmicro.api.http.HttpRequest;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.JMStatisItemJRso;
@@ -308,6 +309,81 @@ public class JMicroContext  {
 			logLevel = msg.getLogLevel();
 			isDebug = msg.isDebugMode();
 		}
+		
+		//context.isLoggable = msg.isLoggable();
+		//debug mode 下才有效
+		cx.setParam(IS_DEBUG, isDebug);
+		if(isDebug) {
+			//long clientTime = msg.getTime();
+			StringBuilder sb = new StringBuilder();
+			//long curTime = TimeUtils.getCurTime();
+			//context.setParam(CLIENT_UP_TIME, msg.getTime());
+			
+			cx.setParam(DEBUG_LOG, sb);
+		}
+		
+		cx.setParam(IS_MONITORENABLE, iMonitorable);
+		if(iMonitorable) {
+			initMrpcStatisItem();
+		}
+		
+		if(logLevel != MC.LOG_NO) {
+			initMrpcLogItem(true);
+		}
+	}
+	
+	public static void configHttpProvider(HttpRequest req, ServiceMethodJRso sm) {
+		
+		JMicroContext cx = get();
+		
+		cx.curCxt.clear();
+		
+		setCallSide(true);
+		
+		ISession s = req.getSession();
+		
+		cx.setParam(JMicroContext.SESSION_KEY, s);
+		
+		cx.setParam(JMicroContext.REMOTE_HOST, s.remoteHost());
+		cx.setParam(JMicroContext.REMOTE_PORT, s.remotePort());
+		//cx.setParam(JMicroContext.REMOTE_INS_ID, msg.getInsId());
+		cx.setParam(JMicroContext.ORIGIN_MSG, req);
+		
+		cx.setParam(JMicroContext.LOCAL_HOST, s.localHost());
+		cx.setParam(JMicroContext.LOCAL_PORT, s.localPort()+"");
+		
+		String lk = req.getHeaderParam(Message.EXTRA_KEY_LOGIN_KEY+"");
+		String slk = req.getHeaderParam(Message.EXTRA_KEY_LOGIN_KEY+"");
+		
+		if(!Utils.isEmpty(lk)) {
+			cx.setParam(JMicroContext.LOGIN_TOKEN, lk);
+		}
+		
+		if(!Utils.isEmpty(slk)) {
+			cx.setParam(JMicroContext.SLOGIN_TOKEN, slk);
+		}
+		
+		String cid = req.getHeaderParam(Message.EXTRA_KEY_CLIENT_ID+"");
+		if(cid != null) {
+			cx.setParam(Message.EXTRA_KEY_CLIENT_ID+"", Integer.parseInt(cid));
+		} else {
+			ActInfoJRso sai = JMicroContext.get().getSysAccount();
+			if(sai != null) {
+				cx.setParam(Message.EXTRA_KEY_CLIENT_ID+"", sai.getClientId());
+			}
+		}
+		
+		Byte logLevel = MC.LOG_NO;
+		
+		cx.setParam(Constants.NEW_LINKID, false);
+		cx.setByte(JMicroContext.SM_LOG_LEVEL, MC.LOG_NO);
+		
+		boolean iMonitorable = false;
+		boolean isDebug = false;
+		
+		iMonitorable = sm.getMonitorEnable() == 1;
+		isDebug = sm.getDebugMode() == 1;
+		logLevel = sm.getLogLevel();
 		
 		//context.isLoggable = msg.isLoggable();
 		//debug mode 下才有效

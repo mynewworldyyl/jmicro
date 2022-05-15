@@ -56,7 +56,7 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 		
 		log.info(sb.toString());*/
 		
-		resp.contentType(file.getContentType());
+		resp.setHeader("Content-Type",file.getContentType());
 		resp.write(file.getInputStream(), (int)file.getLength());
 	}
 

@@ -179,6 +179,20 @@ public final class ServiceMethodJRso {
 	
 	private int[] authClients;
 	
+	//处理httpy请求的URL，默认不处理HTTP请求
+	private String httpPath;
+	
+	//处理httpy请求方法，默认处理全部请求方法
+	private String httpMethod;
+	
+	//HTTP请求体内容类型
+	private String httpReqContentType;
+	
+	//整个HTTP请求数据作为一个整体作为参数唯一方法，参数可以是字符串或VO对象
+	private boolean httpReqBody;
+	
+	private String[] paramNames;
+	
 	public void formPersisItem(ServiceMethodJRso p){
 		this.monitorEnable = p.monitorEnable;
 
@@ -234,6 +248,12 @@ public final class ServiceMethodJRso {
 		this.cacheExpireTime = p.cacheExpireTime;
 		
 		this.external = p.external;
+		
+		this.httpMethod = p.httpMethod;
+		this.httpPath = p.httpPath;
+		this.httpReqContentType = p.httpReqContentType;
+		this.httpReqBody = p.httpReqBody;
+		this.paramNames = p.paramNames;
 		
 		this.key.form(p.key);
 	}

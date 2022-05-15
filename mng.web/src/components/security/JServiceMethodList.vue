@@ -43,11 +43,11 @@
             </div>
             <p>{{auth.errMsg}}</p>
             <div v-if="auth.showAccountNameBox">
-            <Label for="authAccountName">{{"AccountName"|i18n}}</Label>
-            <Input id="authAccountName"  v-model="auth.accountName"/>
-            <a @click="okAuthByAccountName()"> {{'Ok' | i18n}} </a>
-            <a @click="cancelAuth()"> {{'Cancel' | i18n}} </a>
-        </div>
+				<Label for="authAccountName">{{"AccountName"|i18n}}</Label>
+				<Input id="authAccountName"  v-model="auth.accountName"/>
+				<a @click="okAuthByAccountName()"> {{'Ok' | i18n}} </a>
+				<a @click="cancelAuth()"> {{'Cancel' | i18n}} </a>
+			</div>
             <div v-if="auth.showClientIdBox">
                 <Label for="authAuthClientId">{{"Client ID"}}</Label>
                 <Input id="authAuthClientId"  v-model="auth.clientId"/>

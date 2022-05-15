@@ -38,7 +38,7 @@ public class CRUDService<T extends PersistVo> {
 		vo.setCreatedTime(TimeUtils.getCurTime());
 		vo.setUpdatedTime(TimeUtils.getCurTime());
 		vo.setId(idGenerator.getLongId(clazz));
-		return os.save(table, vo, clazz, false, false);
+		return os.save(table, vo, clazz, false);
 	}
 
 	public boolean deleteById(Class<T> clazz,Long id) {

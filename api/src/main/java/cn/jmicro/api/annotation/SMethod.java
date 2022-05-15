@@ -189,4 +189,19 @@ public @interface SMethod {
 	//缓存类型
 	public byte cacheType() default Constants.CACHE_TYPE_NO;
 	public int cacheExpireTime() default 60;//单位秒
+	
+	//处理httpy请求的URL，默认不处理HTTP请求
+	public String httpPath() default "";
+	
+	//处理httpy请求方法，默认处理全部请求方法
+	public String httpMethod() default "";
+	
+	//HTTP请求体内容类型
+	public String httpReqContentType() default "application/json;charset=UTF-8";
+	
+	//默认和请求类型（httpReqContentType）相同
+	//public String httpRespContentType() default "";
+	
+	//整个HTTP请求数据作为一个整体作为参数唯一方法，参数可以是字符串或VO对象
+	public boolean httpReqBody() default false;
 }

@@ -15,5 +15,5 @@ public interface HttpResponse {
 	
 	void write(InputStream in,int len);
 	
-	void contentType(String contentType);
+	void setHeader(String key,Object value) ;
 }

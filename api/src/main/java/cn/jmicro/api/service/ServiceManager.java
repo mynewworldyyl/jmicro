@@ -83,6 +83,8 @@ public class ServiceManager {
 	
 	private Map<Integer,ServiceMethodJRso> methodHash2Method = new HashMap<>();
 	
+	private Map<String,ServiceMethodJRso> httpPath2Method = new HashMap<>();
+	
 	//服务hash值
 	//private Map<String,Integer> path2Hash = new HashMap<>();
 	
@@ -199,6 +201,7 @@ public class ServiceManager {
 		allPaths.clear();
 		service2Methods.clear();
 		methodHash2Method.clear();
+		httpPath2Method.clear();
 		
 		for(String child : children) {
 			childrenAdd(child);
@@ -441,6 +444,53 @@ public class ServiceManager {
 				l.unlock();
 			}
 		}
+		return null;
+	}
+	
+	/**
+	 * 查找路径最佳匹配的服务方法
+	 * @param path
+	 * @param httpMethod
+	 * @param reqContentType
+	 * @return
+	 */
+	public ServiceMethodJRso getMethodByHttpPath(String path) {
+		if(Utils.isEmpty(path)) {
+			return null;
+		}
+		
+		path = path.trim();
+		if(httpPath2Method.containsKey(path)) {
+			return httpPath2Method.get(path);
+		}
+		
+		// /a/b/c/*   /a/b/* /a/*
+		// /a/b/c/cdd  匹配  /a/b/c/*
+		String curMathPath = null;
+		for(String p : httpPath2Method.keySet()) {
+			if(!p.endsWith("*")) {
+				continue;
+			}
+
+			String prefix = p.substring(0,p.length()-1);
+			if(!path.startsWith(prefix)) {
+				continue;
+			}
+
+			if(curMathPath == null) {
+				curMathPath = p;
+				continue;
+			}
+			
+			if(prefix.length() > curMathPath.length()) {
+				curMathPath = p;
+			}
+		}
+		
+		if(curMathPath != null) {
+			return httpPath2Method.get(curMathPath);
+		}
+		
 		return null;
 	}
 	
@@ -938,7 +988,7 @@ public class ServiceManager {
 		
 		UniqueServiceKeyJRso uk = this.allPaths.remove(child);
 		
-		boolean isMy = this.myService(uk);
+		//boolean isMy = this.myService(uk);
 		
 		ServiceItemJRso si = path2SrvItems.remove(child);
 		
@@ -958,9 +1008,11 @@ public class ServiceManager {
 				/*Set<UniqueServiceKeyJRso> items = this.getServiceItems(si.getKey().getServiceName(),
 						si.getKey().getNamespace(), si.getKey().getVersion());*/
 				for(UniqueServiceMethodKeyJRso sm : methods) {
-					this.methodHash2Method.remove(sm.getSnvHash());
+					ServiceMethodJRso smj = this.methodHash2Method.remove(sm.getSnvHash());
+					if(smj != null && !Utils.isEmpty(smj.getHttpPath())) {
+						this.httpPath2Method.remove(smj.getHttpPath());
+					}
 				}
-			
 			}
 		} finally {
 			if(l != null) {
@@ -1054,13 +1106,28 @@ public class ServiceManager {
 						if(conflichMethod != null) {
 							String msg = "Service method hash conflict: [" + smKey + 
 									"] with exist sm [" + conflichMethod.fullStringKey()+"] fail to load service!";
-							logger.error(msg);
+							//logger.error(msg);
 							LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class,msg,MC.MT_DEFAULT,true);
-							return false;
+							throw new CommonException(msg);
 						}
 						//同一个方法，保存最新的方法
 						this.methodHash2Method.put(h, sm);
 					}
+					
+					if(this.gatewayModel && !Utils.isEmpty(sm.getHttpPath())) {
+						String trimPath = sm.getHttpPath().trim();
+						if(httpPath2Method.containsKey(trimPath)) {
+							String emk = httpPath2Method.get(trimPath).getKey().methodID();
+							if(!emk.equals(sm.getKey().methodID())) {
+								//相同的HTT路径，不能存在两个处理方法
+								String msg = "Exist HTTP path: "+sm.getHttpPath()+", NMK: " + sm.getKey().methodID()+", EMK: " + emk ;
+								LG.logWithNonRpcContext(MC.LOG_ERROR, ServiceManager.class,msg,MC.MT_DEFAULT,true);
+								throw new CommonException(msg);
+							}
+						}
+						httpPath2Method.put(sm.getHttpPath(), sm);
+					}
+					
 				}
 			}
 			

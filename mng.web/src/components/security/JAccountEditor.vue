@@ -3,13 +3,14 @@
 
         <div v-if="isLogin && actList && actList.length > 0" style="position:relative;height:auto;margin-top:10px;">
             <table class="configItemTalbe" width="99%">
-                <thead><tr><td>Act Name</td><td>Client ID</td><td>Regist Time</td><td>Statu Code</td>
-                    <td>Mobile</td><td>Email</td><td>LoginNum</td><td>LastLoginTime</td>
+                <thead><tr><td>{{'ActName'|i18n}}</td><td>{{'ClientID'|i18n}}</td>
+				<td>{{'RegistTime'|i18n}}</td><td>{{'StatuCode'|i18n}}</td><td>{{'Mobile'|i18n}}</td>
+					<td>{{'Email'|i18n}}</td><td>{{'LoginNum'|i18n}}</td><td>{{'LastLoginTime'|i18n}}</td>
                     <td>{{"Operation"|i18n}}</td></tr>
                 </thead>
                 <tr v-for="c in actList" :key="c._id">
                     <td>{{c.actName}}</td><td>{{c.clientId}}</td><td>{{c.registTime | formatDate(1)}}</td>
-                    <td>{{c.statuCode}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
+                    <td>{{c.statuCode | actStatus}}</td> <td>{{c.mobile}}</td> <td>{{c.email}}</td>
                     <td>{{c.loginNum}}</td><td>{{c.lastLoginTime | formatDate(2)}}</td>
                     <td>
                           <a v-if="c.statuCode==2" @click="openRoleInfoDrawer(c)">{{"Role"|i18n}}</a>
@@ -81,6 +82,7 @@
     //import treeTable from '../treetable/LinkLogTreeTable.vue'
     import act from "@/rpcservice/act"
     import cons from "@/rpc/constants"
+	import auth from "@/rpc/auth.js"
     import c from "./c"
     import actAuth from "./roleauth/act2roleauth"
 
@@ -91,6 +93,15 @@
         components: {
             actAuth
         },
+		
+		filters : {
+			actStatus:function(code) {
+				console.log(code)
+				console.log(auth.st2Desc)
+				return auth.st2Desc[code]
+			}
+		},
+		
         data() {
             return {
                 isLogin:false,
@@ -124,7 +135,7 @@
 
             }
         },
-
+		
         methods: {
 
             resendActiveEmail(c) {
@@ -140,9 +151,9 @@
                 });
             },
 
-            changeAccountStatus(act) {
+            changeAccountStatus(ai) {
                 let self = this;
-                act.changeAccountStatus(act.id).then((resp) => {
+                act.changeAccountStatus(ai.id).then((resp) => {
                     if (resp.code == 0) {
                         self.refresh();
                     } else {
@@ -381,13 +392,6 @@
 
         beforeDestroy() {
             this.$jr.auth.removeActListener(cid);
-        },
-
-        filters: {
-            formatDate: function(time) {
-                // 后期自己格式化
-                return new Date(time).format("yyyy/MM/dd hh:mm:ss S");
-            }
         },
 
     }

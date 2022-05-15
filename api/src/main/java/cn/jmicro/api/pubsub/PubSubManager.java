@@ -341,7 +341,7 @@ public class PubSubManager {
 		item.setPersist(true);
 		
 		if(objStorage != null) {
-			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSDataJRso.class,true,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, item,PSDataJRso.class,true);
 		}
 	}
 	
@@ -371,7 +371,7 @@ public class PubSubManager {
 		if(objStorage != null && !set.isEmpty()) {
 			PSDataJRso[] pds = new PSDataJRso[set.size()];
 			set.toArray(pds);
-			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSDataJRso.class,true,true);
+			objStorage.save(TABLE_PUBSUB_ITEMS, pds,PSDataJRso.class,true);
 		}
 	}
 

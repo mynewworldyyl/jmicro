@@ -51,7 +51,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 	
 	@Override
-	public RespJRso<Boolean> activeAccount(Integer aid, String token) {
+	public String activeAccount(Integer aid, String token) {
 		return null;
 	}
 

@@ -504,79 +504,21 @@ public class ApiGatewayClient {
     
     private Message createMessage(String serviceName, String namespace, String version, String method, Object[] args) {
     	
-    	byte upp = getUpProtocol(args);
-    	
-    	ApiRequestJRso req = new ApiRequestJRso();
-    	req.setReqId(idClient.getLongId(IRequest.class.getName()));
-		req.setArgs(args);
-		/*req.setMethod(generatorSrvMethodName(method));
-		if(!ApiGatewayPubsubClient.messageServiceImplName.equals(serviceName)) {
-			req.setServiceName(generatorSrvName(serviceName));
-		}else {
-			req.setServiceName(serviceName);
-		}
-		req.setNamespace(namespace);
-		req.setVersion(version);*/
-		if(this.actInfo != null) {
-			//System.out.println("LKEY: " +this.actInfo.getLoginKey());
-			req.getParams().put(Constants.LOGIN_KEY, this.actInfo.getLoginKey());
-		}
+    	String mn = generatorSrvMethodName(method);
+		String sn = AsyncClientUtils.genSyncServiceName(serviceName);
+		String key = HashUtils.mkey(sn, namespace, version, method, config.getClientId());
 		
-		Message msg = new Message();
-		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
-		
-		/*msg.setUpProtocol(Message.PROTOCOL_JSON);
-		msg.setDownProtocol(Message.PROTOCOL_JSON);*/
-		
-		msg.setUpProtocol(upp);
-		msg.setDownProtocol(Message.PROTOCOL_JSON);
-		
-		//msg.setId(req.getReqId()/*idClient.getLongId(Message.class.getName())*/);
-		msg.setMsgId(req.getReqId());
-		//msg.setLinkId(req.getReqId()/*idClient.getLongId(Linker.class.getName())*/);
-		msg.setRpcMk(true);
-		
-		String mn = generatorSrvMethodName(method);
-		String sn = serviceName;
-		sn = AsyncClientUtils.genSyncServiceName(sn);
-		
-		String key = sn + "##"+namespace+"##"+version+"########"+mn;
 		Integer hash = this.methodCodes.get(key);
 		if(hash == null) {
 			hash = HashUtils.FNVHash1(key);
 			this.methodCodes.put(key, hash);
 		}
 		
-		msg.setSmKeyCode(hash);
-		//msg.setStream(false);
-		msg.setDumpDownStream(false);
-		msg.setDumpUpStream(false);
-		msg.setRespType(Message.MSG_TYPE_PINGPONG);
-		msg.setOuterMessage(true);
-		//msg.setLogLevel(MC.LOG_NO);
-		msg.setMonitorable(false);
-		msg.setDebugMode(false);
-		//全部异步返回，服务器可以异步返回，也可以同步返回
-		msg.setUpSsl(false);
-		msg.setInsId(0);
+		Long reqId = idClient.getLongId(IRequest.class.getName());
+		String loginKey = this.actInfo != null ? this.actInfo.getLoginKey() : null;
+		Message msg = Message.createRpcMessage(hash, args, reqId, mn, loginKey, Message.PROTOCOL_BIN, Message.PROTOCOL_JSON);
 		
-		//msg.setVersion(Message.MSG_VERSION);
-		
-		byte[] data = null;
-		if(Message.PROTOCOL_BIN == upp) {
-			ByteBuffer buf = req.encode();
-			data = new byte[buf.remaining()];
-			buf.get(data, 0, buf.remaining());
-		} else {
-			String json = JsonUtils.getIns().toJson(req);
-			try {
-				data = json.getBytes(Constants.CHARSET);
-			} catch (UnsupportedEncodingException e) {
-				throw new CommonException(json,e);
-			}
-		}
-		
-		signAndEncrypt(msg,data);
+		signAndEncrypt(msg,((ByteBuffer)msg.getPayload()).array());
 		
 		return msg;
     }
@@ -594,7 +536,7 @@ public class ApiGatewayClient {
 		return Message.PROTOCOL_JSON;
 	}
 
-	private void signAndEncrypt(Message msg,byte[] data) {
+	private void signAndEncrypt(Message msg, byte[] data) {
 		
 		try {
 			

@@ -37,8 +37,8 @@ public class JMicroNettyHttpResponse implements HttpResponse {
 	}
 
 	@Override
-	public void contentType(String contentType) {
-		r.headers().set("Content-Type",contentType);
+	public void setHeader(String key,Object value) {
+		r.headers().set(key,value);
 	}
 
 	@Override

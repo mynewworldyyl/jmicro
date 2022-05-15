@@ -7,6 +7,7 @@
               </a>
               <DropdownMenu slot="list">
                   <DropdownItem v-if="isLogin"  name="refresh">Refresh</DropdownItem>
+				  <DropdownItem v-if="isLogin"  name="add">{{'Add' | i18n}}</DropdownItem>
               </DropdownMenu>
           </Dropdown>
       </div>
@@ -15,6 +16,14 @@
           <span v-if="!isLogin">Not login</span>
       </div>
 
+		<Modal v-model="showAddModule" :loading="true" width="360" @on-cancel="showAddModule=false" 
+			@on-ok="doAddModule()" ref="addMobule">
+            <table>
+				<tr v-if="isAdmin"><td>{{'ClientId'|i18n}}</td><td><input  type="input"  v-model="module.clientId"/></td></tr>
+				<tr><td>{{'Module'|i18n}}</td><td><input  type="input"  v-model="module.module"/></td></tr>
+            </table>
+        </Modal>
+		
   </div>
 </template>
 
@@ -25,7 +34,6 @@
     import {Constants} from "@/rpc/message"
 
     const GROUP = 'userProfile';
-
     const cid= 'userProfileList';
 
     export default {
@@ -36,6 +44,9 @@
                 srcProfiles:[],
                 adminPer:false,
                 isLogin:false,
+				isAdmin:this.$jr.auth.isAdmin(),
+				module:{clientId: this.$jr.auth.actInfo.clientId, module:''},
+				showAddModule:false,
             }
         },
 
@@ -51,7 +62,26 @@
         },
 
         methods:{
-
+			
+			async doAddModule(){
+				
+				if(!this.module.module) {
+					this.$Message.error("失败模块名称不能为空")
+				}
+				
+				if(!this.$jr.auth.isAdmin() || !this.module.clientId) {
+					this.module.clientId = this.$jr.auth.actInfo.clientId
+				}
+				
+				let rst = await profile.addModule(this.module.clientId, this.module.module)
+				if(rst.code != 0) {
+					 this.$Message.error(rst.msg || "失败")
+				}else{
+					 this.showAddModule=false
+					 this.$Message.info("成功")
+				}
+			},
+			
             editorRemove(it) {
                 if(GROUP != it.id) {
                     return;
@@ -128,7 +158,9 @@
             ,menuSelect(name){
                 if(name == 'refresh') {
                     this.refresh();
-                }
+                }else if(name=='add') {
+					this.showAddModule = true
+				}
             }
 
         },

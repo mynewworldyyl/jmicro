@@ -5,11 +5,11 @@ const STATUS_REVOKE = 4  //已回收
 const STATUS_DELETE = 5  //已删除
 
 const statusLabels = {}
-statusLabels[STATUS_APPLY]='(审核中)';
-statusLabels[STATUS_REJECT]='(拒绝)';
-statusLabels[STATUS_APPROVE]='(通过)';
-statusLabels[STATUS_REVOKE]='(已回收)';
-statusLabels[STATUS_DELETE]='(已删除)';
+statusLabels[STATUS_APPLY]='审核中';
+statusLabels[STATUS_REJECT]='拒绝';
+statusLabels[STATUS_APPROVE]='通过';
+statusLabels[STATUS_REVOKE]='已回收';
+statusLabels[STATUS_DELETE]='已删除';
 
 const TYPE_ROLE = 1;//授权给角色
 const TYPE_ACT = 2;//授权给账号

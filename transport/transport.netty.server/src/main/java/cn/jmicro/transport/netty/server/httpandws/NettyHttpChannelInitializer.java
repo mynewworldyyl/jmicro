@@ -24,6 +24,8 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.cert.CertificateException;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -38,6 +40,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -57,7 +60,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChannel> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NettyHttpChannelInitializer.class);
-
+	
 	// @Inject
 	// private NettyTextWebSocketHandler txtWsHandler;
 
@@ -70,8 +73,8 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	//@Cfg(value="/textWebsocketContextPath",defGlobal=true)
 	//private String textWebsocketContextPath = "/_txt_";
 
-	@Cfg(value = "/binaryWebsocketContextPath", defGlobal = true)
-	private String binaryWebsocketContextPath = "/_bin_";
+	//@Cfg(value = "/binaryWebsocketContextPath", defGlobal = true)
+	private String binaryWebsocketContextPath = "/" + Constants.HTTP_binContext;
 
 	@Cfg(value = "/jksPwd")
 	private String jksPwd = "";

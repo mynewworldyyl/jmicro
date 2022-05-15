@@ -17,6 +17,7 @@
 package cn.jmicro.common.util;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -36,6 +37,14 @@ public class HashUtils {
 
 	private HashUtils() {}
 	
+	public static int mcode(String sn,String namespace,String version,String method,Integer cid) {
+		return FNVHash1(mkey(sn,namespace,version,method,cid));
+	}
+	
+	public static String mkey(String sn,String namespace,String version,String method,Integer cid) {
+		return sn + "##" + namespace + "##" + version + "##############" + cid + "##" + method;
+	}
+	
 	public static int argHash(Object[] args) {
 		int h = 0;//无参数或参数都为空时
 		if(args != null && args.length > 0) {
@@ -48,6 +57,14 @@ public class HashUtils {
 			}
 		}
 		return h;
+	}
+	
+	public static int hash32(final ByteBuffer data) {
+		return hash32(data.array());
+	}
+	
+	public static long hash64(final ByteBuffer data) {
+		return hash64(data.array());
 	}
 
 	public static int hash32(final byte[] data) {

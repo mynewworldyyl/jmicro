@@ -2,7 +2,13 @@ package cn.jmicro.transport.netty.server.httpandws;
 
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +17,7 @@ import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
+import cn.jmicro.api.http.IHttpRequestHandler;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.net.IMessageReceiver;
 import cn.jmicro.api.net.ISession;
@@ -18,6 +25,7 @@ import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.transport.netty.server.NettyServerSession;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -28,7 +36,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.AttributeKey;
 
 @Component(lazy=false,side=Constants.SIDE_PROVIDER)
@@ -61,6 +69,17 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	@Inject
 	private StaticResourceHttpHandler resourceHandler;
 	
+	@Inject(required=false)
+	private Map<String,IHttpRequestHandler> handlers = new HashMap<>();
+	
+	//普通的HTTP请求转化为RPC调用，相当于JMicro服务与普通HTTP请求之间一个桥梁，或适配器
+	//正常只在API网关有效
+	@Inject(required=false, value="srvDispatcher")
+	private IHttpRequestHandler srvDispatcher;
+	
+	@Inject(required=false, value="fsd")
+	private IHttpRequestHandler fsDispatcher;
+	
 	@Cfg(value = "/httpsEnable")
 	private boolean httpsEnable = false;
 	
@@ -77,59 +96,101 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
     		logger.debug("channelRead:" + msg.toString());
     	}
     	//logger.debug("channelRead:" + msg.toString());
-    	
-    	NettyServerSession session = ctx.attr(sessionKey).get();
-    	
-    	if(msg instanceof FullHttpRequest){
-    		FullHttpRequest req = (FullHttpRequest)msg;
-    		if(httpsEnable) {
-        		if(session.getLocalAddress().getPort() == 80) {
-        			//httpt重定向到https
-        			doRedirect2Https(session,ctx,req);
-        			return;
-        		}
-    		}
-    		
-    		//cors(req,session);
-    		if(resourceHandler.canhandle(req)){
-    			//全部GET请求转到资源控制器上面
-    			resourceHandler.handle(ctx, req);
-    		} else if(req.method().equals(HttpMethod.POST)){
-    			//全部POST请求转到RPC控制器上面,因为RPC只能用POST请求
-    	    	
-    			ByteBuf bb = req.content();
-    			byte[] bts = new byte[bb.readableBytes()];
-    			bb.readBytes(bts);
-    			
-    			session.receive(ByteBuffer.wrap(bts));
-    			
-    			//String encodeType = req.headers().get(Constants.HTTP_HEADER_ENCODER);
-    			
-    			/*Message message = Message.decode(new JDataInput(ByteBuffer.wrap(bts)));
-				JMicroContext.configProvider(session,message);
-				receiver.receive(session,message);*/
-				
-    			/*if(encodeType == null || encodeType.equals(Message.PROTOCOL_JSON+"")) {
-    				String result = new String(bts,Constants.CHARSET);
-        			message = JsonUtils.getIns().fromJson(result, Message.class);
-        			JMicroContext.configProvider(session,message);
-        			receiver.receive(session,message);
-    			} else {
-    				message = Message.decode(new JDataInput(ByteBuffer.wrap(bts)));
-    				JMicroContext.configProvider(session,message);
-    				receiver.receive(session,message);
-    			}*/
-    		}
-    	}else {
+    	if(!(msg instanceof FullHttpRequest)){
     		logger.warn("Buffer: "+msg);
     		/*if(msg instanceof TextWebSocketFrame) {
     			TextWebSocketFrame txt = (TextWebSocketFrame)msg;
     			logger.warn("Buffer text: " + txt.text());
     		}*/
     		ctx.fireChannelRead(msg);
+    		return;
     	}
+
+		String path = null;
+		FullHttpRequest req = (FullHttpRequest)msg;
+		try {
+			
+			NettyServerSession session = ctx.attr(sessionKey).get();
+			if(httpsEnable) {
+				if(session.getLocalAddress().getPort() == 80) {
+					//httpt重定向到https
+					doRedirect2Https(session,ctx,req);
+					return;
+				}
+			}
+			
+			path = req.uri();
+			if(req.method().equals(HttpMethod.POST) && path != null 
+				&& path.startsWith(Constants.HTTP_httpContext)){
+				//源生http RPC
+				ByteBuf bb = req.content();
+				byte[] bts = new byte[bb.readableBytes()];
+				bb.readBytes(bts);
+				session.receive(ByteBuffer.wrap(bts));
+				return;
+			}
+			
+			if(req.method().equals(HttpMethod.GET) && path != null 
+				&& path.startsWith(Constants.HTTP_statis)) {
+				//静态资源
+				resourceHandler.handle(ctx, req);
+				return;
+			}
+			
+			if(this.handleHttpToRpc(session,ctx, req)) {
+				return;
+			}
+		} catch (Throwable e) {
+			logger.error(path,e);
+			//this.responseText(ctx, "System error");
+			//return;
+		}
+		
+		//资源未找到
+		//剩下的交由静态资源处理
+		resourceHandler.handle(ctx, req);
+	
     }
     
+    public boolean handleHttpToRpc(NettyServerSession session,
+    		ChannelHandlerContext ctx,FullHttpRequest req) throws IOException {
+    	
+    	String path = req.uri();
+		if(path.contains("?")) {
+			path = path.substring(0,path.indexOf("?"));
+		}
+		
+		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+		JMicroNettyHttpRequest rr = new JMicroNettyHttpRequest(req,session);
+		if(!rr.isSuccess()) {
+			this.responseText(ctx, rr.getRetMsg());
+			return true;
+		}
+		
+		JMicroNettyHttpResponse resp = new JMicroNettyHttpResponse(response,ctx);
+		String key = req.headers().get(IHttpRequestHandler.HANDLER_KEY);
+		if(key == null) {
+			key = rr.getReqParam(IHttpRequestHandler.HANDLER_KEY);
+		}
+		
+		if(key != null && handlers.containsKey(key)) {
+			//基于头部KEY匹配
+			handlers.get(key).handler(rr,resp);
+			//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+		}
+		
+		srvDispatcher.handler(rr, resp);
+		return true;
+	}
+    
+    private void responseText(ChannelHandlerContext ctx,String text) {
+    	FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+		response.headers().set("Content-Length",text.length());
+		response.content().writeCharSequence(text,Charset.forName(Constants.CHARSET));
+		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+    
+    //httpt重定向到https
 	private void doRedirect2Https(NettyServerSession session,ChannelHandlerContext ctx, FullHttpRequest req) {
 		FullHttpResponse response =  new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.FOUND);
 		HttpHeaders hs = response.headers();

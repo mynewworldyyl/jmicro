@@ -69,6 +69,9 @@
                         <JResourceConfigView v-else-if="item.group == 'resourceConfig'" :item="item"></JResourceConfigView>
                         <JPublicKeyList v-else-if="item.group == 'publicKeyList'" :item="item"></JPublicKeyList>
                         <JServiceMethodList v-else-if="item.group == 'serviceMethodList'" :item="item"></JServiceMethodList>
+						<JPermissionApproveList v-else-if="item.group == 'permissionApproveList'" :item="item"></JPermissionApproveList>
+						<JRoleApproveList v-else-if="item.group == 'roleApproveList'" :item="item"></JRoleApproveList>
+						
 						<JInterfaceDefEditor v-else-if="item.group == 'interfaceDef'" :item="item"></JInterfaceDefEditor>
 						<InterfaceParamList v-else-if="item.group == 'interfaceParamList'" :item="item"></InterfaceParamList>
                         <InterfaceUsedHistory v-else-if="item.group == 'interfaceUsedHistory'" :item="item"></InterfaceUsedHistory>
@@ -161,7 +164,9 @@
             JUserProfileEditor:()=> import('./security/JUserProfileEditor.vue'),
             JPublicKeyList:()=> import('./security/JPublicKeyList.vue'),
             JServiceMethodList:()=> import('./security/JServiceMethodList.vue'),
-
+			JPermissionApproveList:()=> import('./security/JPermissionApproveList.vue'),
+			JRoleApproveList:()=>import('./security/JRoleApproveList.vue'),
+			
             JTypeConfig : () => import('./monitor/JTypeConfig.vue'),
             JI18nConfig : () => import('./i18n/JI18nConfig.vue'),
 

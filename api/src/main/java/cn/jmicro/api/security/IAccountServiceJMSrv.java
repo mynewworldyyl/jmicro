@@ -11,7 +11,7 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IAccountServiceJMSrv {
 
-	public RespJRso<Boolean> activeAccount(Integer aid, String token);
+	public String activeAccount(Integer aid, String token);
 	
 	IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd, String code,String codeId);
 	

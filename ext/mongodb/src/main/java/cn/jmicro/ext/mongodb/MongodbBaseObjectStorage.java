@@ -190,7 +190,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 	
 	@Override
-	public <T> boolean save(String table, List<T> val, Class<T> cls,boolean async,boolean toDocument) {
+	public <T> boolean save(String table, List<T> val, Class<T> cls,boolean async) {
 
 		if(val == null || val.isEmpty()) {
 			return false;
@@ -199,7 +199,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		MongoCollection coll = null;
 		List lis = val;
 		
-		if(toDocument) {
+		if(/*toDocument*/false) {
 			lis = new ArrayList();
 			for(Object v : val) {
 				lis.add(toDocument(v));
@@ -272,17 +272,18 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	
 	@Override
 	public <T> boolean saveSync(String table, T val,Class<T> cls) {
-		return this.save(table, val, cls,false,false);
+		return this.save(table, val, cls,false);
 	}
 
 	@Override
-	public <T> boolean save(String table, T val,Class<T> cls,boolean async,boolean toDocument) {
+	public <T> boolean save(String table, T val,Class<T> cls,boolean async) {
 		if(val == null) {
 			return false;
 		}
 		
 		MongoCollection coll = null;
 		
+		boolean toDocument = false;
 		Object v = val;
 		if(toDocument) {
 			v = toDocument(val);
@@ -320,7 +321,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 
 	@Override
-	public <T> boolean save(String table, T[] vals,Class<T> cls,boolean async,boolean toDocument) {
+	public <T> boolean save(String table, T[] vals,Class<T> cls,boolean async) {
 		if(vals == null || vals.length == 0) {
 			return false;
 		}
@@ -329,7 +330,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		MongoCollection coll = null;
 		
 		List lis = Arrays.asList(vals);
-		
+		boolean toDocument = false;
 		if(toDocument) {
 			lis = new ArrayList();
 			for(int i = 0; i < vals.length; i++) {
@@ -463,7 +464,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			updateById(table,val,cls,tidName,true);
 		} else {
 			if(!updateById(table,val,cls,tidName,false)) {
-				return save(table,val,cls,false,true);
+				return save(table,val,cls,false);
 			}
 		}
 		return true;

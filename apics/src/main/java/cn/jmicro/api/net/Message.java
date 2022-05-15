@@ -26,8 +26,11 @@ import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.codec.DecoderConstant;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
+import cn.jmicro.api.gateway.ApiRequestJRso;
+import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -292,6 +295,56 @@ public final class Message {
 	//****************extra data begin*******************//
 	
 	public Message(){}
+	
+	public static Message createRpcMessage(Integer mcode,Object[] args,Long reqId, String method,
+			String loginKey, byte up,byte dp) {
+    	
+    	ApiRequestJRso req = new ApiRequestJRso();
+    	req.setReqId(reqId);
+		req.setArgs(args);
+		
+		if(loginKey != null) {
+			req.getParams().put(Constants.LOGIN_KEY, loginKey);
+		}
+		
+		Message msg = new Message();
+		msg.setType(Constants.MSG_TYPE_REQ_JRPC);
+		
+		msg.setUpProtocol(up);
+		msg.setDownProtocol(dp);
+		
+		msg.setMsgId(req.getReqId());
+		
+		msg.setRpcMk(true);
+		msg.setSmKeyCode(mcode);
+		
+		msg.setDumpDownStream(false);
+		msg.setDumpUpStream(false);
+		msg.setRespType(Message.MSG_TYPE_PINGPONG);
+		msg.setOuterMessage(true);
+		msg.setMonitorable(false);
+		msg.setDebugMode(false);
+		//全部异步返回，服务器可以异步返回，也可以同步返回
+		msg.setUpSsl(false);
+		msg.setInsId(0);
+		msg.setForce2Json(true);
+		msg.setFromApiGateway(true);
+		
+		ByteBuffer data = null;
+		if(Message.PROTOCOL_BIN == up) {
+			data = req.encode();
+		} else {
+			String json = JsonUtils.getIns().toJson(req);
+			try {
+				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET)) ;
+			} catch (UnsupportedEncodingException e) {
+				throw new CommonException(json,e);
+			}
+		}
+		
+		msg.setPayload(data);
+		return msg;
+    }
 	
 	private static Map<Byte,Object> decodeExtra(ByteBuffer extra) {
 		if(extra == null || extra.remaining() == 0) return null;

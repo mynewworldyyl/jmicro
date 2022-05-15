@@ -355,7 +355,7 @@ public class BbsServiceImpl implements IBbsServiceJMSrv {
 		note.setCreatedTime(curTime);
 		note.setCreaterName(ai.getActName());
 		
-		os.save(T_NOTE_NAME, note,NoteJRso.class, true,false);
+		os.save(T_NOTE_NAME, note,NoteJRso.class, true);
 		
 		addNoteNum(note.getTopicId());
 		

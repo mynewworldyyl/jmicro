@@ -107,4 +107,6 @@ public interface ISession{
 	int connType();
 	
 	String targetName();
+	
+	IMessageReceiver getReceiver();
 }

@@ -16,12 +16,39 @@
  */
 package cn.jmicro.common;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:08:51
  */
-public interface Constants {
+public final class Constants {
+	
+	//系统固定的HTTP路径前缀，应用不能使用此前缀作它用
+	//public static final String  HTTP_txtContext= "_txt_";
+	public static final String  HTTP_binContext = "_bin_";//专用于web Socket rpc
+	public static final String  HTTP_httpContext= "_http_";//专用于HTTP RPC
+	public static final String  HTTP_fsContext= "_fs_";//专用于文件下载
+	public static final String  HTTP_statis= "statis";//静态资源本地目录
+	
+	public static final String  HTTP_METHOD_POST= "POST";
+	public static final String  HTTP_METHOD_GET= "GET";
+	
+	public static final String  HTTP_JSON_CONTENT_TYPE = "application/json;chartset=utf-8";
+	
+	public static final Set<String>  HTTP_PREFIX_LIST;
+	static {
+		HashSet<String> h = new HashSet<>();
+		h.add(Constants.HTTP_binContext);
+		h.add(Constants.HTTP_fsContext);
+		h.add(Constants.HTTP_httpContext);
+		h.add(Constants.HTTP_statis);
+		//h.add(Constants.HTTP_txtContext);
+		HTTP_PREFIX_LIST = Collections.unmodifiableSet(h);
+	}
 	
 	public static final String BASE64_IMAGE_PREFIX = "data:image/jpeg;base64,";
 	public static final String BASE64_IMAGE_SUBFIX = "==";
@@ -306,5 +333,8 @@ public interface Constants {
 	public static final byte CACHE_TYPE_MCODE = 1;
 	//服务方法 + 账号
 	public static final byte CACHE_TYPE_ACCOUNT = 2;
+	
+	//消息payload计算hash作为key
+	public static final byte CACHE_TYPE_PAYLOAD = 3;
 	
 }

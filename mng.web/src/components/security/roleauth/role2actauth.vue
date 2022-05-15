@@ -107,7 +107,7 @@
                         self.$nextTick(() => { self.authList = resp.data })
                         self.errMsg = "";
                     }).catch((err) => {
-                    self.errMsg = err;
+						self.errMsg = err;
                 });
             },
 
@@ -133,7 +133,7 @@
                         self.showClientIdBox = false;
                         self.refreshAuthList();
                     }).catch((err) => {
-                    self.errMsg = err;
+						self.errMsg = err;
                 });
             },
 
@@ -153,7 +153,7 @@
                         self.showAccountNameBox = false;
                         self.refreshAuthList();
                     }).catch((err) => {
-                    self.errMsg = err;
+						self.errMsg = err;
                 });
             },
 
@@ -175,7 +175,7 @@
                         self.descAuthCancel();
                         self.refreshAuthList();
                     }).catch((err) => {
-                    self.errMsg = err;
+						self.errMsg = err;
                 });
             },
 
