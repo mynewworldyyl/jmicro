@@ -416,7 +416,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 			return msg;
 		}
 		
-		if(Utils.getIns().checkEmail(lw.getToParams())) {
+		if(Utils.getIns().isValidEmail(lw.getToParams())) {
 			msg = "Email format invalid: " + lw.getToParams()+ " for id: " + lw.getId();
 			return msg;
 		}
@@ -479,7 +479,7 @@ public class MngResourceServiceImpl implements IMngResourceServiceJMSrv{
 					return msg;
 				}
 			}else if(StatisConfigJRso.TO_TYPE_EMAIL == lw.getToType()) {
-				if(!Utils.getIns().checkEmail(lw.getToParams())) {
+				if(!Utils.getIns().isValidEmail(lw.getToParams())) {
 					msg = "Email format invalid: " + lw.getToParams();
 					return msg;
 				}

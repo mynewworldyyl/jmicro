@@ -9,6 +9,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import cn.jmicro.common.Constants;
 
 public class TimeUtils {
+	
+	//一天的毫秒数
+	public static final long MS_BY_DATE = 24*60*60*1000;
 
 	private TimeUtils() {}
 	

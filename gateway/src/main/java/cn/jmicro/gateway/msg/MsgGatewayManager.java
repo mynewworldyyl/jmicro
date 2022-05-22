@@ -35,14 +35,13 @@ import cn.jmicro.common.util.StringUtils;
 
 /**
  * 消息网关，专门处理客户端转发消息
- *
  * @author Yulei Ye
  * @date 2022年4月10日 上午8:28:52
  */
 @Component
 public class MsgGatewayManager {
 
-	private final static Logger logger = LoggerFactory.getLogger(MessageServiceImpl.class);
+	private final static Logger logger = LoggerFactory.getLogger(MsgGatewayManager.class);
 	
 	public static final String MESSAGE_SERVICE_REG_ID = "__messageServiceRegId";
 	public static final String TIMER_KEY = "__MessageRegistionStatusCheck";
@@ -175,13 +174,13 @@ public class MsgGatewayManager {
 		if(flag) {
 			
 			if(msg.getExtraMap() == null || msg.getExtraMap().isEmpty()) {
-				logger.error("Login key not found");
+				logger.error("Login key not found with empty extra map");
 				return -1;
 			}
 			
 			Object lk = msg.getExtraMap().get(Message.EXTRA_KEY_LOGIN_KEY);
 			if(lk == null) {
-				logger.error("Login key not found");
+				logger.error("Login key not found key: " + Message.EXTRA_KEY_LOGIN_KEY+", topic: " + topic);
 				return -1;
 			}
 			

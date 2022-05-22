@@ -78,7 +78,10 @@
 	//申请特定角色，如配送
 	const CFG_APPROVER_TYPE_ROLE = 3;
 	
-	const  type2Map={1:'流程类',2:'实名认证',3:'角色',}
+	//申请特定角色，如配送
+	const CFG_APPROVER_TYPE_BUSLIC = 4;
+	
+	const  type2Map={1:'流程类',2:'实名认证',3:'角色',4:'营业执照'}
 	
 	const statusMap = {'1':'待审批','2':'通过','3':'拒绝','4':'驳回',}
 	

@@ -73,7 +73,7 @@ public interface IAccountServiceJMSrv {
 	 * @return
 	 */
 	IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, String fileId, String vcode
-			,String codeId);
+			,String codeId, String remark,Byte appType);
 	
 	/**
 	 * 

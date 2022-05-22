@@ -30,7 +30,7 @@
 		        <tr><td>{{'Value'|i18n}}</td><td><input  type="input"  v-model="mod.val"/></td></tr>
 				<tr><td>{{'Type'|i18n}}</td><td>
 					<Select v-model="mod.type">
-						<Option v-for="(val,key) in type2Desc" :value="key" :key="key">{{val | i18n}}</Option>
+						<Option v-for="(val,key) in type2Desc" :value="key+''" :key="key">{{val | i18n}}</Option>
 					</Select>
 				</td></tr>
 		    </table>
@@ -58,7 +58,7 @@
                 modifyDialog:false,
                 modifyProfile:null,
                 msg:'',
-				mod:{clientId:au.actInfo.clientId,module:this.item.id}
+				mod:{clientId:au.actInfo.clientId,module:this.item.id, type: Constants.PREFIX_TYPE_STRINGG+''}
             }
         },
 
@@ -124,6 +124,7 @@
 				if(rst.code != 0) {
 					 this.$Message.error(rst.msg || "失败")
 				}else{
+					 this.refresh()
 					 this.showAddModule=false
 					 this.$Message.info("成功")
 				}
@@ -144,10 +145,11 @@
                 profile.updateKv(this.item.id,this.modifyProfile)
 				.then((resp,errmsg)=>{
 					if(resp.data) {
+						this.refresh()
 						self.$Message.success("Update successfully")
-						self.modifyDialog = false;
+						self.modifyDialog = false
 					}else {
-						self.msg = errmsg;
+						self.msg = errmsg
 					}
 				});
             }
@@ -160,8 +162,7 @@
             let self = this;
             this.$bus.$emit("editorOpen",
                 {"editorId":cid,
-                    "menus":[{name:"Save",label:"Save",icon:"ios-cog",call: ()=>{ self.save();}},
-						{name:"Add",label:"Add",icon:"ios-cog",call: ()=>{ self.showAddModule = true}},
+                    "menus":[{name:"Add",label:"Add",icon:"ios-cog",call: ()=>{ self.showAddModule = true}},
                         {name:"REFRESH",label:"Refresh",icon:"ios-cog",call:self.refresh}]
                 });
 

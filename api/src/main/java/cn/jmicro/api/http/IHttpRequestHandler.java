@@ -7,7 +7,7 @@ public interface IHttpRequestHandler {
 	public static final String HANDLER_KEY = Constants.DEFAULT_PREFIX + "__hh__";
 	public static final String HANDLER_METHOD = Constants.DEFAULT_PREFIX + "_HTTP_METHOD";
 	
-	void handler(HttpRequest req, HttpResponse resp);
+	void handle(HttpRequest req, HttpResponse resp);
 	
 	boolean match(HttpRequest req);
 	

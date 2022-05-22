@@ -714,7 +714,7 @@ public class FileServiceImpl implements IFileJMSrv{
 				zkrr.setSize(size);
 				
 				//w.close();
-			}else {
+			} else {
 				for(File f : blockFiles) {
 					 FileInputStream fis = null;
 					 try {

@@ -22,7 +22,7 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 	private GridFS fs;
 	
 	@Override
-	public void handler(HttpRequest req, HttpResponse resp) {
+	public void handle(HttpRequest req, HttpResponse resp) {
 		String uri = req.getUri();
 		String[] ps = uri.split("/");
 		String n = ps[ps.length-1];

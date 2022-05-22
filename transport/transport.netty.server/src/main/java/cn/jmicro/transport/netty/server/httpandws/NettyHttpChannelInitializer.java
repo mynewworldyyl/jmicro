@@ -24,8 +24,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.cert.CertificateException;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -74,7 +72,7 @@ public class NettyHttpChannelInitializer extends ChannelInitializer<SocketChanne
 	//private String textWebsocketContextPath = "/_txt_";
 
 	//@Cfg(value = "/binaryWebsocketContextPath", defGlobal = true)
-	private String binaryWebsocketContextPath = "/" + Constants.HTTP_binContext;
+	private String binaryWebsocketContextPath = Constants.HTTP_binContext;
 
 	@Cfg(value = "/jksPwd")
 	private String jksPwd = "";

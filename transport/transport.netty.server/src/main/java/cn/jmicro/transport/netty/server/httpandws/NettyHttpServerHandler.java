@@ -120,6 +120,14 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 			}
 			
 			path = req.uri();
+			
+			if(req.method().equals(HttpMethod.GET) && path != null 
+				&& path.startsWith(Constants.HTTP_statis)) {
+				//静态资源
+				resourceHandler.handle(ctx, req);
+				return;
+			}
+			
 			if(req.method().equals(HttpMethod.POST) && path != null 
 				&& path.startsWith(Constants.HTTP_httpContext)){
 				//源生http RPC
@@ -127,13 +135,6 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 				byte[] bts = new byte[bb.readableBytes()];
 				bb.readBytes(bts);
 				session.receive(ByteBuffer.wrap(bts));
-				return;
-			}
-			
-			if(req.method().equals(HttpMethod.GET) && path != null 
-				&& path.startsWith(Constants.HTTP_statis)) {
-				//静态资源
-				resourceHandler.handle(ctx, req);
 				return;
 			}
 			
@@ -175,11 +176,18 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 		
 		if(key != null && handlers.containsKey(key)) {
 			//基于头部KEY匹配
-			handlers.get(key).handler(rr,resp);
+			handlers.get(key).handle(rr,resp);
 			//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 		}
 		
-		srvDispatcher.handler(rr, resp);
+		if(req.method().equals(HttpMethod.GET) && path != null 
+			&& path.startsWith(Constants.HTTP_fsContext)) {
+			//静态资源
+			fsDispatcher.handle(rr, resp);
+			return true;
+		}
+		
+		srvDispatcher.handle(rr, resp);
 		return true;
 	}
     

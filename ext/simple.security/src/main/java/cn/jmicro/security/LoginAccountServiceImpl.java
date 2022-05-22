@@ -267,7 +267,8 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 
 	@Override
-	public IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, String fileId, String vcode, String vcodeId) {
+	public IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, 
+			String fileId, String vcode, String vcodeId,String remark,Byte appType) {
 		// TODO Auto-generated method stub
 		return null;
 	}

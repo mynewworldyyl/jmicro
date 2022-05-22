@@ -411,25 +411,25 @@
             },
 
             refresh() {
-                let self = this;
-                this.isLogin = this.$jr.auth.isLogin();
-                this.act = this.$jr.auth.actInfo;
-                let qry = this.queryParams;
+                let self = this
+                this.isLogin = this.$jr.auth.isLogin()
+                this.act = this.$jr.auth.actInfo
+                let qry = this.queryParams
                 this.$jr.rpc.callRpcWithParams(sn, ns, v, 'getMethodList', [qry,this.pageSize,this.curPage])
                     .then((resp) => {
                         if (resp.code != 0) {
-                            self.$Message.success(resp.msg);
-                            return;
+                            self.$Message.success(resp.msg)
+                            return
                         }
-                        self.totalNum = resp.total;
-                        self.keyList = resp.data;
+                        self.totalNum = resp.total
+                        self.keyList = resp.data
                        /* if(self.keyList) {
                             self.keyList.forEach((e)=>{
                                 e.authList = [];
                             })
                         }*/
                     }).catch((err) => {
-                    window.console.log(err);
+                    window.console.log(err)
                 });
             },
         },

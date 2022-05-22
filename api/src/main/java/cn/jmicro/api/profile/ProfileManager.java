@@ -61,6 +61,7 @@ public class ProfileManager {
 		if(this.cacheValues.containsKey(path)) {
 			return (T)this.cacheValues.get(path);
 		}
+		
 		if(op.exist(path)) {
 			String data = op.getData(path);
 			if(StringUtils.isNotEmpty(data)) {
@@ -76,6 +77,7 @@ public class ProfileManager {
 		}else if(defaultVal != null){
 			setVal(clientId, module, key, defaultVal);
 		}
+		
 		return defaultVal;
 	}
 	

@@ -502,7 +502,7 @@ public class ActInfoJRso {
 	}
 
 	public static enum Tag {
-		Mobile("未绑定手机号"),Email("未绑定邮箱"),RealName("未实名认证"),Face("未提交人脸信息");
+		Mobile("绑定手机号"),Email("绑定邮箱"),RealName("实名认证"),Face("人脸信息"),BusLic("营业执照");
 		
 		private String errMsg;
 		

@@ -29,10 +29,10 @@ public final class Constants {
 	
 	//系统固定的HTTP路径前缀，应用不能使用此前缀作它用
 	//public static final String  HTTP_txtContext= "_txt_";
-	public static final String  HTTP_binContext = "_bin_";//专用于web Socket rpc
-	public static final String  HTTP_httpContext= "_http_";//专用于HTTP RPC
-	public static final String  HTTP_fsContext= "_fs_";//专用于文件下载
-	public static final String  HTTP_statis= "statis";//静态资源本地目录
+	public static final String  HTTP_binContext = "/_bin_";//专用于web Socket rpc
+	public static final String  HTTP_httpContext= "/_http_";//专用于HTTP RPC
+	public static final String  HTTP_fsContext= "/_fs_";//专用于文件下载
+	public static final String  HTTP_statis= "/statis";//静态资源本地目录
 	
 	public static final String  HTTP_METHOD_POST= "POST";
 	public static final String  HTTP_METHOD_GET= "GET";

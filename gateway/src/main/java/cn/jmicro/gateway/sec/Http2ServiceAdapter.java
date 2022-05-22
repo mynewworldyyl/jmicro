@@ -107,7 +107,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		
 	}
 	
-	public void handler(HttpRequest req, HttpResponse resp) {
+	public void handle(HttpRequest req, HttpResponse resp) {
 		ServiceMethodJRso sm = this.smng.getMethodByHttpPath(req.getPath());
 		
 		if(!Utils.isEmpty(sm.getHttpMethod()) && !sm.getHttpMethod().equals(req.getMethod())) {

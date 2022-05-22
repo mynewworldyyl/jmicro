@@ -52,8 +52,18 @@ public class Utils {
 
 	// 邮箱验证规则
 	private String EMAIL_EX = "[a-zA-Z_]{0,}[0-9]{0,}@(([a-zA-z0-9]-*){1,}\\.){1,3}[a-zA-z\\-]{1,}";
-	// 编译正则表达式
+	
+	private String MOBILE_EX = "^1(3[0-9]|4[01456879]|5[0-35-9]|6[2567]|7[0-8]|8[0-9]|9[0-35-9])\\d{8}$";
+	
+	private String ACCOUNT_NAME_EX = "^[A-Za-z]+[A-Za-z0-9_]*$";
+	
+	//EMAIL正则表达式
 	private Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_EX);
+	
+	//手机号
+	private Pattern MOBILE_PATTERN = Pattern.compile(MOBILE_EX);
+	
+	private Pattern ACCOUNT_NAME_PATTERN = Pattern.compile(ACCOUNT_NAME_EX);
 
 	private DecimalFormat DECIMALFORMAT = new DecimalFormat("#.##");
 
@@ -344,9 +354,17 @@ public class Utils {
 
 		return v;
 	}
-
-	public boolean checkEmail(String str) {
+	
+	public boolean isValidEmail(String str) {
 		return EMAIL_PATTERN.matcher(str).find();
+	}
+	
+	public boolean isValidMobile(String str) {
+		return MOBILE_PATTERN.matcher(str).find();
+	}
+	
+	public boolean isValidAccountName(String str) {
+		return ACCOUNT_NAME_PATTERN.matcher(str).find();
 	}
 
 	public String defaultVal(Class<?> cl) {
@@ -397,7 +415,7 @@ public class Utils {
 		return DECIMALFORMAT.format(retVal) + unit;
 	}
 	
-	  /**
+	/**
      * join string.
      *
      * @param array String array.

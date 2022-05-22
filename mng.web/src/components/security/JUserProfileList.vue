@@ -77,6 +77,7 @@
 				if(rst.code != 0) {
 					 this.$Message.error(rst.msg || "失败")
 				}else{
+					 this.refresh()
 					 this.showAddModule=false
 					 this.$Message.info("成功")
 				}
