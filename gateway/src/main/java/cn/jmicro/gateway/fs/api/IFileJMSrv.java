@@ -14,17 +14,17 @@ public interface IFileJMSrv {
 	
 	IPromise<RespJRso<FileJRso>> addFile(FileJRso pr);
 	
-	IPromise<RespJRso<FileJRso>> getFile(int resId);
+	IPromise<RespJRso<FileJRso>> getFile(String resId);
 	
 	//IPromise<RespJRso<FileJRso>> updateFile(FileJRso pr,boolean updateFile);
 	
-	IPromise<RespJRso<Boolean>> addFileData(int id, byte[] data, int blockNum);
+	IPromise<RespJRso<Boolean>> addFileData(String id, byte[] data, int blockNum);
 	
-	IPromise<RespJRso<Boolean>> deleteFile(int id);
+	IPromise<RespJRso<Boolean>> deleteFile(String id);
 	
 	IPromise<RespJRso<byte[]>> downFileData(int downloadId, int blockNum);
 	
-	IPromise<RespJRso<Integer>> initDownloadFile(int actId,int resId);
+	IPromise<RespJRso<Integer>> initDownloadFile(int actId,String resId);
 	
 	IPromise<RespJRso<Map<String,Object>>> queryDict();
 	

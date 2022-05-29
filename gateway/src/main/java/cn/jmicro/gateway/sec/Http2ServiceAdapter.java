@@ -185,7 +185,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		});
 	}
 	
-	private boolean checkLoginAndPermission(HttpRequest req, HttpResponse resp,ServiceMethodJRso sm) {
+	private boolean checkLoginAndPermission(HttpRequest req, HttpResponse resp, ServiceMethodJRso sm) {
 		
 		if(sm.getMaxPacketSize() > 0 && req.getContentLen() > sm.getMaxPacketSize()) {
 			String errMsg = "Packet too max " + req.getContentLen() + 

@@ -107,6 +107,12 @@ public class AreaDataManager implements IAreaDataServiceJMSrv {
 		return ads.getArea(areaCode).getResult();
 	}
 
+	@Override
+	public IPromise<RespJRso<AreaJRso>> getById(Integer aid) {
+		check();
+		return ads.getById(aid);
+	}
+
 	public RespJRso<AreaJRso> getTownSync(String areaCode) {
 		check();
 		return ads.getTown(areaCode).getResult();

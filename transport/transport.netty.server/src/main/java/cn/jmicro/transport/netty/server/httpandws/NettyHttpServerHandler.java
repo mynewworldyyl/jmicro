@@ -120,8 +120,10 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 			}
 			
 			path = req.uri();
-			
-			if(req.method().equals(HttpMethod.GET) && path != null 
+
+			if("/favicon.ico".equals(path) || 
+				req.method().equals(HttpMethod.GET) 
+				&& path != null 
 				&& path.startsWith(Constants.HTTP_statis)) {
 				//静态资源
 				resourceHandler.handle(ctx, req);

@@ -103,6 +103,8 @@ public class FileServiceImpl implements IFileJMSrv{
 	
 	private Map<Integer,Long> downloadResourceTimeout = new ConcurrentHashMap<>();
 	
+	private Map<String,FileJRso> files = new ConcurrentHashMap<>();
+	
 	@Inject
 	private IObjectStorage os;
 	
@@ -158,6 +160,19 @@ public class FileServiceImpl implements IFileJMSrv{
 				}
 			}
 		}
+		
+		if(!this.files.isEmpty()) {
+			Set<String> fids = new HashSet<>();
+			fids.addAll(this.files.keySet());
+			for(String fid: fids) {
+				FileJRso f = this.files.get(fid);
+				if(curTime - f.getUpdatedTime() > resTimeout) {
+					LOG.warn("Resource update timeout: "+f.toString());
+					this.files.remove(fid);
+				}
+			}
+		}
+		
 	}
 
 	@Override
@@ -235,7 +250,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 	
 	@Override
-	public IPromise<RespJRso<Boolean>> deleteFile(int id) {
+	public IPromise<RespJRso<Boolean>> deleteFile(String id) {
 		
 		return new Promise<RespJRso<Boolean>>((reso,reje)->{
 			RespJRso<Boolean> resp = new RespJRso<>(RespJRso.CODE_FAIL);
@@ -327,7 +342,7 @@ public class FileServiceImpl implements IFileJMSrv{
 			}
 			
 			//pr.setUpdateTime(TimeUtils.getCurTime());
-			pr.setId(this.idGenerator.getLongId(FileJRso.class));
+			pr.setId(this.idGenerator.getStringId(FileJRso.class));
 			pr.setBlockSize(this.uploadBlockSize);
 			
 			File resD = new File(this.tempDir,"" + pr.getId());
@@ -339,6 +354,8 @@ public class FileServiceImpl implements IFileJMSrv{
 			pr.setTotalBlockNum(getBlockNum(pr.getSize()));
 			
 			os.save(FileJRso.TABLE, pr, FileJRso.class, false);
+			
+			files.put(pr.getId(), pr);
 			
 			LOG.info("Add resource: " + pr.toString());
 			resp.setCode(RespJRso.CODE_SUCCESS);
@@ -358,10 +375,10 @@ public class FileServiceImpl implements IFileJMSrv{
 
 	@Override
 	@SMethod(maxPacketSize=1024*1024*1)
-	public IPromise<RespJRso<Boolean>> addFileData(int id, byte[] data, int blockNum) {
+	public IPromise<RespJRso<Boolean>> addFileData(String id, byte[] data, int blockNum) {
 		return new Promise<RespJRso<Boolean>>((reso,reje)->{
 			RespJRso<Boolean> resp = new RespJRso<>(RespJRso.CODE_FAIL);
-			FileJRso zkrr = this.getPkg(id);
+			FileJRso zkrr = this.files.get(id);
 
 			if(zkrr == null) {
 				String msg = "Resource is not ready to upload!";
@@ -460,7 +477,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 
 	@Override
-	public IPromise<RespJRso<FileJRso>> getFile(int resId) {
+	public IPromise<RespJRso<FileJRso>> getFile(String resId) {
 		return new Promise<RespJRso<FileJRso>>((reso,reje)->{
 			Map<String,Object> filter = new HashMap<>();
 			filter.put(IObjectStorage._ID, resId);
@@ -477,7 +494,7 @@ public class FileServiceImpl implements IFileJMSrv{
 		});
 	}
 
-	private FileJRso getPkg(int resId) {
+	private FileJRso getPkg(String resId) {
 		Map<String,Object> filter = new HashMap<>();
 		filter.put(IObjectStorage._ID, resId);
 		return os.getOne(FileJRso.TABLE, filter, FileJRso.class);
@@ -485,7 +502,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	
 	@Override
 	@SMethod(needLogin=false,maxSpeed=1)
-	public IPromise<RespJRso<Integer>> initDownloadFile(int actId,int resId) {
+	public IPromise<RespJRso<Integer>> initDownloadFile(int actId,String resId) {
 
 		return new Promise<RespJRso<Integer>>((reso,reje)->{
 			RespJRso<Integer> resp = new RespJRso<>(RespJRso.CODE_FAIL);

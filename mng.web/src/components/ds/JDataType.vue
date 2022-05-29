@@ -24,18 +24,18 @@
 			</el-table-column>
 			<el-table-column width="60">
 				<template slot="header" slot-scope="scope">
-					{{'Sort'|i18n}}
-				</template>
-				<template slot-scope="scope">
-					{{scope.row.sort}}
-				</template>
-			</el-table-column>
-			<el-table-column width="60">
-				<template slot="header" slot-scope="scope">
 					{{'Enable'|i18n}}
 				</template>
 				<template slot-scope="scope">
 					{{scope.row.enable}}
+				</template>
+			</el-table-column>
+			<el-table-column width="60">
+				<template slot="header" slot-scope="scope">
+					{{'Sort'|i18n}}
+				</template>
+				<template slot-scope="scope">
+					{{scope.row.sort}}
 				</template>
 			</el-table-column>
 			<el-table-column width="80"> 
@@ -100,6 +100,9 @@
 				<Input v-else-if="ptype" :disabled="true" id="Pid" v-model="ptype.id" />
 				<Input v-else :disabled="true" id="Pid" />
 
+				<Label for="enable">{{'Enable'|i18n}}</Label>
+				<checkbox id="enable" v-model="ic.enable" /><BR/>
+				
 				<Label for="name">{{'name'|i18n}}</Label>
 				<Input id="name" v-model="ic.name" />
 				
@@ -121,9 +124,6 @@
 				<Label for="sort">{{'Sort'|i18n}}</Label>
 				<Input id="sort" v-model="ic.sort" />
 				
-				<Label for="enable">{{'Enable'|i18n}}</Label>
-				<checkbox id="enable" v-model="ic.enable" /><BR/>
-
 				<Label v-if="isAdmin" for="clientId">{{'clientId'|i18n}}</Label>
 				<Select v-if="isAdmin" v-model="ic.clientId">
 					<Option v-for="(val,key) in clients" :key="key" :value="val">{{val}}</Option>
@@ -284,7 +284,7 @@
 				actInfo: null,
 				totalNum: 0,
 				ptype:{},
-				ic: {},
+				ic: {enable:true},
 
 				qry: {
 					size: 30,
@@ -456,7 +456,7 @@
 			async getChildren(parentNode, treeNode, resolve) {
 				resoMap[parentNode.id] = resolve
 				let pid = parentNode ? parentNode.id : 0
-				let resp = await this.$jr.rpc.invokeByCode(-1428697610, [pid,this.qry.ps.enable])
+				let resp = await this.$jr.rpc.invokeByCode(-1428697610, [pid,/*this.qry.ps.enable*/null])
 				if(resp.code == 0) {
 					if (resp.data && resp.data.length > 0) {
 						let ar = this.parseChildren(resp.data,parentNode)

@@ -15,7 +15,7 @@ public class FileJRso {
 	public static final byte S_UPING = 2;
 	public static final byte S_FINISH = 3;
 	
-	private long id;
+	private String id;
 	
 	private int clientId;
 	
@@ -44,5 +44,7 @@ public class FileJRso {
 	private int blockSize = 0;
 	
 	private boolean tochar = false;
+	
+	private long updatedTime;
 	
 }

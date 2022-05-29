@@ -16,12 +16,15 @@ public interface IAreaDataServiceJMSrv {
 	IPromise<RespJRso<List<AreaJRso>>> querySelective(QueryJRso qry);
 	
 	IPromise<RespJRso<AreaJRso>> getProvince(String areaCode);
+	
 	IPromise<RespJRso<AreaJRso>> getProvinceByName(String proName);
 	
 	IPromise<RespJRso<AreaJRso>> getCity(String cityCode);
+	
 	IPromise<RespJRso<AreaJRso>> getCityByName(String cityName);
 	
 	IPromise<RespJRso<AreaJRso>> getArea(String areaCode);
+	
 	//相同名称的区可能有多个
 	IPromise<RespJRso<List<AreaJRso>>> getAreasByName(String name);
 	
@@ -30,5 +33,7 @@ public interface IAreaDataServiceJMSrv {
 	IPromise<RespJRso<AreaJRso>> getVillage(String areaCode);
 	
 	IPromise<RespJRso<String>> getFullPath(String areaCode);
+	
+	IPromise<RespJRso<AreaJRso>> getById(Integer aid);
 	
 }
