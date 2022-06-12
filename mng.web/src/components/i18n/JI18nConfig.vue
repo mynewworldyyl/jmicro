@@ -48,54 +48,55 @@
 
         <!--  创建 或 更新 -->
         <Drawer  v-model="addDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
-                :draggable="true" :scrollable="true" width="50" :mask-closable="true">
+                :draggable="true" :scrollable="true" width="50" :mask-closable="false">
             <div class="error">{{errMsg}}</div>
             <div class="addClientcls">
+				<a @click="addDrawer.drawerStatus=false">{{'Close'|i18n}}</a>
                 <a v-if="actInfo  && !importFileModel" @click="doAdd()">{{'Confirm'|i18n}}</a>
                 <a v-if="actInfo && importFileModel" @click="doImport()">{{'DoImport'|i18n}}</a>
             </div>
             <div>
 
-                <!--  文件导入 -->
-                <JFileUpload v-if="importFileModel" ref="importFile" mcode="1168774889"
-                             @finish="uploadFinish()"></JFileUpload>
+				<!--  文件导入 -->
+				<JFileUpload v-if="importFileModel" ref="importFile" mcode="1168774889"
+							 @finish="uploadFinish()"></JFileUpload>
 
-                <Label v-if="!importFileModel"  for="key">{{'key'|i18n}}</Label>
-                <Input  v-if="!importFileModel"   :disabled="updateModel"  id="key" v-model="ic.key"/>
+				<Label v-if="!importFileModel"  for="key">{{'key'|i18n}}</Label>
+				<Input  v-if="!importFileModel"   :disabled="updateModel"  id="key" v-model="ic.key"/>
 
-                <Label  v-if="!importFileModel" for="val">{{'val'|i18n}}</Label>
-                <Input  v-if="!importFileModel" id="val" v-model="ic.val"/>
+				<Label  v-if="!importFileModel" for="val">{{'val'|i18n}}</Label>
+				<Input  v-if="!importFileModel" id="val" v-model="ic.val"/>
 
-                <Label for="desc">{{'desc'|i18n}}</Label>
-                <Input  id="desc" v-model="ic.desc"/>
+				<Label for="desc">{{'desc'|i18n}}</Label>
+				<Input  id="desc" v-model="ic.desc"/>
 
-                <Label v-if="actInfo && actInfo.admin"  for="clientId">{{'clientId'|i18n}}</Label>
-                <Input v-if="actInfo && actInfo.admin"   id="clientId" v-model="ic.clientId"/>
+				<Label v-if="actInfo && actInfo.admin"  for="clientId">{{'clientId'|i18n}}</Label>
+				<Input v-if="actInfo && actInfo.admin"   id="clientId" v-model="ic.clientId"/>
 
-                <Label  for="mod">{{'mod'|i18n}}</Label>
-                <Input  id="mod" v-model="ic.mod"/>
+				<Label  for="mod">{{'mod'|i18n}}</Label>
+				<Input  id="mod" v-model="ic.mod"/>
 
-                <Label for="country">{{'country'|i18n}}</Label>
-               <!-- <Input id="country" v-model="ic.country"/>-->
-                <Select :disabled="updateModel" id="country" :filterable="false" ref="country" v-model="ic.country">
-                    <Option v-for="c in conList" :key="c.l" :value="c.l" >{{c.b}}</Option>
-                </Select>
+				<Label for="country">{{'country'|i18n}}</Label>
+			   <!-- <Input id="country" v-model="ic.country"/>-->
+				<Select :disabled="updateModel" id="country" :filterable="false" ref="country" v-model="ic.country">
+					<Option v-for="c in conList" :key="c.l" :value="c.l" >{{c.b}}</Option>
+				</Select>
 
-                <Label for="lan">{{'lan'|i18n}}</Label>
-                <!--<Input id="lan" v-model="ic.lan"/>-->
-                <Select :disabled="updateModel"  id="lan" :filterable="false" ref="lan"  v-model="ic.lan">
-                    <Option v-for="c in langList" :key="c.l" :value="c.l" >{{c.b}}</Option>
-                </Select>
+				<Label for="lan">{{'lan'|i18n}}</Label>
+				<!--<Input id="lan" v-model="ic.lan"/>-->
+				<Select :disabled="updateModel"  id="lan" :filterable="false" ref="lan"  v-model="ic.lan">
+					<Option v-for="c in langList" :key="c.l" :value="c.l" >{{c.b}}</Option>
+				</Select>
 
-                <Label  for="createdTime">{{'createdTime'|i18n}}</Label>
-                <div id="createdTime">{{ic.createdTime| formatDate(1)}}</div>
+				<Label  for="createdTime">{{'createdTime'|i18n}}</Label>
+				<div id="createdTime">{{ic.createdTime| formatDate(1)}}</div>
 
-                <Label  for="updatedTime">{{'updatedTime'|i18n}}</Label>
-                <div id="updatedTime">{{ic.updatedTime| formatDate(1)}}</div>
+				<Label  for="updatedTime">{{'updatedTime'|i18n}}</Label>
+				<div id="updatedTime">{{ic.updatedTime| formatDate(1)}}</div>
 
-                <Label  for="id">{{'id'|i18n}}</Label>
-                <Input :disabled="true"  id="id" v-model="ic.id"/>
-
+				<Label  for="id">{{'id'|i18n}}</Label>
+				<Input :disabled="true"  id="id" v-model="ic.id"/>
+		
             </div>
 
 

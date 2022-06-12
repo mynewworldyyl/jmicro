@@ -166,7 +166,7 @@ public class PermissionManager {
 	}
 	
 	public RespJRso<Object> permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
-		if(isCurAdmin(sm.getForType(),sm.getKey().getUsk().getClientId()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
+		if(isCurAdmin(sm.getForType(), sm.getKey().getUsk().getClientId()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
 			return null;
 		}
 		
@@ -176,34 +176,46 @@ public class PermissionManager {
 		if(sm.isNeedLogin() && (ai == null && sai == null ||
 				ai == null && Constants.FOR_TYPE_USER == sm.getForType()
 				|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) ) {
-			RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,
-					 "Have to login for invoking to " + sm.getKey().methodID());
-			LG.log(MC.LOG_ERROR, TAG,se.toString());
-			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
-			logger.warn(se.toString());
-			return se;
+			return noPerResp(sm,"未登录账号");
+		}
+		
+		if(sm.getForType() == Constants.FOR_TYPE_USER) {
+			if(ai != null && (ai.getClientId() == srcClientId || ai.getPers().contains(sm.getKey().getSnvHash()))) {
+				//有权限
+				return null;
+			}else {
+				return noPerResp(sm,"Permission reject, ");
+			}
 		}
 		
 		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
-			ai = sai;
+			if(sai != null && (sai.getClientId() == srcClientId || sai.getPers().contains(sm.getKey().getSnvHash()))) {
+				//有权限
+				return null;
+			}else {
+				return noPerResp(sm,"Permission reject, ");
+			}
 		}
 		
-		if(sm.isPerType() && (ai == null || ai.getPers() == null 
-				|| !ai.getPers().contains(sm.getKey().getSnvHash()))) {
-			RespJRso<Object> se = new RespJRso<>(MC.MT_ACT_PERMISSION_REJECT,
-					(ai!= null?ai.getActName():" Not login") + " no permission for this operation ");
-			LG.log(MC.LOG_ERROR, TAG,se.toString()+",SM: " + sm.getKey().fullStringKey());
-			MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);
-			logger.warn(se.toString()+",SM: " + sm.getKey().fullStringKey());
-			return se;
-		}/*else if(checkAccountClientPermission(srcClientId)) {
-			ServerError se = new ServerError(ServerError.SE_NO_PERMISSION,
-					(ai!= null?ai.getActName():" Not login") + " permission reject to invoke "+ srcClientId);
-			SF.eventLog(MC.MT_CLIENT_ID_REJECT,MC.LOG_ERROR, TAG,se.toString());
-			logger.warn(se.toString());
-			return se;
-		}*/
-		return null;
+		if(sm.getForType() == Constants.FOR_TYPE_ALL) {
+			if(sai != null && (sai.getClientId() == srcClientId || sai.getPers().contains(sm.getKey().getSnvHash())) 
+				|| ai != null && (ai.getClientId() == srcClientId || ai.getPers().contains(sm.getKey().getSnvHash()))) {
+				//有权限
+				return null;
+			} else {
+				return noPerResp(sm,"Permission reject, ");
+			}
+		}
+
+		return noPerResp(sm,"Permission reject, ");
+	}
+	
+	RespJRso<Object> noPerResp(ServiceMethodJRso sm,String msg) {
+		RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO, msg + sm.getKey().methodID());
+		LG.log(MC.LOG_ERROR, TAG,se.toString());
+		MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+		logger.warn(se.toString());
+		return se;
 	}
 	
 	private static final ActInfoJRso getAccount(int forType) {

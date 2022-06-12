@@ -54,15 +54,15 @@ public interface IAccountServiceJMSrv {
 	 * @param faceImage
 	 * @return
 	 */
-	IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImageId,
-			String idCardFileId, String vcode);
+	/*IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImageId,
+			String idCardFileId, String vcode);*/
 	
 	/**
 	 * 接收通过实名认证接口
 	 * @param actId
 	 * @return
 	 */
-	public IPromise<RespJRso<Boolean>> approveRealname(Integer actId);
+	//public IPromise<RespJRso<Boolean>> approveRealname(Integer actId);
 	
 	/**
 	 * 提交认证附件信息
@@ -73,7 +73,7 @@ public interface IAccountServiceJMSrv {
 	 * @return
 	 */
 	IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, String fileId, String vcode
-			,String codeId, String remark,Byte appType);
+			,String codeId, String remark/*,Byte appType*/);
 	
 	/**
 	 * 

@@ -173,7 +173,7 @@ public @interface SMethod {
 	public boolean needLogin() default true;
 	
 	//接口调用用户类型，分为系统用户和前端登录用户
-	public int forType() default Constants.FOR_TYPE_ALL;
+	public int forType() default Constants.FOR_TYPE_USER;
 	
 	//加密相关
 	public boolean downSsl() default false;

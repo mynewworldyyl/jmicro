@@ -350,7 +350,7 @@ public class Config{
 		List<String> configFiles = ClassScannerUtils.getClasspathResourcePaths("META-INF/jmicro", "*.properties");
 		Map<String,String> params = new HashMap<>();
 		ClassLoader cl = Config.class.getClassLoader();
-		Set<String> set = new HashSet<>();
+		Set<String> basePackages = new HashSet<>();
 		for(String f : configFiles) {
 			InputStream is = null;
 			try {
@@ -366,7 +366,7 @@ public class Config{
 						String ps = p.getProperty(key, null);
 						if(!StringUtils.isEmpty(ps)){
 							String[] pps = ps.split(",");
-							set.addAll(Arrays.asList(pps));
+							basePackages.addAll(Arrays.asList(pps));
 						}
 						logger.info("basePackages:{}",ps);
 						continue;
@@ -397,8 +397,8 @@ public class Config{
 				}
 			}
 		}
-		if(!set.isEmpty()) {
-			setBasePackages0(set);
+		if(!basePackages.isEmpty()) {
+			setBasePackages0(basePackages);
 		}
 		
 		if(!params.isEmpty()) {

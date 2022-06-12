@@ -42,7 +42,7 @@ public class AccountRouterImpl extends AbstractRouter implements IRouter {
 		ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
 			ai = JMicroContext.get().getSysAccount();
-		}else {
+		} else {
 			ai = JMicroContext.get().getAccount();
 		}
 		

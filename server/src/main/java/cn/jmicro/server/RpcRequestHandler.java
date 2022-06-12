@@ -118,8 +118,10 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	private Object[] getArgs(Type[] clses, Object[] jsonArgs){
 
 		if(clses.length != jsonArgs.length) {
-			throw new CommonException("Args number not mather");
+			String ned = "Need: " + clses.length+" ,got: " + JsonUtils.getIns().toJson(jsonArgs);
+			throw new CommonException("Args number not mather: " + ned);
 		}
+		
 		if(clses== null || clses.length ==0){
 			return new Object[0];
 		} else {
@@ -131,7 +133,6 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 				Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), clses[i]);
 				args[i] = a;
 			}
-		
 			return args;
 		}
 	}

@@ -316,6 +316,7 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 		msg.putExtra(Message.EXTRA_KEY_LOGIN_KEY, cxt.getString(JMicroContext.LOGIN_KEY, null));
 		
 		if(sm.getForType() == Constants.FOR_TYPE_SYS) {
+			//只支持系统登录的接口
 			if(pi.isLogin()) {
 				//msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, cxt.getString(JMicroContext.LOGIN_KEY_SYS, null));
 				msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, pi.getAi().getLoginKey());
@@ -325,9 +326,9 @@ public class RpcClientRequestHandler extends AbstractHandler implements IRequest
 				LG.log(MC.LOG_ERROR, this.getClass(), desc);
 				throw new CommonException(desc);
 			}
-		}
-		
-		if(req.getRequestParams().containsKey(JMicroContext.LOGIN_KEY_SYS)) {
+		} else if(pi.isLogin())  {
+			msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, pi.getAi().getLoginKey());
+		}else if(req.getRequestParams().containsKey(JMicroContext.LOGIN_KEY_SYS)) {
 			msg.putExtra(Message.EXTRA_KEY_LOGIN_SYS, req.getRequestParams().get(JMicroContext.LOGIN_KEY_SYS));
 		}
 		

@@ -237,11 +237,12 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			return false;
 		}
 		
-		RespJRso<Object> se = pm.permissionCheck(sm, sm.getKey().getUsk().getClientId());
-		
-		if(se != null) {
-			this.resp(resp, se.getMsg(), req.getContentType());
-			return false;
+		if(sm.isPerType()) {
+			RespJRso<Object> se = pm.permissionCheck(sm, sm.getKey().getUsk().getClientId());
+			if(se != null) {
+				this.resp(resp, se.getMsg(), req.getContentType());
+				return false;
+			}
 		}
 		
 		return true;

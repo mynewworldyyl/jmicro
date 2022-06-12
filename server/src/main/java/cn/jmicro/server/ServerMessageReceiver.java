@@ -404,13 +404,13 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				return false;
 			}
 			
-			RespJRso<Object> se = pm.permissionCheck(sm, sm.getKey().getUsk().getClientId());
-			
-			if(se != null) {
-				resp2Client(se,s,msg,sm);
-				return false;
+			if(sm.isPerType()) {
+				RespJRso<Object> se = pm.permissionCheck(sm, sm.getKey().getUsk().getClientId());
+				if(se != null) {
+					resp2Client(se,s,msg,sm);
+					return false;
+				}
 			}
-			
 		}
 		
 		return true;

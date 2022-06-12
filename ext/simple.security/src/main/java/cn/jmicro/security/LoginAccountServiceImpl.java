@@ -252,23 +252,9 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 		return null;
 	}
 
-
-	@Override
-	public IPromise<RespJRso<Boolean>> realNameVerify(String name, String idNo, String faceImageId, String idCardFileId,
-			String vcode) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IPromise<RespJRso<Boolean>> approveRealname(Integer actId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	@Override
 	public IPromise<RespJRso<Boolean>> submitAttachmentInfo(String metadata, Byte type, 
-			String fileId, String vcode, String vcodeId,String remark,Byte appType) {
+			String fileId, String vcode, String vcodeId,String remark) {
 		// TODO Auto-generated method stub
 		return null;
 	}

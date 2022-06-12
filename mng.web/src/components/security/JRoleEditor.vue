@@ -175,9 +175,9 @@
 				
                 this.$jr.rpc.callRpcWithParams(sn, ns, v, method, [ this.role ])
                     .then((resp)=>{
-                    if(resp.code == 0 && resp.data) {
+                    if(resp.code == 0) {
                         self.refresh();
-                        this.addRoleDrawer.drawerStatus = true;
+                        this.addRoleDrawer.drawerStatus = false;
                     } else {
                         self.errorMsg = resp.msg;
                     }

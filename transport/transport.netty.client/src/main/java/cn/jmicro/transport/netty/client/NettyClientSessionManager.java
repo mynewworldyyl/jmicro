@@ -328,7 +328,6 @@ public class NettyClientSessionManager implements IClientSessionManager{
 	            
 	            // Wait until the connection is closed.
 	            //f.channel().closeFuture().sync();
-	            
 	           
 	           //LOG.info("session connected : {}", session);
 	           logger.debug("Connection finish,host:" + host + ", port:" + s.remotePort() + ", instanceName: "+ targetInstanceName);

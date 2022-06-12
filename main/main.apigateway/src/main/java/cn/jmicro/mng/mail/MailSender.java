@@ -15,6 +15,7 @@ import javax.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Service;
@@ -101,7 +102,8 @@ public class MailSender implements IEmailSenderJMSrv{
 	}
 	
 	
-	public boolean send(String to,/*String from,*/String title, String message) {
+	public RespJRso<String> send(String to,/*String from,*/String title, String message) {
+		RespJRso<String> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
         try {
             Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
             final String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
@@ -139,12 +141,14 @@ public class MailSender implements IEmailSenderJMSrv{
             
             //调用Transport的send方法去发送邮件
             Transport.send(msg);
-            return true;
+            return r;
         } catch (Exception e) {
-        	String errMsg = "to: " + to+" title: "+title+" message: "+ message;
+        	String errMsg = "to: " + to+" title: "+title+" message: "+ message+",Error: " + e.getMessage();
             LG.log(MC.LOG_ERROR, MailSender.class, errMsg,e);
             logger.error(errMsg,e);
-            return false;
+            r.setCode(RespJRso.CODE_FAIL);
+            r.setData(errMsg);
+            return r;
         }
 
     }
