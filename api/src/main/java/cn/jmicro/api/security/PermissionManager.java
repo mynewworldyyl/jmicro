@@ -166,7 +166,7 @@ public class PermissionManager {
 	}
 	
 	public RespJRso<Object> permissionCheck(ServiceMethodJRso sm,int srcClientId ) {
-		if(isCurAdmin(sm.getForType(), sm.getKey().getUsk().getClientId()) || !sm.isNeedLogin() && sm.getForType() == Constants.FOR_TYPE_ALL) {
+		if(isCurAdmin(sm.getForType(), sm.getKey().getUsk().getClientId()) || !sm.isNeedLogin()) {
 			return null;
 		}
 		
@@ -176,7 +176,7 @@ public class PermissionManager {
 		if(sm.isNeedLogin() && (ai == null && sai == null ||
 				ai == null && Constants.FOR_TYPE_USER == sm.getForType()
 				|| sai == null && Constants.FOR_TYPE_SYS == sm.getForType()) ) {
-			return noPerResp(sm,"未登录账号");
+			return noPerResp(sm,"未登录账号",MC.MT_INVALID_LOGIN_INFO);
 		}
 		
 		if(sm.getForType() == Constants.FOR_TYPE_USER) {
@@ -184,7 +184,7 @@ public class PermissionManager {
 				//有权限
 				return null;
 			}else {
-				return noPerResp(sm,"Permission reject, ");
+				return noPerResp(sm,"Permission reject forType:FOR_TYPE_USER,",MC.MT_ACT_PERMISSION_REJECT);
 			}
 		}
 		
@@ -193,7 +193,7 @@ public class PermissionManager {
 				//有权限
 				return null;
 			}else {
-				return noPerResp(sm,"Permission reject, ");
+				return noPerResp(sm,"Permission reject forType:FOR_TYPE_SYS,",MC.MT_ACT_PERMISSION_REJECT);
 			}
 		}
 		
@@ -203,17 +203,17 @@ public class PermissionManager {
 				//有权限
 				return null;
 			} else {
-				return noPerResp(sm,"Permission reject, ");
+				return noPerResp(sm,"Permission reject forType:FOR_TYPE_ALL, ",MC.MT_ACT_PERMISSION_REJECT);
 			}
 		}
 
-		return noPerResp(sm,"Permission reject, ");
+		return noPerResp(sm,"无效方法forType: " + sm.getForType(), MC.MT_ACT_PERMISSION_REJECT);
 	}
 	
-	RespJRso<Object> noPerResp(ServiceMethodJRso sm,String msg) {
-		RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO, msg + sm.getKey().methodID());
+	RespJRso<Object> noPerResp(ServiceMethodJRso sm,String msg,short code) {
+		RespJRso<Object> se = new RespJRso<>(code, msg + sm.getKey().methodID());
 		LG.log(MC.LOG_ERROR, TAG,se.toString());
-		MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+		MT.rpcEvent(MC.MT_ACT_PERMISSION_REJECT);//权限不足
 		logger.warn(se.toString());
 		return se;
 	}

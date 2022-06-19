@@ -18,16 +18,19 @@
         </span>
 
         <span v-if="actInfo != null && actInfo.clientIds && actInfo.clientIds.length > 1" class="accountBtn"
-              href="javascript:void(0);" @click="changeClient()">切换
+            href="javascript:void(0);" @click="changeClient()">切换
         </span>
 
         <Modal v-model="loginDialog" :loading="true" width="360" @on-ok="doLogin()" ref="loginDialog">
             <table>
                 <tr><td>{{'actName'|i18n}}</td><td><input type="input"  v-model="actName"/></td></tr>
                 <tr><td>{{'Password'|i18n}}</td><td><input type="password"  v-model="pwd"/></td></tr>
-                <tr v-if="vcodeId"><td>{{'vcode'|i18n}}</td><td><input type="input"  v-model="vcode"/>
-                    <img :src="codeUrl" @click="getCode()">
-                </td></tr>
+                <tr v-if="vcodeId"><td>{{'vcode'|i18n}}</td>
+					<td>
+						<input type="input"  v-model="vcode"/>
+						<img :src="codeUrl" @click="getCode()">
+					</td>
+				</tr>
                 <tr>
                     <td><input type="checkbox"  v-model="rememberPwd" @change="rememberPwdChange()"/>{{'RememberPwd'|i18n}}</td>
                     <td>
@@ -140,9 +143,9 @@ export default {
     mounted(){
         let self = this;
 
-		this.$jr.auth.toLoginCb = (vcode,vcodeId)=>{
-			if(vcode) {
-				this.vcode = vcode
+		this.$jr.auth.toLoginCb = (codeUrl, vcodeId)=>{
+			if(codeUrl) {
+				this.codeUrl = 'data:image/gif;base64,' + codeUrl
 				this.vcodeId = vcodeId
 			}
 			

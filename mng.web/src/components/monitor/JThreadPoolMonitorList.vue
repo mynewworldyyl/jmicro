@@ -80,7 +80,9 @@
                     if(resp.code == 0) {
                         self.srcServerList = resp.data;
                         self.parseServerListNode();
-                    }
+                    }else{
+						console.log('serverList',resp)
+					}
                 }).catch((err) => {
                     window.console.log(err);
                 });

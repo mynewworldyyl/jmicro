@@ -314,7 +314,7 @@ public final class MC {
 	public static final short MT_CLIENT_ID_REJECT = 0x0053;
 	
 	@MCA(value="账号权限拒绝", desc="")
-	public static final short MT_ACT_PERMISSION_REJECT = 0x0054;
+	public static final short MT_ACT_PERMISSION_REJECT = 0x0054;//84
 	
 	@MCA(group="clientNetIo",value="客户端写字节数", desc="")
 	public static final short MT_CLIENT_IOSESSION_WRITE_BYTES = 0x0055;

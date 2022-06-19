@@ -45,7 +45,7 @@
                 adminPer:false,
                 isLogin:false,
 				isAdmin:this.$jr.auth.isAdmin(),
-				module:{clientId: this.$jr.auth.actInfo.clientId, module:''},
+				module:{clientId: 0, module:''},
 				showAddModule:false,
             }
         },

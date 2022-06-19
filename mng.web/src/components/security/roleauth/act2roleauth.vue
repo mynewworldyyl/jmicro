@@ -88,6 +88,7 @@
                 if(!this.act) {
                     return
                 }
+				
                 let self = this;
                 this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listRoleByActId', [this.act.id])
                     .then((resp) => {
