@@ -17,12 +17,12 @@
 package cn.jmicro.common.util;
 
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.chrono.IsoChronology;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,15 +53,20 @@ public class JsonUtils {
 	 //序列化
     final static JsonSerializer<LocalDateTime> jsonSerializerDateTime = (localDateTime, type, jsonSerializationContext) -> new JsonPrimitive(localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     final static JsonSerializer<LocalDate> jsonSerializerDate = (localDate, type, jsonSerializationContext) -> new JsonPrimitive(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+  
     //反序列化
     final static JsonDeserializer<LocalDateTime> jsonDeserializerDateTime = (jsonElement, type, jsonDeserializationContext) -> {
     	String strd = jsonElement.getAsJsonPrimitive().getAsString();
+    	//System.out.println(JsonUtils.class.getName()+": " + strd);
     	if(strd.indexOf("T") > 0) {
     		return LocalDateTime.parse(strd, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    	}else if(strd.indexOf("E") > 0) {
+    		//浮点数长整数
+    		Double d = Double.parseDouble(strd);
+    		return LocalDateTime.ofInstant(Instant.ofEpochMilli(d.longValue()), ZoneId.systemDefault());
     	}else {
     		return LocalDateTime.parse(strd, ISO_LOCAL_DATE_TIME);
     	}
-    	
     };
     
     final static JsonDeserializer<LocalDate> jsonDeserializerDate = (jsonElement, type, jsonDeserializationContext) -> LocalDate.parse(jsonElement.getAsJsonPrimitive().getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
@@ -102,6 +107,7 @@ public class JsonUtils {
 	
 	public <T> T fromJson(String json, java.lang.reflect.Type type) {
 		GsonBuilder builder = b();
+		//System.out.println(this.getClass().getName()+": " + json);
 		T obj = builder.create().fromJson(json, type);
 		return obj;
 	}

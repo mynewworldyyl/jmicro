@@ -22,6 +22,7 @@
 		<module>druid</module>
 		<module>dataservice</module>
 		<module>payservice</module>
+		<module>barcode</module>
 	</modules>
 	<dependencies>
 		<dependency>

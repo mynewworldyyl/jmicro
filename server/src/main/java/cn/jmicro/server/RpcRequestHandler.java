@@ -130,6 +130,7 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			int j = 0;
 			for(; i < clses.length; i++){
 				Object arg = jsonArgs[j++];
+				//logger.info(arg.toString());
 				Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), clses[i]);
 				args[i] = a;
 			}

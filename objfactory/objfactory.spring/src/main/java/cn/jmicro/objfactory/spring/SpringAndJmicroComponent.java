@@ -130,8 +130,9 @@ public class SpringAndJmicroComponent implements BeanDefinitionRegistryPostProce
 		}
 		
         try {
-        	/*if(tCls.getName().startsWith("com.qiguliuxing.dts.db.service.DtsAccountService")) {
-        		log.info("tCls.getName()");
+        	log.info(tCls.getName());
+        	/*if(tCls.getName().startsWith("com.mongodb.client.internal.MongoDatabaseImpl")) {
+        		log.info(tCls.getName());
         	}*/
         	
         	CgLibProxyInterceptor intProxy = new CgLibProxyInterceptor(to);
@@ -145,7 +146,16 @@ public class SpringAndJmicroComponent implements BeanDefinitionRegistryPostProce
 			
 			return (T)enhancer.create();
 		} catch (ClassNotFoundException | IllegalArgumentException e) {
-			throw new CommonException(tCls.getName(),e);
+			try {
+				CgLibProxyInterceptor intProxy = new CgLibProxyInterceptor(to);
+	            Enhancer enhancer = new Enhancer();
+	            String cn = tCls.getInterfaces()[0].getName();
+				enhancer.setSuperclass(cl.loadClass(cn));
+				enhancer.setCallback(intProxy);
+				return (T)enhancer.create();
+			} catch (ClassNotFoundException e1) {
+				throw new CommonException(tCls.getName(),e);
+			}
 		}
        
 	}
