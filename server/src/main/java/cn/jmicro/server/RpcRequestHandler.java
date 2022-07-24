@@ -31,7 +31,10 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
+import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
@@ -40,6 +43,8 @@ import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.net.Message;
+import cn.jmicro.api.net.RpcRequestJRso;
+import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -54,12 +59,18 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 	
 	private static final Logger logger = LoggerFactory.getLogger(RpcRequestHandler.class);
 	
+	@Inject
+	private RpcClassLoader rpcClassloader;
+	
 	@Override
 	public IPromise<Object> onRequest(IRequest request) {
 		Object obj = JMicroContext.get().getObject(Constants.SERVICE_OBJ_KEY, null);
 		Promise<Object> p = null;
 		try {
-			Method m = getServiceMethod(obj, request);
+			
+			Class<?>[] pst = getMethodParamsType(request.getArgs());
+			
+			Method m = getServiceMethod(obj,pst,request);
 			/*if(m.getName().equals("publishData")) {
 				logger.debug("debug info");
 			}*/
@@ -76,8 +87,9 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			}*/
 			
 			Object[] args = request.getArgs();
+			
 			if(request.getProtocol() == Message.PROTOCOL_JSON) {
-				args = getArgs(m.getGenericParameterTypes(),args);
+				args = parseJsonArgs(obj,m,request);
 			}
 			
 			Object result = m.invoke(obj, args);
@@ -115,31 +127,45 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 		return p;
 	}
 	
-	private Object[] getArgs(Type[] clses, Object[] jsonArgs){
+	private Object[] parseJsonArgs(Object obj, Method m, IRequest req){
 
-		if(clses.length != jsonArgs.length) {
-			String ned = "Need: " + clses.length+" ,got: " + JsonUtils.getIns().toJson(jsonArgs);
-			throw new CommonException("Args number not mather: " + ned);
-		}
+		if(req.getArgs() == null || req.getArgs().length == 0) return new Object[0];
 		
-		if(clses== null || clses.length ==0){
-			return new Object[0];
-		} else {
-			Object[] args = new Object[clses.length];
-			int i = 0;
-			int j = 0;
-			for(; i < clses.length; i++){
-				Object arg = jsonArgs[j++];
-				//logger.info(arg.toString());
-				Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), clses[i]);
-				args[i] = a;
+		Type[] clses = m.getGenericParameterTypes();
+		
+		for(Type c : clses) {
+			if(TypeUtils.isMap(c) || TypeUtils.isCollection(c)) {
+				//ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+				try {
+					Class<?> intCls = this.rpcClassloader.loadClass(req.getServiceName());
+					Method imethod = intCls.getMethod(req.getMethod(), m.getParameterTypes());
+					clses  = imethod.getGenericParameterTypes();
+				} catch (ClassNotFoundException | NoSuchMethodException | SecurityException e) {
+					e.printStackTrace();
+				}
+				break;
 			}
-			return args;
 		}
+
+		Object[] jsonArgs = req.getArgs();
+		
+		Object[] args = new Object[clses.length];
+		int i = 0;
+		int j = 0;
+		for(; i < clses.length; i++){
+			Object arg = jsonArgs[j++];
+			//logger.info(arg.toString());
+			Type t = clses[i];
+			Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg),t);
+			args[i] = a;
+		}
+	
+		return args;
+		
 	}
 	
-	public static Method getServiceMethod(Object obj ,IRequest req){
-		Class<?>[] pst = getMethodParamsType(req.getArgs());
+	public static Method getServiceMethod(Object obj ,Class<?>[] pst, IRequest req){
+		
 		try {
 			Method m = obj.getClass().getMethod(req.getMethod(), pst);
 			return m;

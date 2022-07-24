@@ -63,15 +63,22 @@ public class ImgManager {
 	 * @param subfix jpg png jpeg
 	 * @return
 	 */
-	public boolean getFile(String fn, String subfix,HttpResponse resp) {
+	public boolean getFile(String fn,HttpResponse resp) {
 		if(!fn.contains("@")) {
 			//只处理图片文件
 			log.error(fn+" not support!");
 			return false;
 		}
 		
+		String subfix = null;
+		int idx = fn.lastIndexOf(".");
+		if(idx > 0) {
+			subfix = fn.substring(idx+1);
+			fn = fn.substring(0,idx);
+		}
+		
 		String[] ar = fn.split("@");
-		String srcFileId = ar[0];
+		String srcFileId = ar[0]+"."+subfix;
 		
 		DBObject q = new BasicDBObject();
 		q.put(IObjectStorage._ID, srcFileId);
@@ -81,19 +88,12 @@ public class ImgManager {
 			return false;
 		}
 		
-		String[] sizeAr = ar[1].split("[xX]");
-		int w,h;
-		h = w = Integer.parseInt(sizeAr[0]);
-		if(sizeAr.length > 1) {
-			h = Integer.parseInt(sizeAr[1]);
-		}
-		
 		GridFSInputFile ff = this.fs.createFile();
 		
 		//ff.setChunkSize(zkrr.getSize());
 		ff.setContentType(file.getContentType());
-		ff.setId(srcFileId+"@"+w+"x"+h);
-		ff.setFilename(ff.getId()+"."+ct2Subfixes.get(file.getContentType()));
+		ff.setId(fn+"."+subfix);
+		ff.setFilename(ff.getId().toString());
 		ff.setMetaData(file.getMetaData());
 		
 		OutputStream fos = ff.getOutputStream();
@@ -102,6 +102,13 @@ public class ImgManager {
 			fp = new File(this.imgTempDir+ff.getFilename());
 			if(!fp.exists()) {
 				fp.createNewFile();
+			}
+			
+			String[] sizeAr = ar[1].split("[xX]");
+			int w,h;
+			h = w = Integer.parseInt(sizeAr[0]);
+			if(sizeAr.length > 1) {
+				h = Integer.parseInt(sizeAr[1]);
 			}
 			//做图片压缩转换
 			 Thumbnails.of(file.getInputStream()).size(w, h).toFile(fp);

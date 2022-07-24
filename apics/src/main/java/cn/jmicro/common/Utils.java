@@ -16,6 +16,7 @@
  */
 package cn.jmicro.common;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -40,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import javax.activation.MimetypesFileTypeMap;
 
 import cn.jmicro.common.util.JsonUtils;
 
@@ -75,6 +78,17 @@ public class Utils {
 	public static Utils getIns() {
 		return ins;
 	}
+	
+	public static String getContentType(String fileUrl) {
+	    String contentType = null;
+	    try {
+	      contentType = new MimetypesFileTypeMap().getContentType(new File(fileUrl));
+	    } catch (Exception e) {
+	      e.printStackTrace();
+	    }
+	    System.out.println("getContentType, File ContentType is : " + contentType);
+	    return contentType;
+	 }
 	
 	public static Map<String,String> parseProgramArgs(String argStr) {
 		if(Utils.isEmpty(argStr)) {

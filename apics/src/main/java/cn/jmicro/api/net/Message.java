@@ -181,6 +181,8 @@ public final class Message {
 	public static final Byte EXTRA_KEY_EXT3 = 123;
 	
 	public static final Byte EXTRA_KEY_CLIENT_ID = 122;
+	public static final Byte EXTRA_KEY_EXT4 = 121;
+	public static final Byte EXTRA_KEY_EXT5 = 120;
 	
 	public static final byte MSG_TYPE_PINGPONG = 0;//默认请求响应模式
 	
@@ -548,7 +550,9 @@ public final class Message {
 		ByteBuffer data = null;
 		if(this.getPayload() instanceof ByteBuffer) {
 			data = (ByteBuffer)this.getPayload();
-		} else {
+		} else if(this.getPayload() instanceof byte[]){
+			data = ByteBuffer.wrap((byte[])this.getPayload());
+		} else  {
 			String json = JsonUtils.getIns().toJson(this.getPayload());
 			try {
 				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));

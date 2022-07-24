@@ -3,11 +3,9 @@ package cn.jmicro.gateway.fs.upload;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -47,14 +45,15 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
-import cn.jmicro.api.task.TaskManager;
+import cn.jmicro.api.storage.FileJRso;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.client.storage.FileStorageMng;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
-import cn.jmicro.gateway.Namespace;
-import cn.jmicro.gateway.fs.api.FileJRso;
+import cn.jmicro.gateway.fs.FileUploadManager;
+import cn.jmicro.gateway.fs.Namespace;
 import cn.jmicro.gateway.fs.api.IFileJMSrv;
 
 @Component
@@ -64,27 +63,24 @@ public class FileServiceImpl implements IFileJMSrv{
 	//private static final String ID2NAME_SEP = PackageResource.ID2NAME_SEP;
 	private static final Logger LOG = LoggerFactory.getLogger(FileServiceImpl.class);
 	
-	@Cfg(value="/ResourceReponsitoryService/dataDir", defGlobal=true)
-	private String resDir = System.getProperty("user.dir") + "/resDataDir";
-	
 	//分块上传文件中每块大小
 	@Cfg(value="/ResourceReponsitoryService/uploadBlockSize", defGlobal=true)
 	private int uploadBlockSize = 32767;//1024*1024;
 	
-	@Cfg(value="/ResourceReponsitoryService/openDebug", defGlobal=false)
-	private boolean openDebug = false;//1024*1024;
+	@Cfg(value="/ResourceReponsitoryService/dataDir", defGlobal=true)
+	private String resDir = System.getProperty("user.dir") + "/resDataDir";
 	
 	@Cfg(value="/ResourceReponsitoryService/resTimeout", defGlobal=true)
 	private long resTimeout = 3*60*1000;
 	
-	@Cfg(value="/ResourceReponsitoryService/devMode", defGlobal=true)
-	private boolean devMode = false;//1024*1024;
-	
-	@Cfg(value="/ResourceReponsitoryService/respServerUrl", defGlobal=true)
-	private String resServerUrl = "https://repo1.maven.org/maven2/";
-	
 	@Inject
 	private ICodecFactory codecFactory;
+	
+	@Inject
+	private FileUploadManager fileMng;
+	
+	@Inject
+	private FileStorageMng fileStoreMng;
 	
 	@Inject
 	private ComponentIdServer idGenerator;
@@ -103,15 +99,13 @@ public class FileServiceImpl implements IFileJMSrv{
 	
 	private Map<Integer,Long> downloadResourceTimeout = new ConcurrentHashMap<>();
 	
-	private Map<String,FileJRso> files = new ConcurrentHashMap<>();
-	
 	@Inject
 	private IObjectStorage os;
 	
 	@Inject
 	private MongoDatabase mongoDb;
 	
-	private TaskManager taskMng = null;
+	//private TaskManager taskMng = null;
 	
 	public void jready() {
 		
@@ -126,7 +120,7 @@ public class FileServiceImpl implements IFileJMSrv{
 			tempDir.mkdir();
 		}
 		
-		taskMng = new TaskManager(5000);
+		//taskMng = new TaskManager(5000);
 		TimerTicker.doInBaseTicker(120, "ResourceReponsitoryChecker", null, (key,att)->{
 			try {
 				doChecker();	
@@ -137,41 +131,96 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 	
 	private void doChecker() {
-		if(downloadResourceTimeout.isEmpty()) {
-			return;
-		}
-		
 		long curTime = TimeUtils.getCurTime();
-		Map<Integer,Long> mtemp = new HashMap<>();
-		mtemp.putAll(this.downloadResourceTimeout);
-				
-		for(Map.Entry<Integer,Long> e : mtemp.entrySet()) {
-			if(curTime - e.getValue() > resTimeout) {
-				InputStream is = this.downloadReses.get(e.getKey());
-				if(is != null) {
-					try {
-						LOG.warn("Remove timeout resource: " + e.getKey()+", timeout: " + this.resTimeout);
-						is.close();
-						this.downloadReses.remove(e.getKey());
-						this.downloadResourceTimeout.remove(e.getKey());
-					} catch (IOException e1) {
-						e1.printStackTrace();
+		if(!downloadResourceTimeout.isEmpty()) {
+			Map<Integer,Long> mtemp = new HashMap<>();
+			mtemp.putAll(this.downloadResourceTimeout);
+			for(Map.Entry<Integer,Long> e : mtemp.entrySet()) {
+				if(curTime - e.getValue() > resTimeout) {
+					InputStream is = this.downloadReses.get(e.getKey());
+					if(is != null) {
+						try {
+							LOG.warn("Remove timeout resource: " + e.getKey()+", timeout: " + this.resTimeout);
+							is.close();
+							this.downloadReses.remove(e.getKey());
+							this.downloadResourceTimeout.remove(e.getKey());
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
 					}
 				}
 			}
 		}
-		
-		if(!this.files.isEmpty()) {
-			Set<String> fids = new HashSet<>();
-			fids.addAll(this.files.keySet());
-			for(String fid: fids) {
-				FileJRso f = this.files.get(fid);
-				if(curTime - f.getUpdatedTime() > resTimeout) {
-					LOG.warn("Resource update timeout: "+f.toString());
-					this.files.remove(fid);
+	}
+
+	@Override
+	public IPromise<RespJRso<String>> save2Db(FileJRso pr) {
+		return new Promise<RespJRso<String>>((reso,reje)->{
+			RespJRso<String> r = new RespJRso<>(RespJRso.CODE_FAIL,pr.getId());
+			if(Utils.isEmpty(pr.getLocalPath())) {
+				r.setMsg("存储文件不存在");
+				reso.success(r);
+				return;
+			}
+			
+			File f = new File(pr.getLocalPath());
+			if(!f.exists()) {
+				r.setMsg("存储文件未找到，请联系管理员");
+				reso.success(r);
+				return;
+			}
+			
+			if(Utils.isEmpty(pr.getId())) {
+				pr.setId(fileStoreMng.getFileId(pr.getName()));
+			}
+			
+			GridFSInputFile ff = this.fs.createFile();
+			
+			ff.setChunkSize(pr.getSize());
+			ff.setContentType(pr.getType());
+			ff.setFilename(pr.getName());
+			ff.setId(pr.getId());
+			
+			DBObject mt = new BasicDBObject();
+			if(pr.getAttr() != null) {
+				mt.putAll(pr.getAttr());
+			}
+			mt.put("createdBy", pr.getCreatedBy());
+			mt.put("clientId", pr.getClientId());
+			mt.put("group", pr.getGroup());
+			ff.setMetaData(mt);
+			
+			OutputStream fos = null;
+			int bs = 1024*4;
+			byte[] data = new byte[bs];
+			
+			InputStream is = null;
+			int len = 0;
+			
+			try {
+				fos = ff.getOutputStream();
+				is = new FileInputStream(f);
+				while((len = is.read(data, 0, bs)) > 0) {
+					fos.write(data, 0, len);
+				}
+			} catch (IOException e) {
+				LOG.error("",e);
+			}finally {
+				try {
+					if(fos != null) fos.close();
+					if(is != null) is.close();
+				} catch (IOException e1) {
+					LOG.error("",e1);
 				}
 			}
-		}
+			
+			pr.setLocalPath("");
+			this.os.save(FileJRso.TABLE, pr, FileJRso.class, false);
+			
+			r.setCode(RespJRso.CODE_SUCCESS);
+			reso.success(r);
+			return;
+		});
 		
 	}
 
@@ -311,169 +360,25 @@ public class FileServiceImpl implements IFileJMSrv{
 	public IPromise<RespJRso<FileJRso>> addFile(FileJRso pr) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<FileJRso>>((reso,reje)->{
-			RespJRso<FileJRso> resp = new RespJRso<>(RespJRso.CODE_FAIL);
-			
-			pr.setCreatedBy(ai.getId());
-			if(pr.getClientId() == Constants.NO_CLIENT_ID && !PermissionManager.isCurAdmin(Config.getClientId())) {
-				String msg = "You cannot upload public resource" + pr.getName();
-				LOG.error(msg);
-				resp.setMsg(msg);
-				resp.setCode(1);
-				LG.log(MC.LOG_ERROR, this.getClass(), msg);
-				reso.success(resp);
-				return;
-			}
-			
 			if(!PermissionManager.isCurAdmin(Config.getClientId())) {
 				pr.setClientId(ai.getClientId());
 			}
-			
-			if(Utils.isEmpty(pr.getType()) && pr.getName() != null) {
-				int extIdx = pr.getName().lastIndexOf(".");
-				if(extIdx < 0) {
-					String msg = "Resource extention name cannot be null";
-					LOG.error(msg);
-					resp.setMsg(msg);
-					resp.setCode(1);
-					reso.success(resp);
-					return;
-				}
-				pr.setType(pr.getName().substring(extIdx+1));
-			}
-			
-			//pr.setUpdateTime(TimeUtils.getCurTime());
-			pr.setId(this.idGenerator.getStringId(FileJRso.class));
-			pr.setBlockSize(this.uploadBlockSize);
-			
-			File resD = new File(this.tempDir,"" + pr.getId());
-			if(!resD.exists()) {
-				resD.mkdir();
-			}
-		
-			pr.setFinishBlockNum(0);
-			pr.setTotalBlockNum(getBlockNum(pr.getSize()));
-			
-			os.save(FileJRso.TABLE, pr, FileJRso.class, false);
-			
-			files.put(pr.getId(), pr);
-			
-			LOG.info("Add resource: " + pr.toString());
-			resp.setCode(RespJRso.CODE_SUCCESS);
-			resp.setData(pr);
+			pr.setCreatedBy(ai.getId());
+			RespJRso<FileJRso> resp = this.fileMng.addFile(pr);
 			reso.success(resp);
-			return;
 		});
-	}
-
-	public int getBlockNum(long size) {
-		int bn = (int)(size/this.uploadBlockSize);
-		if(size % this.uploadBlockSize > 0) {
-			bn++;
-		}
-		return bn;
 	}
 
 	@Override
 	@SMethod(maxPacketSize=1024*1024*1)
 	public IPromise<RespJRso<Boolean>> addFileData(String id, byte[] data, int blockNum) {
 		return new Promise<RespJRso<Boolean>>((reso,reje)->{
-			RespJRso<Boolean> resp = new RespJRso<>(RespJRso.CODE_FAIL);
-			FileJRso zkrr = this.files.get(id);
-
-			if(zkrr == null) {
-				String msg = "Resource is not ready to upload!";
-				resp.setMsg(msg);
-				resp.setCode(1);
-				LOG.error(msg);
-				LG.log(MC.LOG_ERROR, this.getClass(), msg);
-				reso.success(resp);
-				return;
-			}
-			
-			FileOutputStream bs = null;
-			try {
-				//当前上传文件缓存目录
-				File tdir = new File(this.tempDir.getAbsolutePath() + "/" + id);
-				if(!tdir.exists()) {
-					tdir.mkdir();
-				}
-				
-				//当前块文件
-				File bp = new File(tdir,""+ blockNum);
-				
-				if(!bp.exists()) {
-					bp.createNewFile();
-				}
-				bs = new FileOutputStream(bp);
-				bs.write(data, 0, data.length);
-				zkrr.setFinishBlockNum(zkrr.getFinishBlockNum() +1);
-			} catch (IOException e1) {
-				String msg = id +" " + blockNum;
-				resp.setMsg(msg);
-				resp.setCode(1);
-				LOG.error(msg,e1);
-				LG.log(MC.LOG_ERROR, this.getClass(), msg);
-				
-				Map<String,Object> updater = new HashMap<>();
-				updater.put("status", FileJRso.S_ERROR);
-				
-				Map<String,Object> filter = new HashMap<>();
-				filter.put(IObjectStorage._ID, zkrr.getId());
-				
-				os.update(FileJRso.TABLE, filter, updater, FileJRso.class);
-				
-				reso.success(resp);
-				return;
-			} finally {
-				if(bs != null) {
-					try {
-						bs.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-			
-			if(zkrr.getFinishBlockNum() == zkrr.getTotalBlockNum()) {
-				//上传完成
-				mergeUploadFile(zkrr);
-				
-				Map<String,Object> updater = new HashMap<>();
-				updater.put("status", FileJRso.S_FINISH);
-				updater.put("size", zkrr.getSize());
-				
-				Map<String,Object> filter = new HashMap<>();
-				filter.put(IObjectStorage._ID, zkrr.getId());
-				
-				os.update(FileJRso.TABLE, filter, updater, FileJRso.class);
-				
-				String msg = "Add resource success: " + zkrr.toString();
-				LOG.info(msg);
-				LG.log(MC.LOG_INFO, this.getClass(), msg);
-				
-			} else {
-				if(openDebug) {
-					LOG.debug("Name: " +zkrr.getName() +" blockNum: " + zkrr.getFinishBlockNum());
-				}
-				if(LG.isLoggable(MC.LOG_DEBUG)) {
-					LG.log(MC.LOG_DEBUG, this.getClass(), "Name: " +zkrr.getName() +" blockNum: " + zkrr.getFinishBlockNum());
-				}
-				
-				Map<String,Object> filter = new HashMap<>();
-				filter.put(IObjectStorage._ID, zkrr.getId());
-				
-				Map<String,Object> updater = new HashMap<>();
-				updater.put("finishBlockNum", zkrr.getFinishBlockNum());
-				
-				os.update(FileJRso.TABLE, filter,updater, FileJRso.class);
-			}
-			resp.setCode(RespJRso.CODE_SUCCESS);
-			resp.setData(true);
-			reso.success(resp);
-			return;
-		
+			RespJRso<FileJRso> resp = this.fileMng.addFileData(id,data,blockNum);
+			RespJRso<Boolean> r = new RespJRso<>();
+			r.setCode(resp.getCode());
+			r.setMsg(resp.getMsg());
+			reso.success(r);
 		});
-		
 	}
 
 	@Override
@@ -573,8 +478,6 @@ public class FileServiceImpl implements IFileJMSrv{
 			return;
 			
 		});
-		
-		
 	}
 
 	@Override
@@ -653,108 +556,6 @@ public class FileServiceImpl implements IFileJMSrv{
 		});
 	}
 
-	private void mergeUploadFile(FileJRso zkrr) {
-		
-		String bp = this.tempDir.getAbsolutePath() + "/" + zkrr.getId();
-		File bpDir = new File(bp);
-		
-		File[] blockFiles = bpDir.listFiles( (dir,fn) -> {
-			return Integer.parseInt(fn) >= 0;
-		});
-		
-		Arrays.sort(blockFiles, (f1,f2)->{
-			int num1 = Integer.parseInt(f1.getName());
-			int num2 = Integer.parseInt(f2.getName());
-			return num1 > num2?1:num1==num2?0:-1;
-		});
-		
-		try {
-			
-			GridFSInputFile ff = this.fs.createFile();
-			
-			ff.setChunkSize(zkrr.getSize());
-			ff.setContentType(zkrr.getType());
-			ff.setFilename(zkrr.getName());
-			ff.setId(zkrr.getId());
-			 
-			DBObject mt = new BasicDBObject();
-			mt.put("createdBy", zkrr.getCreatedBy());
-			mt.put("clientId", zkrr.getClientId());
-			mt.put("group", zkrr.getGroup());
-			ff.setMetaData(mt);
-			
-			OutputStream fos = ff.getOutputStream();
-			
-			if(zkrr.isTochar()) {
-				int size = 0;
-				//如果是字符流，则默认为BASE64字符串转为UTF8编码字节流，
-				OutputStreamWriter w = new OutputStreamWriter(fos);
-				int i = 0;
-				 String str = null;
-				for(File f : blockFiles) {
-					 FileInputStream fis = null;
-					 try {
-						 fis = new FileInputStream(f);
-						 byte[] d = new byte[(int)f.length()];
-						 fis.read(d, 0, (int)f.length());
-						//BASE64字符全为ASCII码，以字节对齐，所以可以直接转为字符串
-						 str = new String(d,Constants.CHARSET);
-						/* if(i == 0) {
-							 if(str.startsWith(Constants.BASE64_IMAGE_PREFIX)) {
-								 str = str.substring(Constants.BASE64_IMAGE_PREFIX.length());
-							 }
-						 }*/
-						 //LOG.info(str);
-						  w.write(str);
-						/* if(i == blockFiles.length-1) {
-							 LOG.info(str);
-							 if(str.endsWith(Constants.BASE64_IMAGE_SUBFIX)) {
-								 str = str.substring(0,str.length()-2);
-							 }
-						 }*/
-						 
-						/* i++;
-						 byte[] dd = Base64Utils.decode(str.trim());
-						 size += dd.length;
-						 
-						 fos.write(dd);*/
-					 }catch(Exception e) {
-						 LOG.error(str,e);
-					 }finally {
-						 if(fis != null) {
-							 fis.close();
-						 }
-						 f.delete();
-					 }
-				 }
-				
-				zkrr.setSize(size);
-				
-				//w.close();
-			} else {
-				for(File f : blockFiles) {
-					 FileInputStream fis = null;
-					 try {
-						 fis = new FileInputStream(f);
-						 byte[] d = new byte[(int)f.length()];
-						 fis.read(d, 0, (int)f.length());
-						 fos.write(d, 0, d.length);
-					 }finally {
-						 if(fis != null) {
-							 fis.close();
-						 }
-						 f.delete();
-					 }
-				 }
-			}
-			 fos.close();
-		} catch (IOException e) {
-			LOG.error("finishFileUpload",e);
-		} finally {
-			bpDir.delete();
-		}
-	}
-	
 	public String getJarFileSubDir(String grp) {
 		return grp.replaceAll("\\.", "/");
 	}

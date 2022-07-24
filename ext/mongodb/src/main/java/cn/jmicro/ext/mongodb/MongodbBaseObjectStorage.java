@@ -1,5 +1,11 @@
 package cn.jmicro.ext.mongodb;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,6 +22,8 @@ import org.bson.json.JsonWriterSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -23,13 +31,19 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSInputFile;
 
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.persist.IObjectStorage;
+import cn.jmicro.api.storage.FileJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
+import cn.jmicro.common.util.FileUtils;
 import cn.jmicro.common.util.JsonUtils;
 
 @Component
@@ -43,6 +57,12 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	
 	@Inject
 	private MongoDatabase mdb;
+	
+	@Inject(required=false)
+	private GridFS fs;
+	
+	@Inject
+	private ComponentIdServer idGenerator;
 	
 	private Object syncLocker = new Object();
 	
@@ -140,11 +160,142 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 						} 
 					}
 				}
-			}catch(Throwable e) {
+			} catch (Throwable e) {
 				logger.error("",e);
 			}
 		}
 	}
+	
+	@Override
+	public boolean fileSystemEnable() {
+		return this.fs != null;
+	}
+
+	private String getFileId(String fn) {
+		return idGenerator.getStringId(FileJRso.class)+"."+FileUtils.getFileExt(fn);
+	}
+	
+	@Override
+	public RespJRso<String> saveSteam2Db(FileJRso pr, InputStream is) {
+
+		RespJRso<String> r = new RespJRso<>(RespJRso.CODE_FAIL,pr.getId());
+		
+		if(Utils.isEmpty(pr.getId())) {
+			pr.setId(getFileId(pr.getName()));
+			r.setData(pr.getId());
+		}
+		
+		GridFSInputFile ff = this.fs.createFile();
+		
+		ff.setChunkSize(pr.getSize());
+		ff.setContentType(pr.getType());
+		ff.setFilename(pr.getName());
+		ff.setId(pr.getId());
+		
+		DBObject mt = new BasicDBObject();
+		mt.putAll(pr.getAttr());
+		mt.put("createdBy", pr.getCreatedBy());
+		mt.put("clientId", pr.getClientId());
+		mt.put("group", pr.getGroup());
+		ff.setMetaData(mt);
+		
+		OutputStream fos = null;
+		int bs = 1024*4;
+		byte[] data = new byte[bs];
+		
+		int len = 0;
+		
+		try {
+			fos = ff.getOutputStream();
+			while((len = is.read(data, 0, bs)) > 0) {
+				fos.write(data, 0, len);
+			}
+		} catch (IOException e) {
+			logger.error("",e);
+			try {
+				if(fos != null) fos.close();
+				if(is != null) is.close();
+			} catch (IOException e1) {
+				logger.error("",e1);
+			}
+		}
+		
+		pr.setLocalPath("");
+		this.save(FileJRso.TABLE, pr, FileJRso.class, false);
+		
+		r.setCode(RespJRso.CODE_SUCCESS);
+		return r;
+	
+	}
+
+	@Override
+	public RespJRso<String> saveByteArray2Db(FileJRso pr, byte[] byteData) {
+		return saveSteam2Db(pr,new ByteArrayInputStream(byteData));
+	}
+
+	@Override
+	public RespJRso<String> saveFile2Db(FileJRso pr) {
+		RespJRso<String> r = new RespJRso<>(RespJRso.CODE_FAIL,pr.getId());
+		if(Utils.isEmpty(pr.getLocalPath())) {
+			r.setMsg("存储文件不存在");
+			return r;
+		}
+		
+		File f = new File(pr.getLocalPath());
+		if(!f.exists()) {
+			r.setMsg("存储文件未找到，请联系管理员");
+			return r;
+		}
+		
+		if(Utils.isEmpty(pr.getId())) {
+			pr.setId(getFileId(pr.getName()));
+			r.setData(pr.getId());
+		}
+		
+		GridFSInputFile ff = this.fs.createFile();
+		
+		ff.setChunkSize(pr.getSize());
+		ff.setContentType(pr.getType());
+		ff.setFilename(pr.getName());
+		ff.setId(pr.getId());
+		
+		DBObject mt = new BasicDBObject();
+		mt.putAll(pr.getAttr());
+		mt.put("createdBy", pr.getCreatedBy());
+		mt.put("clientId", pr.getClientId());
+		mt.put("group", pr.getGroup());
+		ff.setMetaData(mt);
+		
+		OutputStream fos = null;
+		int bs = 1024*4;
+		byte[] data = new byte[bs];
+		
+		InputStream is = null;
+		int len = 0;
+		
+		try {
+			fos = ff.getOutputStream();
+			is = new FileInputStream(f);
+			while((len = is.read(data, 0, bs)) > 0) {
+				fos.write(data, 0, len);
+			}
+		} catch (IOException e) {
+			logger.error("",e);
+			try {
+				if(fos != null) fos.close();
+				if(is != null) is.close();
+			} catch (IOException e1) {
+				logger.error("",e1);
+			}
+		}
+		
+		pr.setLocalPath("");
+		this.save(FileJRso.TABLE, pr, FileJRso.class, false);
+		
+		r.setCode(RespJRso.CODE_SUCCESS);
+		return r;
+	}
+	
 	
 	private boolean updateOneById(MongoCollection<Document> coll, Document d, long curTime) {
 		Document filter = new Document();

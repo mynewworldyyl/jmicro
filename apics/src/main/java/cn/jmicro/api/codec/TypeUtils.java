@@ -140,12 +140,18 @@ public class TypeUtils {
 		return Modifier.isFinal(type.getModifiers());
 	}
 
-	public static boolean isMap(Class<?> cls) {
-		return Map.class.isAssignableFrom(cls);
+	public static boolean isMap(Type cls) {
+		if(cls instanceof Class) {
+			return Map.class.isAssignableFrom((Class)cls);
+		}
+		return false;
 	}
 
-	public static boolean isCollection(Class<?> cls) {
-		return Collection.class.isAssignableFrom(cls);
+	public static boolean isCollection(Type cls) {
+		if(cls instanceof Class) {
+			return Collection.class.isAssignableFrom((Class)cls);
+		}
+		return false;
 	}
 
 	public static boolean isByteBuffer(Class<?> cls) {

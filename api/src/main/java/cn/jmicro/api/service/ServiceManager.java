@@ -864,11 +864,9 @@ public class ServiceManager {
 						sns.add(m.getKey().getMethod());
 					}
 				}
-
 			} finally {
 				l.unlock();
 			}
-
 		}
 		return sns;
 	}

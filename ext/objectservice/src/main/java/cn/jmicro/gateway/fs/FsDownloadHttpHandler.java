@@ -14,10 +14,9 @@ import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.gateway.img.ImgManager;
-import lombok.extern.slf4j.Slf4j;
 
 @Component("fsd")
-@Slf4j
+//@Slf4j
 public class FsDownloadHttpHandler implements IHttpRequestHandler{
 
 	@Inject(required=false)
@@ -35,20 +34,13 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 		String[] ps = uri.split("/");
 		String n = ps[ps.length-1];
 		
-		String subfix = null;
-		int idx = n.lastIndexOf(".");
-		if(idx > 0) {
-			n = n.substring(0,idx);
-			subfix = ps[ps.length-1].substring(idx+1);
-		}
-		
 		//Long fid = Long.parseLong(n);//最后一个是文件ID
 		DBObject q = new BasicDBObject();
 		q.put(IObjectStorage._ID, n);
 		
 		GridFSDBFile file = fs.findOne(q);
 		if(file == null) {
-			boolean suc = this.imgMng.getFile(n, subfix, resp);
+			boolean suc = this.imgMng.getFile(n, resp);
 			if(suc) {
 				return;
 			}
@@ -66,7 +58,9 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 			}
 		} catch (IOException e) {}
 		
-		log.info(sb.toString());*/
+		log.info(sb.toString());
+		*/
+		
 		if(file != null) {
 			resp.setHeader("Content-Type",file.getContentType());
 			resp.write(file.getInputStream(), (int)file.getLength());
@@ -83,5 +77,4 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 		return !Utils.isEmpty(uri) && uri.startsWith(Constants.HTTP_fsContext);
 	}
 
-	
 }

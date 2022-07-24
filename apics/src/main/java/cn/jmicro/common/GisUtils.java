@@ -6,7 +6,7 @@ import java.math.RoundingMode;
 /**
  * gps纠偏算法，适用于google,高德体系的地图
  */
-public class GsUtils {
+public class GisUtils {
 
 	private final static double a = 6378245.0;
 	private final static double pi = 3.1415926535897932384626;

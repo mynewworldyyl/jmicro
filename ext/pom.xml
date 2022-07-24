@@ -23,6 +23,7 @@
 		<module>dataservice</module>
 		<module>payservice</module>
 		<module>barcode</module>
+		<module>objectservice</module>
 	</modules>
 	<dependencies>
 		<dependency>

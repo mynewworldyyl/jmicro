@@ -16,10 +16,13 @@
  */
 package cn.jmicro.api.persist;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.storage.FileJRso;
 import cn.jmicro.common.Utils;
 
 /**
@@ -76,6 +79,13 @@ public interface IObjectStorage {
 	
 	Map<String,Object> getFields(String table,Map<String, Object> filter, String...fields);
 	
+	RespJRso<String> saveFile2Db(FileJRso pr);
+	
+	RespJRso<String> saveSteam2Db(FileJRso pr,InputStream is);
+	
+	RespJRso<String> saveByteArray2Db(FileJRso pr,byte[] byteData);
+	
+	boolean fileSystemEnable();
 	/**
 	 * 
 	 * @param sort

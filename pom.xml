@@ -259,7 +259,12 @@
 			 <artifactId>jmicro.gateway.client</artifactId>
 			 <version>${jmicro.version}</version>
         	</dependency>
-
+			<dependency>
+			<groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.objectservice</artifactId>
+			 <version>${jmicro.version}</version>
+        	</dependency>
+	    
 <!-- 	         <dependency>
 				 <groupId>cn.jmicro</groupId>
 				 <artifactId>transport.mina</artifactId>

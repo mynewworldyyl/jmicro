@@ -5,6 +5,7 @@ import java.util.Map;
 
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.storage.FileJRso;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 
 @AsyncClientProxy
@@ -27,5 +28,7 @@ public interface IFileJMSrv {
 	IPromise<RespJRso<Integer>> initDownloadFile(int actId,String resId);
 	
 	IPromise<RespJRso<Map<String,Object>>> queryDict();
+	
+	IPromise<RespJRso<String>> save2Db(FileJRso pr);
 	
 }

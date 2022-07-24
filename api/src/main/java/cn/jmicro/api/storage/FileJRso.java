@@ -1,4 +1,6 @@
-package cn.jmicro.gateway.fs.api;
+package cn.jmicro.api.storage;
+
+import java.util.Map;
 
 import cn.jmicro.api.annotation.IDStrategy;
 import cn.jmicro.api.annotation.SO;
@@ -25,9 +27,11 @@ public class FileJRso {
 	
 	private String name;
 	
+	private String localPath;
+	
 	private String group;
 	
-	private byte status;
+	private Byte status;
 	
 	private int downloadNum;
 	
@@ -46,5 +50,9 @@ public class FileJRso {
 	private boolean tochar = false;
 	
 	private long updatedTime;
+	
+	private int mcode = 0;
+	
+	private Map<String, String> attr;
 	
 }

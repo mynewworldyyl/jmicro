@@ -285,6 +285,9 @@ public final class Constants {
 	public static final byte MSG_TYPE_SYSTEM_REQ_JRPC = 0x0F; // 特殊RPC 接口，如ID RPC接口中
 	public static final byte MSG_TYPE_SPECAIL_RRESP_JRPC = 0x10;//16
 	
+	public static final byte MSG_TYPE_OBJECT_STORAGE = 0x11; //17 对象存储消息
+	public static final byte MSG_TYPE_OBJECT_STORAGE_RESP = 0x12;//18
+	
 	/*=====================Message END=======================*/
 	
 	//time unit constant

@@ -33,7 +33,7 @@ public class Promise<R> implements IPromise<R>{
 	
 	private Object context = null;
 	
-	private int timeout = 30000;
+	private int timeout = 10000*1000;
 	
 	private AtomicInteger ai = null;
 	
@@ -135,12 +135,12 @@ public class Promise<R> implements IPromise<R>{
 		
 		done = true;
 		if(callbacks != null) {
-			Exception e1 = null;
+			Throwable e1 = null;
 			for(int i = 0; i < this.callbacks.length; i++) {
 				if(callbacks[i] != null) {
 					try {
 						callbacks[i].onResult(result, fail,context);
-					}catch(Exception e) {
+					}catch(Throwable e) {
 						e.printStackTrace();
 						e1 = e;
 					}
@@ -163,15 +163,21 @@ public class Promise<R> implements IPromise<R>{
 					this.locker.wait(timeout);
 				} catch (InterruptedException e) {
 					//logger.error("getResult",e);
+					ex = new CommonException("timeout:" + timeout,e);
 					this.setFail(MC.MT_REQ_TIMEOUT, "timeout");
 				}
 			}
 		}
+		
 		if(ex != null) {
 			CommonException ex0 = this.ex;
-			this.ex = null;
+			//this.ex = null;
 			throw ex0;
 		}
+		
+		/*if(result == null) {
+			throw new CommonException("timeout:" + timeout);
+		}*/
 		
 		return result;
 	}
@@ -240,7 +246,11 @@ public class Promise<R> implements IPromise<R>{
 	
 	@Override
 	public boolean isSuccess() {
-		getResult();
+		try {
+			getResult();
+		} catch (Exception e) {
+			return false;
+		}
 		return fail == null;
 	}
 

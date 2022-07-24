@@ -22,10 +22,9 @@
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>jmicro.mongodb</artifactId>
 	    </dependency>
-	    <dependency>
-	      <groupId>net.coobird</groupId>
-		  <artifactId>thumbnailator</artifactId>
-		  <version>0.4.17</version>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.objectservice</artifactId>
 	    </dependency>
 	</dependencies>
    

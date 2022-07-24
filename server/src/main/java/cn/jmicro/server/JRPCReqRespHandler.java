@@ -16,6 +16,9 @@
  */
 package cn.jmicro.server;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +31,7 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ICodecFactory;
+import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exception.RpcException;
 import cn.jmicro.api.exception.TimeoutException;
@@ -53,6 +57,7 @@ import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.JsonUtils;
 
 /**
  *      请求响应式RPC请求
@@ -400,7 +405,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 			// SF.doSubmit(MonitorConstant.SERVER_REQ_SERVICE_NOT_FOUND,req,null);
 			throw new CommonException("Service not found,srv: " + sm.getKey().getSnvHash());
 		}
-
+		
 		JMicroContext cxt = JMicroContext.get();
 		cxt.setString(JMicroContext.CLIENT_SERVICE, req.getServiceName());
 		cxt.setString(JMicroContext.CLIENT_NAMESPACE, req.getNamespace());
