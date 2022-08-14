@@ -773,8 +773,8 @@ public class JMicroContext  {
 	 * @param defautl
 	 * @return
 	 */
-	public <T> T getSessionParam(String fname,T defautl){
-		return getSessionParam0(this.getAccount(),fname,defautl);
+	public <T> T getSessionParam(String fname,T defautl,Class<T> type){
+		return getSessionParam0(this.getAccount(),fname,defautl,type);
 	}
 	
 	/**
@@ -783,13 +783,13 @@ public class JMicroContext  {
 	 * @param defautl
 	 * @return
 	 */
-	public <T> T getSSessionParam(String fname,T defautl){
-		return getSessionParam0(this.getSysAccount(),fname,defautl);
+	public <T> T getSSessionParam(String fname,T defautl,Class<T> type){
+		return getSessionParam0(this.getSysAccount(),fname,defautl,type);
 	}
 	
-	private <T> T getSessionParam0(ActInfoJRso ai,String fname,T defautl){
+	private <T> T getSessionParam0(ActInfoJRso ai,String fname,T defautl,Class<T> type){
 		if(ai == null) return null;
-		T v = ch.hget(sessionDataKey(ai.getActName()), fname);
+		T v = ch.hget(sessionDataKey(ai.getActName()), fname,type);
 		if(v == null) return defautl;
 		return v;
 	}

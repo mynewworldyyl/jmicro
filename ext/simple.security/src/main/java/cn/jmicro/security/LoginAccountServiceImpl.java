@@ -84,7 +84,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 				
 				String oldLk = null;
 				if(cache.exist(akey)) {
-					oldLk = cache.get(akey);
+					oldLk = cache.get(akey,String.class);
 				}
 				
 				if(Utils.isEmpty(oldLk)) {

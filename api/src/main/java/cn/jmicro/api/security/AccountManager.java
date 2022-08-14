@@ -90,7 +90,7 @@ public class AccountManager {
 			
 			String oldLk = null;
 			if(cache.exist(akey)) {
-				oldLk = cache.get(akey);
+				oldLk = cache.get(akey,String.class);
 			}
 			
 			if(oldLk == null) {
@@ -100,7 +100,7 @@ public class AccountManager {
 				cache.put(akey, ai.getLoginKey(),expired);
 				cache.put(key(ai.getId()+""), ai.getLoginKey(),expired);
 			} else {
-				ai = cache.get(oldLk);
+				ai = cache.get(oldLk,ActInfoJRso.class);
 			}
 			r.setCode(RespJRso.CODE_SUCCESS);
 			r.setData(ai);
@@ -120,7 +120,7 @@ public class AccountManager {
 	public boolean forceAccountLogout(String actName) {
 		String akey = key(actName);
 		if(cache.exist(akey)) {
-			String lk = cache.get(akey);
+			String lk = cache.get(akey,String.class);
 			if(StringUtils.isNotEmpty(lk)) {
 				logger.warn("Account "+actName+" force logout by: " + JMicroContext.get().getAccount().getActName());
 				this.logout(lk);
@@ -133,7 +133,7 @@ public class AccountManager {
 	
 	public ActInfoJRso getAccount(String loginKey) {
 		if(cache.exist(loginKey)) {
-			ActInfoJRso ai = cache.get(loginKey);
+			ActInfoJRso ai = cache.get(loginKey,ActInfoJRso.class);
 			long curTime = TimeUtils.getCurTime();
 			if(curTime - ai.getLastActiveTime() > updateExpired) {
 				if(LG.isLoggable(MC.LOG_DEBUG)) {
@@ -152,7 +152,7 @@ public class AccountManager {
 		}
 		String sk = "_sess:" + loginKey;
 		if(cache.exist(sk)) {
-			return cache.get(sk);
+			return cache.get(sk, Map.class);
 		}
 		return null;
 	}

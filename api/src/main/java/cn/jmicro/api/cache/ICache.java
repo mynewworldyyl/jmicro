@@ -40,11 +40,11 @@ public interface ICache {
 		return k;
 	}
 	
-	boolean put(String key,Object val);
+	<T> boolean put(String key, T val);
 	
 	boolean del(String key);
 	
-	<T> T get(String key);
+	<T> T get(String key, Class<T> type);
 	
 	boolean exist(String key);
 	
@@ -58,6 +58,16 @@ public interface ICache {
 	<T> boolean put(String key,T val,long expire);
 	
 	<T> boolean setNx(String key,T val);
+	
+	/**
+	 * 对当前KEY下的值加val,相加后如果结果大于或等于0，则将结果作为新值并返回结果值，否则返回-1,结果不变。
+	 * 此操作必须保证原子性
+	 * @param key
+	 * @param val 可以是负数，表示减法，如果是正数，表示加法
+	 * @return
+	 */
+	int increcement(String key,int val);
+	
 	
 	/**
 	 *  超时时间 = expire + randomVal, randomVal是一个限机数最大值，真实生成的值在0到randomVal之间
@@ -107,7 +117,7 @@ public interface ICache {
 	
 	boolean hdel(String key, String fname);
 	
-	<T> T hget(String key, String fname);
+	<T> T hget(String key, String fname, Class<T> type);
 	
 	boolean hexist(String key, String fname);
 

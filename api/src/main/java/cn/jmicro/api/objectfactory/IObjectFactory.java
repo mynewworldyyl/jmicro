@@ -20,11 +20,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import cn.jmicro.api.choreography.ProcessInfoJRso;
-import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.masterelection.IMasterChangeListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.security.ILoginStatusListener;
 /**
  * 为JMicro微服务框架量身定制的IOC容器，具有基本的依赖注入，属性注入，属性动态更新，生成动态代理对像，动态代理远程对像，动态代理服务对像等功能。
  * 此IOC只能创建无参数构造函数的类，如果类不能满足此条件，则不能通过IOC创建，但可以在外部创建好后注册到IOC容器。
@@ -147,6 +147,8 @@ public interface IObjectFactory {
 	 * @param listener
 	 */
 	//void addPostReadyListener(IFactoryListener listener);
+	
+	void addLoginStatusListener(ILoginStatusListener listener);
 	
 	Class<?> loadCls(String clsName);
 	

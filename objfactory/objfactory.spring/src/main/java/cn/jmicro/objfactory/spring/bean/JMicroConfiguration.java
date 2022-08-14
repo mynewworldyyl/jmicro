@@ -34,6 +34,7 @@ import cn.jmicro.api.objectsource.IObjectSource;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.security.ILoginStatusListener;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.objfactory.spring.JMicroObjectSource2Spring;
@@ -221,6 +222,11 @@ public class JMicroConfiguration implements ApplicationContextAware{
 						pi,ProcessInfo.class.getName(),
 						SpringAndJmicroComponent.class.getClassLoader());*/
 				return pi;
+			}
+
+			@Override
+			public void addLoginStatusListener(ILoginStatusListener listener) {
+				of.addLoginStatusListener(listener);
 			}
 			
 		};

@@ -54,7 +54,7 @@ public final class DateUtils {
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSSSSST = "yyyy-MM-dd HH:mm:ss.SSS'T'";
 	 
 	 public static final String PATTERN_YYYY_MM_DDTHHMMSSSSST = "yyyy-MM-dd'T'HH:mm:ss.SSS";
-	 
+	
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSSZZZ = "yyyy-MM-dd HH:mm:ss SSS";
 	 
 	 public static final String PATTERN_YYYY_MM_DD_HHMMSS = "yyyy-MM-dd HH:mm:ss";
@@ -213,6 +213,10 @@ public final class DateUtils {
        //Args.notNull(pattern, "Pattern");
        final SimpleDateFormat formatter = DateFormatHolder.formatFor(pattern);
        return formatter.format(date);
+   }
+   
+   public static String formatDate(final long date, final String pattern) {
+       return formatDate(new Date(date),pattern);
    }
 
    /**

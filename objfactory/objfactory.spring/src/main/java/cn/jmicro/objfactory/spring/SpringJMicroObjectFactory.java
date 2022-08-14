@@ -12,6 +12,7 @@ import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.security.ILoginStatusListener;
 
 //@Component
 public class SpringJMicroObjectFactory implements IObjectFactory {
@@ -120,6 +121,12 @@ public class SpringJMicroObjectFactory implements IObjectFactory {
 	@Override
 	public ProcessInfoJRso getProcessInfo() {
 		return null;
+	}
+
+	@Override
+	public void addLoginStatusListener(ILoginStatusListener listener) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	public IObjectFactory getOf() {

@@ -74,7 +74,7 @@ public class CgLibProxyInterceptor implements MethodInterceptor {
 		try {
 			rst = srcm.invoke(srcObj, args);
 		} catch (InvocationTargetException e) {
-			logger.error(m.getDeclaringClass().getName() + "." + m.getName()+"," + argsStr(args));
+			logger.error(m.getDeclaringClass().getName() + "." + m.getName()+"," + argsStr(args),e);
 			throw e;
 		}
 		

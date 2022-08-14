@@ -17,11 +17,14 @@
  */
 package cn.jmicro.gateway;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
@@ -208,7 +211,7 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		String ck = IServer.cacheKey(rpcClassloader,msg,sm,codecFactory);
 		if(ck == null) return false;
 		
-		Object val = cache.get(ck);
+		ByteBuffer val = cache.get(ck,ByteBuffer.class);
 		if(val != null) {
 			//从优先从缓存中取数据
 			logger.info("response from cache: " + sm.getKey().fullStringKey());

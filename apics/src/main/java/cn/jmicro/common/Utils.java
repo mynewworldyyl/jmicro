@@ -33,6 +33,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,6 +45,7 @@ import java.util.regex.Pattern;
 
 import javax.activation.MimetypesFileTypeMap;
 
+import cn.jmicro.api.utils.DateUtils;
 import cn.jmicro.common.util.JsonUtils;
 
 /**
@@ -457,5 +459,23 @@ public class Utils {
 	private final double TB = GB * 1024;
 
 	private final double PB = TB * 1024;
+	
+	/**
+	 * 
+	 * @param strDate  DateUtils.PATTERN_YYYY_MM_DD_HHMMSSZZZ
+	 * @return
+	 */
+	public long getMsByStringDate(String strDate) {
+		Date d = DateUtils.parseDate(strDate,DateUtils.PATTERN_YYYY_MM_DD_HHMMSSZZZ);
+		return d.getTime();
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(Utils.getIns().getMsByStringDate("2022-08-13 18:30:00 000"));
+		System.out.println(Utils.getIns().getMsByStringDate("2022-08-13 19:00:00 000"));
+		System.out.println(Utils.getIns().getMsByStringDate("2022-08-13 19:30:00 000"));
+		//Utils.getIns().getMsByStringDate("2022-08-11 10:30:00 000");
+		//Utils.getIns().getMsByStringDate("2022-08-11 11:00:00 000");
+	}
 
 }

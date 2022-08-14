@@ -385,8 +385,8 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			JMicroContext.get().setAccount(ai);
 		}
 		
-		if(sm != null) {
-			if(ai == null && sm.isNeedLogin()) {
+		if(sm != null && sm.isNeedLogin()) {
+			if(ai == null && sai == null ) {
 				RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid login key!"+",insId: " + msg.getInsId());
 				String errMsg = "JRPC check invalid login key!"+",insId: " + msg.getInsId();
 				LG.log(MC.LOG_ERROR, TAG, errMsg);
@@ -394,6 +394,15 @@ public class ServerMessageReceiver implements IMessageReceiver{
 				resp2Client(se,s,msg,sm);
 				return false;
 			} 
+			
+			if(ai == null && sm.getForType() == Constants.FOR_TYPE_USER) {
+				String errMsg = "Invalid client login key: " + lk+",insId: " + msg.getInsId();
+				RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,errMsg);
+				LG.log(MC.LOG_ERROR, TAG,errMsg);
+				MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+				resp2Client(se,s,msg,sm);
+				return false;
+			}
 		
 			if(sai == null && sm.getForType() == Constants.FOR_TYPE_SYS) {
 				String errMsg = "Invalid system login key: " + slk+",insId: " + msg.getInsId();

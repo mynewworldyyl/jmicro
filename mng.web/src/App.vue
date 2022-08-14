@@ -35,6 +35,12 @@
 							<Icon type="ios-cog"></Icon>{{"ProcessLog"|i18n("Process Log")}}
 						</Menu-item>
 					</Menu-group>
+					
+					<Menu-group :title="'Job'|i18n">
+						<Menu-item name="__scheduleJobConfig">
+							<Icon type="ios-cog"></Icon>{{"scheduleJobConfig"|i18n("scheduleJobConfig")}}
+						</Menu-item>
+					</Menu-group>
 				</Submenu>
 
 				<Submenu name="cfg">

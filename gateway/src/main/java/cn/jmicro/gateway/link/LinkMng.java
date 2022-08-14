@@ -263,9 +263,9 @@ public class LinkMng implements IMessageHandler {
 						int bt = (int)(et*0.5);
 						bt = r.nextInt() % bt;//加一个0到二分之一正负ET之间的随机数，避免缓存雪崩
 						int rv = et + bt;
-						cache.put(ck, msg.getPayload(),rv);
-					}else {
-						cache.put(ck, msg.getPayload(),Math.abs(r.nextInt()));
+						cache.put(ck, sb, rv);
+					} else {
+						cache.put(ck, sb, Math.abs(r.nextInt()));
 					}
 					sb.reset();
 				}

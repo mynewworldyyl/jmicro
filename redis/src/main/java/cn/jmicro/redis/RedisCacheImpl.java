@@ -16,8 +16,10 @@
  */
 package cn.jmicro.redis;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -35,6 +37,7 @@ import cn.jmicro.api.cache.ICacheRefresher;
 import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.codec.IEncoder;
+import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -73,6 +76,19 @@ public class RedisCacheImpl implements ICache {
 	
 	private final Map<Long,TimerTicker> timers = new ConcurrentHashMap<>();
 	
+	private static final String ATOMIC_DEC_SCRIPT;
+	static {
+		StringBuilder sb = new StringBuilder();
+		sb.append("local k = KEYS[1];\n");
+		sb.append("local cnt = tonumber(ARGV[1]);\n");
+		sb.append("local curVal = tonumber(redis.call('GET', k));\n");//取当前值
+		sb.append("if cnt < 0 and curVal < -cnt then \n");
+		sb.append("return -1; \n");//库存不够，扣减失败，直接返回失败
+		sb.append("end\n");
+		sb.append("return redis.call('INCRBY', k, cnt);\n");
+		ATOMIC_DEC_SCRIPT = sb.toString();
+	}
+	
 	private String[] adminPrefixs = new String[] {
 			JMicroContext.CACHE_LOGIN_KEY,
 			Constants.CACHE_DIR_PREFIX
@@ -107,7 +123,19 @@ public class RedisCacheImpl implements ICache {
 	}
 	
 	@Override
-	public boolean put(String key, Object val) {
+	public int increcement(String key, int val) {
+		key = this.securityKey(key);
+		Jedis r = jeditPool.getResource();
+		try {
+			int endId = Integer.parseInt(r.eval(ATOMIC_DEC_SCRIPT, 1, key,val+"").toString());
+			return endId;
+		}finally {
+			r.close();
+		}
+	}
+
+	@Override
+	public <T> boolean put(String key, T val) {
 		checkPermission(key);
 		
 		if(StringUtils.isEmpty(key)) {
@@ -126,12 +154,8 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		ByteBuffer bb = (ByteBuffer)codeFactory.getEncoder(Message.PROTOCOL_BIN).encode(val);
-		if(bb == null) {
-			logger.error(val.toString() + " encode error");
-			return false;
-		}
-		byte[] value = bb.array();
+		byte[] value = encodeValue(val);// bb.array();
+		if(value == null) return false;
 		
 		Jedis jedis = null;
 		try {
@@ -147,6 +171,94 @@ public class RedisCacheImpl implements ICache {
 			}
 		}
 		
+	}
+	
+	@SuppressWarnings("unchecked")
+	private Object decodeValue(byte[] data, Class<?> cls) {
+		if(data == null || data.length == 0) return null;
+
+		try {
+			if(TypeUtils.isByteBuffer(cls)){
+				return ByteBuffer.wrap(data);
+			} if(cls == String.class) {
+				return new String(data,Constants.CHARSET);
+			}else if(TypeUtils.isVoid(cls)) {
+				return null;
+			}else if(TypeUtils.isInt(cls)){
+				return Integer.parseInt(new String(data, Constants.CHARSET));
+			}else if(TypeUtils.isByte(cls)){
+				return Byte.parseByte(new String(data, Constants.CHARSET));
+			}else if(TypeUtils.isShort(cls)){
+				return Short.parseShort(new String(data, Constants.CHARSET));
+			}else if(TypeUtils.isLong(cls)){
+				return Long.parseLong(new String(data, Constants.CHARSET));
+			}else if(TypeUtils.isFloat(cls)){
+				return Float.parseFloat(new String(data, Constants.CHARSET));
+			}else if(TypeUtils.isDouble(cls)){
+				return Double.parseDouble(new String(data,Constants.CHARSET));
+			}else if(TypeUtils.isBoolean(cls)){
+				return data[0] == 1;
+			}else if(TypeUtils.isChar(cls)){
+				return new String(data,Constants.CHARSET).charAt(0);
+			}else if(TypeUtils.isDate(cls)){
+				long lv = Long.parseLong(new String(data, Constants.CHARSET));
+				return new Date(lv);
+			} else {
+				return codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(data), cls);
+			}
+		} catch (NumberFormatException | UnsupportedEncodingException e) {
+			logger.error(cls.getName(),e);
+			throw new CommonException(cls.getName(),e);
+		}
+	
+	}
+
+	@SuppressWarnings("unchecked")
+	private <T> byte[] encodeValue(T obj) {
+		
+		if(obj == null) {
+			return new byte[0];
+		}
+		
+		Class<T> cls = (Class<T>)obj.getClass();
+		
+		try {
+			if(TypeUtils.isByteBuffer(cls)){
+				return ((ByteBuffer)obj).array();
+			} if(cls == String.class) {
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isVoid(cls)) {
+				return new byte[0];
+			}else if(TypeUtils.isInt(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isByte(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isShort(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isLong(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isFloat(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isDouble(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isBoolean(cls)){
+				boolean b = (Boolean)obj;
+				return b? new byte[] {1} : new byte[] {0};
+			}else if(TypeUtils.isChar(cls)){
+				return obj.toString().getBytes(Constants.CHARSET);
+			}else if(TypeUtils.isDate(cls)){
+				return (((Date)obj).getTime()+"").getBytes(Constants.CHARSET);
+			} else {
+				ByteBuffer bb = (ByteBuffer)codeFactory.getEncoder(Message.PROTOCOL_BIN).encode(obj);
+				if(bb != null) {
+					return bb.array();
+				}
+			}
+		} catch (UnsupportedEncodingException e) {
+			logger.error(obj.toString(),e);
+			throw new CommonException(obj.toString(),e);
+		}
+		throw new CommonException(obj.toString());
 	}
 
 	private void checkPermission(String key) {
@@ -177,7 +289,7 @@ public class RedisCacheImpl implements ICache {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T get(String key) {
+	public <T> T get(String key, Class<T> type) {
 		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {
 			logger.error("Get key cannot be NULL");
@@ -199,7 +311,8 @@ public class RedisCacheImpl implements ICache {
 			 
 			if(val != null && val.length > 0) {
 				//命中缓存,理想情况下,大部份缓存都走到这里返回
-				return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
+				//return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
+				return (T)this.decodeValue(val, type);
 			} else {
 				 
 				//上次从源读取过相同数据,但是数据不存在,则判断和上次更新时间是否超过1秒,是则更新缓存，否则直接返回空
@@ -230,7 +343,8 @@ public class RedisCacheImpl implements ICache {
 				}
 				
 				if(val != null) {
-					return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
+					return (T)this.decodeValue(val, type);
+					//return (T)codeFactory.getDecoder(Message.PROTOCOL_BIN).decode(ByteBuffer.wrap(val), null);
 				}
 				return null;
 			}
@@ -290,8 +404,9 @@ public class RedisCacheImpl implements ICache {
 			return false;
 		}
 		
-		byte[] value = null;
-		if(val == null || val.toString().equals("")) {
+		byte[] value = this.encodeValue(val);
+		
+		/*if(val == null || val.toString().equals("")) {
 			value = new byte[0];
 		} else {
 			ByteBuffer bb = (ByteBuffer)codeFactory.getEncoder(Message.PROTOCOL_BIN).encode(val);
@@ -300,7 +415,7 @@ public class RedisCacheImpl implements ICache {
 				return false;
 			}
 			value = bb.array();
-		}
+		}*/
 		
 		Jedis jedis = null;
 		try {
@@ -509,7 +624,7 @@ public class RedisCacheImpl implements ICache {
 	}
 
 	@Override
-	public <T> T hget(String key, String fname) {
+	public <T> T hget(String key, String fname, Class<T> type) {
 
 		checkPermission(key);
 		if(StringUtils.isEmpty(key)) {

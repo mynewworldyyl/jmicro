@@ -46,7 +46,7 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.FileUtils;
 import cn.jmicro.common.util.JsonUtils;
 
-@Component
+@Component(level=1)
 public class MongodbBaseObjectStorage implements IObjectStorage {
 
 	private final static Logger logger = LoggerFactory.getLogger(MongodbBaseObjectStorage.class);

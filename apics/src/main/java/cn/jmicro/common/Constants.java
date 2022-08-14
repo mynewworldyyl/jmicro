@@ -332,12 +332,28 @@ public final class Constants {
 	
 	//缓存策略
 	public static final byte CACHE_TYPE_NO = 0;
+	
 	//服务方法级缓存
 	public static final byte CACHE_TYPE_MCODE = 1;
+	
 	//服务方法 + 账号
 	public static final byte CACHE_TYPE_ACCOUNT = 2;
 	
 	//消息payload计算hash作为key
 	public static final byte CACHE_TYPE_PAYLOAD = 3;
+	
+	//消息payload计算hash作为key + 账号
+	public static final byte CACHE_TYPE_PAYLOAD_AND_ACT = 4;
+	
+	//操作类型，具体意义由实现方及使用方加以细化
+	public static final byte OP_TYPE_ADD = 1;
+	public static final byte OP_TYPE_UPDATE = 2;
+	public static final byte OP_TYPE_DELETE = 3;
+	public static final byte OP_TYPE_QUERY = 4;
+	public static final byte OP_TYPE_START = 5;//开始
+	public static final byte OP_TYPE_END = 6;//结束
+	public static final byte OP_TYPE_PAUSE = 7;//暂停
+	public static final byte OP_TYPE_RESUME = 8;//唤醒
+	public static final byte OP_TYPE_STATUS = 9;
 	
 }

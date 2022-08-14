@@ -35,6 +35,7 @@ import cn.jmicro.api.objectfactory.IPostInitListener;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.AsyncConfigJRso;
 import cn.jmicro.api.registry.ServiceItemJRso;
+import cn.jmicro.api.security.ILoginStatusListener;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -199,7 +200,12 @@ public class SpringObjectFactory implements IObjectFactory {
 		reg2Spring(srv);
 		return srv;
 	}
-
+	
+	@Override
+	public void addLoginStatusListener(ILoginStatusListener listener) {
+		ori.addLoginStatusListener(listener);
+	}
+	
 	@Override
 	public <T> Set<T> getByParent(Class<T> parrentCls) {
 		 Set<T> set = ori.getByParent(parrentCls);

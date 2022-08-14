@@ -31,6 +31,13 @@
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 		</dependency>
+		
+		<dependency>
+			 <groupId>org.quartz-scheduler</groupId>
+			  <artifactId>quartz</artifactId>
+    		 <version>2.3.0</version>
+		</dependency>
+		
 		<!-- https://mvnrepository.com/artifact/org.eclipse.equinox/common -->
 		<dependency>
 		    <groupId>org.eclipse.equinox</groupId>

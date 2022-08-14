@@ -75,6 +75,7 @@ import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.IAccountServiceJMSrv;
+import cn.jmicro.api.security.ILoginStatusListener;
 import cn.jmicro.api.security.genclient.IAccountServiceJMSrv$JMAsyncClient;
 import cn.jmicro.api.service.IServerServiceProxy;
 import cn.jmicro.api.service.ServiceLoader;
@@ -123,6 +124,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private byte stage = INIT;
 	
+	private List<ILoginStatusListener> loginStatusListers = new ArrayList<>();
+	
 	private List<IPostFactoryListener> postReadyListeners = new ArrayList<>();
 	
 	private List<IPostInitListener> postListeners = new ArrayList<>();
@@ -141,6 +144,18 @@ public class SimpleObjectFactory implements IObjectFactory {
 	
 	private	Set<IObjectSource> osSet = new HashSet<>();
 	
+	@Override
+	public void addLoginStatusListener(ILoginStatusListener listener) {
+		for(ILoginStatusListener l :loginStatusListers) {
+			if(listener == l) return;
+		}
+		
+		loginStatusListers.add(listener);
+		if(pi != null && pi.isLogin()) {
+			listener.statusChange(ILoginStatusListener.STATUS_LOGIN, pi.getAi());
+		}
+	}
+
 	@Override
 	public void foreach(Consumer<Object> c) {
 		for(Object obj : objs.values()) {
@@ -306,12 +321,19 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}
 		}
 		
-		if(!osSet.isEmpty() && !parrentCls.getName().startsWith(Constants.SYSTEM_PCK_NAME_PREFIXE)) {
-			for(IObjectSource os : osSet) {
-				Set<T> rst = os.getByParent(parrentCls);
-				if(rst != null && !rst.isEmpty()) {
-					set.addAll(rst);
+		if(!osSet.isEmpty() && (set.isEmpty() || !parrentCls.getName().startsWith(Constants.SYSTEM_PCK_NAME_PREFIXE))) {
+			ClassLoader cl = Thread.currentThread().getContextClassLoader();
+			Thread.currentThread().setContextClassLoader(rpcClassLoader);
+			try {
+				for(IObjectSource os : osSet) {
+					
+					Set<T> rst = os.getByParent(parrentCls);
+					if(rst != null && !rst.isEmpty()) {
+						set.addAll(rst);
+					}
 				}
+			}finally {
+				Thread.currentThread().setContextClassLoader(cl);
 			}
 		}
 		
@@ -895,6 +917,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				String p = ChoyConstants.INS_ROOT+"/" + pi.getId();
 				op.setData(p,JsonUtils.getIns().toJson(pi));
 				
+				notifyLogin(ILoginStatusListener.STATUS_LOGIN,r.getData());
+				
 				if(self) {
 					return;//安全中心自身不需要心跳刷新账号
 				}
@@ -910,8 +934,12 @@ public class SimpleObjectFactory implements IObjectFactory {
 							logger.error(e.getMessage());
 						}
 						//刷新系统账号，防止超时
-						if(resp != null && resp.getData()) {
-							return;
+						if(resp != null) {
+							if(resp.getCode() == RespJRso.CODE_SUCCESS ) {
+								if(resp.getData()) return;
+							} else {
+								logger.error(resp.toString());
+							}
 						}
 					}
 					
@@ -944,7 +972,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 							LG.log(MC.LOG_ERROR, SimpleObjectFactory.class
 									 , "System login fail and exit jvm cnt"+loginCnt.get()+" act:" + pi.getAi().getActName()+",actId: "+ pi.getAi().getId());
 							EnterMain.waitTime(3000);
-							System.exit(0);
+							//System.exit(0);
 						} 
 					}
 				});
@@ -980,6 +1008,13 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException("Account name not found for: " + adminClientId);
 			}*/
 		
+	}
+
+	private void notifyLogin(int statusLogin, ActInfoJRso ai) {
+		if(this.loginStatusListers.isEmpty()) return;
+		this.loginStatusListers.forEach(e->{
+			e.statusChange(statusLogin, ai);
+		});
 	}
 
 	private void notifyAfterInitPostListener0(List<Object> lobjs, Config cfg, Set<Object> systemObjs) {
@@ -1473,8 +1508,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			boolean isRequired = false;
 			Class<?> refCls = f.getType();
 			
-			/*if(refCls.getName().equals("cn.jmicro.api.choreography.ProcessInfo")) {
-				logger.debug("cn.jmicro.api.choreography.ProcessInfo");
+			/*if(cls.getName().equals("cn.jmicro.shop.api.service.FlashsalesTaskMng")) {
+				logger.debug("cn.jmicro.shop.api.service.FlashsalesTaskMng");
 			}*/
 			
 			//对某些类,命令行可以指定特定组件实例名称,系统对该类使用指定实例,忽略别的实例

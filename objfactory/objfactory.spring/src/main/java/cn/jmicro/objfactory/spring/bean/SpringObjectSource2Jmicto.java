@@ -73,8 +73,17 @@ public class SpringObjectSource2Jmicto implements IObjectSource{
 			Map<String,T> objs = cxt.getBeansOfType(cls);
 			if(objs == null || objs.isEmpty()) return null;
 			Set<T> set = new HashSet<>();
+			
+			ClassLoader cl = this.jmicroRpcClassloader;
+			if(cl == null) {
+				cl = Thread.currentThread().getContextClassLoader();
+				if(cl == null) {
+					cl = SpringObjectSource2Jmicto.class.getClassLoader();
+				}
+			}
+			
 			for(T o : objs.values()) {
-				Object c = SpringAndJmicroComponent.createLazyProxyObjectByCglib(o,AopUtils.getTargetClass(o).getName(),jmicroRpcClassloader);
+				Object c = SpringAndJmicroComponent.createLazyProxyObjectByCglib(o,AopUtils.getTargetClass(o).getName(),cl);
 				set.add((T)c);
 			}
 			springObjectParent.put(type, set);

@@ -162,6 +162,9 @@ public class ServiceInvokeManager {
 	
 	public <T> IPromise<T> call(int mcode, Object[] args) {
 		ServiceMethodJRso m = srvManager.getServiceMethodByHash(mcode);
+		if(m == null) {
+			new NullPointerException("服务方法为空：" + mcode);
+		}
 		return call(m,args);
 	}
 	

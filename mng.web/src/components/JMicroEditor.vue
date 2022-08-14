@@ -20,6 +20,8 @@
                         <!--  server monitor -->
                         <JMonitorEditor v-else-if="item.group == 'monitors'" :group="item"> </JMonitorEditor>
 
+						<JScheduleJobConfig v-else-if="item.group == 'scheduleJobConfig'" :group="item"> </JScheduleJobConfig>
+
                         <!--  service router -->
                         <!--<JRouterType v-else-if="item.group == 'router' && item.type == 't'" :selectItem="item"></JRouterType>
                         <JRouterGroup v-else-if="item.group == 'router' && item.type == 'g'" :selectItem="item"></JRouterGroup>
@@ -138,7 +140,8 @@
             JStatisServerItemView : () => import('./statis/JStatisServerItemView.vue'),
 
             JMonitorEditor : () => import('./monitor/JMonitorEditor.vue'),
-
+			JScheduleJobConfig : ()=>import('./monitor/JScheduleJobConfig.vue'),
+			
            /* JRouterGroup : () => import('./route/JRouterType.vue'),
             JRouterType : () => import('./route/JRouterGroup.vue'),*/
 
