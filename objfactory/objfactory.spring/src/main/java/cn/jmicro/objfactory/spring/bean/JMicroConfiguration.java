@@ -228,6 +228,11 @@ public class JMicroConfiguration implements ApplicationContextAware{
 			public void addLoginStatusListener(ILoginStatusListener listener) {
 				of.addLoginStatusListener(listener);
 			}
+
+			@Override
+			public void notifyPostListener(Object obj) {
+				of.notifyPostListener(obj);
+			}
 			
 		};
 	}

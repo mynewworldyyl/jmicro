@@ -9,6 +9,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +65,19 @@ public class ZxingUtils {
 //        MatrixToImageWriter.writeToPa(bitMatrix, format, file);
 //        return pathname;
 		return MatrixToImageWriter.toBufferedImage(bitMatrix);
+	}
+	
+	public static void enQRCodeToFile(String contents, int width, int height, File targetFile) throws WriterException, IOException {
+//      String uuid = UUID.randomUUID().toString().replace("-", "");
+		// 本地完整路径
+//      String pathname = path + "/" + uuid + "." + format;
+		// 生成二维码
+		BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height);
+//      Path file = new File(pathname).toPath();
+		// 将二维码保存到路径下
+//      MatrixToImageWriter.writeToPa(bitMatrix, format, file);
+//      return pathname;
+	    MatrixToImageWriter.writeToFile(bitMatrix, "png", targetFile);
 	}
 
 	/**

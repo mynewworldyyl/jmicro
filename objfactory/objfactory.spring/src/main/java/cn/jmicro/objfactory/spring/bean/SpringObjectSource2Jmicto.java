@@ -39,6 +39,7 @@ public class SpringObjectSource2Jmicto implements IObjectSource{
 				if(this.jmicroRpcClassloader == null) {
 					this.jmicroRpcClassloader = Thread.currentThread().getContextClassLoader();
 				}
+				
 				T c = SpringAndJmicroComponent.createLazyProxyObjectByCglib(obj,AopUtils.getTargetClass(obj).getName(),jmicroRpcClassloader);
 				springObjectTypes.put(type, c);
 				return c;

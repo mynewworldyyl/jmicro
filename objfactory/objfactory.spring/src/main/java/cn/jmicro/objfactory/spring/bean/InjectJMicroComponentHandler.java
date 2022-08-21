@@ -14,8 +14,10 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.JMicroComponent;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectsource.IObjectSource;
 import cn.jmicro.common.CommonException;
@@ -27,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InjectJMicroComponentHandler implements BeanPostProcessor/*,ApplicationListener<ApplicationEvent>*/{
 
+	private Set<CfgFieldHolder> cfgFields = new HashSet<>();
+	
 	private Set<FieldComponentHolder> jmicroComponentFields = new HashSet<>();
 	
 	private Set<ReadyMethodHolder> jmicroReadyMethods = new HashSet<>();
@@ -53,7 +57,13 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 				}
 				log.info("{}.{}",beanName,f.getName());
 				jmicroComponentFields.add(fh);
+			 }else if(f.isAnnotationPresent(Cfg.class)) {
+				 CfgFieldHolder fh = new CfgFieldHolder();
+				 fh.bean = bean;
+				 log.info("{}.{}",beanName,f.getName());
+				 cfgFields.add(fh);
 			 }
+		 
 		 }
 		 
 		 List<Method> methods = new ArrayList<>();
@@ -87,6 +97,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 		if(jmicroComponentFields.isEmpty()) return;
 		IObjectFactory of = beanFactory.getBean(IObjectFactory.class);
 		IObjectSource jmicroSource = beanFactory.getBean(IObjectSource.class);
+		Config cfg = jmicroSource.get(Config.class);
 		
 		for(FieldComponentHolder fc : jmicroComponentFields) {
 			Object com = null;
@@ -130,6 +141,19 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 			}
 		}
 		
+		for(CfgFieldHolder fc : cfgFields) {
+			try {
+				Object to = AopTargetUtils.getTarget(fc.bean);
+				if(to != null) {
+					of.notifyPostListener(to);
+				}else {
+					log.error("Target object not found: "+fc.bean.toString());
+				}
+			} catch (Exception e) {
+				log.error(fc.bean.toString(),e);
+			}
+		}
+		
 		if(!this.jmicroReadyMethods.isEmpty()) {
 			for(ReadyMethodHolder rm : this.jmicroReadyMethods) {
 				try {
@@ -146,6 +170,20 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 		private Field f;
 		private JMicroComponent ann;
 		private Method setMethod;
+	}
+	
+	private class CfgFieldHolder {
+		private Object bean;
+
+		@Override
+		public int hashCode() {
+			return bean == null?0:bean.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			return this.hashCode() == obj.hashCode();
+		}
 	}
 	
 	private class ReadyMethodHolder {

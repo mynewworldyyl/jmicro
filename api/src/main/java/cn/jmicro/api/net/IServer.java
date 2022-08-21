@@ -65,24 +65,15 @@ public interface IServer{
 			if(ai == null) {
 				return null;
 			}
-			mcode = sm.getKey().getSnvHash() + ":" + ai.getId();
+			mcode += ai.getId();
 		} else if(Constants.CACHE_TYPE_PAYLOAD == sm.getCacheType()) {
-			Integer ah = msg.getExtra(Message.EXTRA_KEY_ARG_HASH);
-			if(ah == null) {
-				 ByteBuffer sb = (ByteBuffer)msg.getPayload();
-				 sb.mark();
-				 RpcRequestJRso req;
-				 if(msg.isFromApiGateway() && msg.getUpProtocol() == Message.PROTOCOL_BIN) {
-					 req = parseApiGatewayRequest(rpcClassloader,msg, sm);
-				 } else {
-					 req = ICodecFactory.decode(codecFactory, sb,RpcRequestJRso.class, msg.getUpProtocol());
-				 }
-				 sb.reset();
-				 msg.setReq(req);
-				 ah = HashUtils.argHash(req.getArgs());
-				 msg.putExtra(Message.EXTRA_KEY_ARG_HASH, ah);
+			mcode += payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
+		} else if(Constants.CACHE_TYPE_PAYLOAD_AND_ACT == sm.getCacheType()) {
+			ActInfoJRso ai = JMicroContext.get().getAccount();
+			if(ai == null) {
+				return null;
 			}
-			mcode =  mcode + ":" + ah;
+			mcode += ai.getId() +":" + payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
 		} else {
 			return null;
 		}
@@ -90,6 +81,30 @@ public interface IServer{
 		return Constants.CACHE_DIR_PREFIX + mcode;
 	}
 	
+	static Integer payloadCacheKey(RpcClassLoader rpcClassloader, Message msg, 
+			ServiceMethodJRso sm, ICodecFactory codecFactory) {
+		Integer ah = msg.getExtra(Message.EXTRA_KEY_ARG_HASH);
+
+		if (ah != null) {
+			return ah;
+		}
+
+		ByteBuffer sb = (ByteBuffer) msg.getPayload();
+		sb.mark();
+		RpcRequestJRso req;
+		if (msg.isFromApiGateway() && msg.getUpProtocol() == Message.PROTOCOL_BIN) {
+			req = parseApiGatewayRequest(rpcClassloader, msg, sm);
+		} else {
+			req = ICodecFactory.decode(codecFactory, sb, RpcRequestJRso.class, msg.getUpProtocol());
+		}
+		sb.reset();
+		msg.setReq(req);
+		ah = HashUtils.argHash(req.getArgs());
+		msg.putExtra(Message.EXTRA_KEY_ARG_HASH, ah);
+
+		return ah;
+	}
+
 	public static RpcRequestJRso parseApiGatewayRequest(RpcClassLoader rpcClassloader,Message msg, ServiceMethodJRso sm) {
 		try {
 			RpcRequestJRso req = new RpcRequestJRso();

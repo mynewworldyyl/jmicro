@@ -54,6 +54,10 @@ import cn.jmicro.common.util.StringUtils;
 @Component(value="defaultConfig",lazy=false,level = 0)
 public class Config{
 	
+	public static final String CFG_PREFIX_SYSTEM = "/system";
+	public static final String CFG_PREFIX_SHOP = "/shop";
+	public static final String CFG_PREFIX_SEC = "/sec";
+	
 	//全局配置及服务信息目录使用
 	private static final String ADMIN_CLIENT_ID = "adminClientId";
 	

@@ -93,7 +93,7 @@ public class SpringAndJmicroComponent implements BeanDefinitionRegistryPostProce
 		//this.jmicro2Spring();
 		
 		IObjectSource os2Jmicro = new SpringObjectSource2Jmicto();
-		Object toJmicroOS = createLazyProxyObjectByCglib(os2Jmicro,IObjectSource.class.getName(),jmicroRpcClassloader);
+		Object toJmicroOS = createLazyProxyObjectByCglib(os2Jmicro, IObjectSource.class.getName(), jmicroRpcClassloader);
 		of.regist("springObjectSource", toJmicroOS);
 		
 		/*ObjectSource2Spring os2s = cxt.getBean(ObjectSource2Spring.class);

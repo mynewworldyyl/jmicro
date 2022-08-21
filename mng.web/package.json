@@ -6,7 +6,8 @@
     "serve": "vue serve src/main.js",
     "build": "vue build src/main.js",
     "lint": "vue lint",
-    "dev": "cross-env BABEL_ENV=development webpack-dev-server --inline --progress --config build/webpack.dev.conf.js"
+    "dev": "cross-env BABEL_ENV=development webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
+	"packrpc": "webpack --config ./build/webpack.packlib.conf.js"
   },
   "dependencies": {
     "cross-env": "^5.2.0",
@@ -30,6 +31,8 @@
     "@vue/cli-plugin-eslint": "~4.2.0",
     "@vue/cli-service": "~4.2.0",
     "babel-eslint": "^10.0.3",
+    "babel-plugin-component": "^1.1.1",
+    "babel-preset-env": "^1.7.0",
     "compression-webpack-plugin": "^4.0.1",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.1.2",

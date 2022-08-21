@@ -107,24 +107,28 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		
 	}
 	
-	public void handle(HttpRequest req, HttpResponse resp) {
+	public boolean handle(HttpRequest req, HttpResponse resp) {
 		ServiceMethodJRso sm = this.smng.getMethodByHttpPath(req.getPath());
+		
+		if(sm == null) {
+			return false;
+		}
 		
 		if(!Utils.isEmpty(sm.getHttpMethod()) && !sm.getHttpMethod().equals(req.getMethod())) {
 			this.resp(resp, "不支持方法: " + req.getMethod(), req.getContentType());
-			return;
+			return true;
 		}
 		
 		if(!Utils.isEmpty(sm.getHttpReqContentType()) && Constants.HTTP_METHOD_POST.equals(req.getMethod()) 
 				&& !sm.getHttpReqContentType().equals(req.getContentType())) {
 			this.resp(resp, "不支持内容类型: " + req.getContentType(), req.getContentType());
-			return;
+			return true;
 		}
 		
 		JMicroContext.configHttpProvider(req, sm);
 		
 		if(!checkLoginAndPermission(req,resp,sm)) {
-			return;
+			return true;
 		}
 		
 		Class<?>[] psClasses = sm.getKey().getParameterClasses();
@@ -142,7 +146,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			//单参数请求体类型
 			if(psClasses.length > 1) {
 				this.resp(resp, "请求参数不匹配", req.getContentType());
-				return;
+				return true;
 			}
 			
 			Class<?> paramClass = psClasses[0];
@@ -173,7 +177,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		
 		if(p == null) {
 			this.resp(resp, "无效请求: " + req.getUri(), req.getContentType());
-			return;
+			return true;
 		}
 		
 		p.success((rst,cxt)->{
@@ -183,6 +187,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			this.resp(resp, "{\"code\":\"" + code+"\",\"msg\":\""+msg+"\"}", 
 					Constants.HTTP_JSON_CONTENT_TYPE);
 		});
+		return true;
 	}
 	
 	private boolean checkLoginAndPermission(HttpRequest req, HttpResponse resp, ServiceMethodJRso sm) {

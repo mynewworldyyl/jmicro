@@ -245,5 +245,10 @@ public class SpringObjectFactory implements IObjectFactory {
 	public ProcessInfoJRso getProcessInfo() {
 		return ori.getProcessInfo();
 	}
+
+	@Override
+	public void notifyPostListener(Object obj) {
+		this.ori.notifyPostListener(obj);
+	}
 	
 }

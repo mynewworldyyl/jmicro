@@ -41,6 +41,10 @@
 			 <groupId>cn.jmicro</groupId>
 			 <artifactId>jmicro.resource</artifactId>
 	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.barcode</artifactId>
+	    </dependency>
 		<dependency>
 			<groupId>cn.jmicro</groupId>
 			<artifactId>jmicro.test</artifactId>

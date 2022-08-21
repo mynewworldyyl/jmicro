@@ -29,7 +29,7 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 	 * logo@400x400.png
 	 */
 	@Override
-	public void handle(HttpRequest req, HttpResponse resp) {
+	public boolean handle(HttpRequest req, HttpResponse resp) {
 		String uri = req.getUri();
 		String[] ps = uri.split("/");
 		String n = ps[ps.length-1];
@@ -42,7 +42,7 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 		if(file == null) {
 			boolean suc = this.imgMng.getFile(n, resp);
 			if(suc) {
-				return;
+				return true;
 			}
 		}
 		
@@ -64,9 +64,11 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 		if(file != null) {
 			resp.setHeader("Content-Type",file.getContentType());
 			resp.write(file.getInputStream(), (int)file.getLength());
+			return true;
 		} else {
 			resp.setHeader("Content-Type",Constants.HTTP_JSON_CONTENT_TYPE);
 			resp.write("{'code':'1','msg':'"+uri+"'}");
+			return false;
 		}
 		
 	}

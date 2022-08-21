@@ -124,6 +124,12 @@ public class SpringJMicroObjectFactory implements IObjectFactory {
 	}
 
 	@Override
+	public void notifyPostListener(Object obj) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
 	public void addLoginStatusListener(ILoginStatusListener listener) {
 		// TODO Auto-generated method stub
 		

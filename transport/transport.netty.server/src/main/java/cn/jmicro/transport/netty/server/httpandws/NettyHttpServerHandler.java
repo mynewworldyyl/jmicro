@@ -189,8 +189,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 			return true;
 		}
 		
-		srvDispatcher.handle(rr, resp);
-		return true;
+		return srvDispatcher.handle(rr, resp);
 	}
     
     private void responseText(ChannelHandlerContext ctx,String text) {

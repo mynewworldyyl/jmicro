@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
@@ -24,6 +25,7 @@ import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.client.IClientSession;
 import cn.jmicro.api.client.IClientSessionManager;
 import cn.jmicro.api.codec.ICodecFactory;
+import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.monitor.LG;
@@ -79,10 +81,13 @@ public class FileStorageMng implements IMessageHandler{
 	@Inject(required=true)
 	private ProcessInfoJRso pi;
 	
+	@Cfg(value=Config.CFG_PREFIX_SYSTEM + "/filesystem/fileServerInsName", defGlobal=true)
 	private String fileServerInsName = "apigateway";
 	
+	@Cfg(value=Config.CFG_PREFIX_SYSTEM + "/filesystem/host", defGlobal=true)
 	private String host="127.0.0.1";
 	
+	@Cfg(value=Config.CFG_PREFIX_SYSTEM + "/filesystem/port", defGlobal=true)
 	private String port = "9092";
 	
 	public String getFileId(String fn) {
@@ -114,6 +119,7 @@ public class FileStorageMng implements IMessageHandler{
 			fvo.setCreatedBy(ai.getId());
 			fvo.setLocalPath(filePath);
 			fvo.setAttr(attr);
+			fvo.setMcode(-1984341167);//存文件系统
 			
 			if(os != null && os.fileSystemEnable()) {
 				RespJRso<String> r = os.saveFile2Db(fvo);

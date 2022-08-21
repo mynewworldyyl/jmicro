@@ -76,9 +76,9 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 /*if(cls.getName().equals("cn.jmicro.client.ClientMessageReceiver")) {
+		 if(cls.getName().equals("cn.jmicro.shop.api.srv.impl.ShareJMSrvImpl")) {
 			 logger.debug("Config preInit");
-		 }*/
+		 }
 		 
 		if (cls.isAnnotationPresent(Cfg.class)) {
 			//配置实体类
@@ -140,9 +140,9 @@ public class ConfigPostInitListener extends PostInitAdapter {
 						prefix = cfgAnno.value();
 					}
 					
-					if(cfgAnno.value().equals("/nettyHttpPort")) {
+					/*if(cfgAnno.value().equals("/nettyHttpPort")) {
 						logger.debug("Debug config inject");
-					}
+					}*/
 					
 					if(!prefix.startsWith("/")){
 						prefix = "/"+prefix;

@@ -182,6 +182,11 @@
 			 <artifactId>jmicro.monitor.api</artifactId>
 			  <version>${jmicro.version}</version>
 	    	</dependency>
+	    	 <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.barcode</artifactId>
+			 <version>${jmicro.version}</version>
+	    	</dependency>
              <dependency>
                  <groupId>cn.jmicro</groupId>
 				 <artifactId>jmicro.main.monitor.log</artifactId>

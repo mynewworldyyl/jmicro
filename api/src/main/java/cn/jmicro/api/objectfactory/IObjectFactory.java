@@ -143,6 +143,8 @@ public interface IObjectFactory {
 	 */
 	void addPostListener(IPostInitListener listener);
 	
+	void notifyPostListener(Object obj);
+	
 	/**如果IPostFactoryReady没有被IOC容器管理，可以在调用start前，调用此方法加入，然后再start容器
 	 * @param listener
 	 */

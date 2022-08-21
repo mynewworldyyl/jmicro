@@ -473,6 +473,14 @@ public class SimpleObjectFactory implements IObjectFactory {
 		}	
 	}
 
+	
+	
+	@Override
+	public void notifyPostListener(Object obj) {
+		Config cfg = (Config)objs.get(Config.class);
+		notifyPreInitPostListener(obj,cfg);
+	}
+
 	private boolean isLazy(Class<?> cls) {
 		if(cls.isAnnotationPresent(Component.class)){
 			Component lazy = cls.getAnnotation(Component.class);
