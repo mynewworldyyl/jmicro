@@ -37,7 +37,7 @@
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.1.2",
     "glob-all": "^3.2.1",
-    "node-sass": "^4.9.2",
+    "node-sass": "^7.0.0",
     "purgecss-webpack-plugin": "^2.3.0",
     "sass-loader": "^7.0.3",
     "uglifyjs-webpack-plugin": "^2.2.0",
