@@ -24,8 +24,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
-
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
@@ -47,6 +45,7 @@ import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
@@ -208,7 +207,9 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		if(sm == null || sm.getCacheType() == Constants.CACHE_TYPE_NO) return false;
 		
-		String ck = IServer.cacheKey(rpcClassloader,msg,sm,codecFactory);
+		ActInfoJRso ai = JMicroContext.get().getAccount();
+		
+		String ck = IServer.cacheKey(rpcClassloader,msg,sm,codecFactory, ai!= null? ai.getId() : null);
 		if(ck == null) return false;
 		
 		ByteBuffer val = cache.get(ck,ByteBuffer.class);

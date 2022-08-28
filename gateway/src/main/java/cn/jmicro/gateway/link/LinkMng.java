@@ -30,6 +30,7 @@ import cn.jmicro.api.net.IServer;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.ServiceMethodJRso;
+import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
@@ -85,6 +86,8 @@ public class LinkMng implements IMessageHandler {
     	private int flag;
     	private Byte type;
     	private int extrFlag;
+    	
+    	private Integer aid;
     }
     
     public void jready() {
@@ -133,6 +136,11 @@ public class LinkMng implements IMessageHandler {
 		n.msgId = msg.getMsgId();
 		n.lastActiveTime = TimeUtils.getCurTime();
 		n.extrFlag = msg.getExtrFlag();
+		
+		ActInfoJRso ai = JMicroContext.get().getAccount();
+		if(ai != null) {
+			n.aid = ai.getId();
+		}
 		
 		n.sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		
@@ -236,9 +244,8 @@ public class LinkMng implements IMessageHandler {
 		
 		return true;
 	}
-    
 	
-	private void cacheData(Message msg,LinkNode n) {
+	private void cacheData(Message msg, LinkNode n) {
 		if(n.sm == null || msg.isError()) return;
 		ServiceMethodJRso sm = n.sm;
 		
@@ -253,7 +260,7 @@ public class LinkMng implements IMessageHandler {
 			}*/
 			
 			if(doc) {
-				String ck = IServer.cacheKey(rpcClassloader,msg, sm,null);
+				String ck = IServer.cacheKey(rpcClassloader,msg, sm,null,n.aid);
 				if(ck != null) {
 					int et = sm.getCacheExpireTime();
 					ByteBuffer sb = (ByteBuffer)msg.getPayload();

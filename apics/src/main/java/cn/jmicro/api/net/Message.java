@@ -570,6 +570,7 @@ public final class Message {
 		}
 		
 		if(this.extrFlag != 0) {
+			//将扩展标志位放到头部参数中
 			this.putExtra(EXTRA_KEY_FLAG, extrFlag);
 		}
 		

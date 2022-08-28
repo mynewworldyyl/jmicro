@@ -55,25 +55,26 @@ public interface IServer{
 		return msg.isOuterMessage() && msg.getType() == Constants.MSG_TYPE_REQ_JRPC;
 	}
 	
-	public static String cacheKey(RpcClassLoader rpcClassloader, Message msg, ServiceMethodJRso sm, ICodecFactory codecFactory) {
+	public static String cacheKey(RpcClassLoader rpcClassloader, Message msg, ServiceMethodJRso sm,
+			ICodecFactory codecFactory,Integer aid) {
 		
 		String mcode = sm.getKey().getSnvHash() + ":";
 		if(Constants.CACHE_TYPE_MCODE == sm.getCacheType()) {
 			//mcode +=  ah;
 		}else if(Constants.CACHE_TYPE_ACCOUNT == sm.getCacheType()) {
-			ActInfoJRso ai = JMicroContext.get().getAccount();
-			if(ai == null) {
+			//ActInfoJRso ai = JMicroContext.get().getAccount();
+			if(aid == null) {
 				return null;
 			}
-			mcode += ai.getId();
+			mcode += aid;
 		} else if(Constants.CACHE_TYPE_PAYLOAD == sm.getCacheType()) {
 			mcode += payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
 		} else if(Constants.CACHE_TYPE_PAYLOAD_AND_ACT == sm.getCacheType()) {
-			ActInfoJRso ai = JMicroContext.get().getAccount();
-			if(ai == null) {
+			//ActInfoJRso ai = JMicroContext.get().getAccount();
+			if(aid == null) {
 				return null;
 			}
-			mcode += ai.getId() +":" + payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
+			mcode += aid +":" + payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
 		} else {
 			return null;
 		}
@@ -90,16 +91,21 @@ public interface IServer{
 		}
 
 		ByteBuffer sb = (ByteBuffer) msg.getPayload();
-		sb.mark();
+		
+		/*
+		 * sb.mark();
 		RpcRequestJRso req;
 		if (msg.isFromApiGateway() && msg.getUpProtocol() == Message.PROTOCOL_BIN) {
 			req = parseApiGatewayRequest(rpcClassloader, msg, sm);
 		} else {
 			req = ICodecFactory.decode(codecFactory, sb, RpcRequestJRso.class, msg.getUpProtocol());
 		}
-		sb.reset();
 		msg.setReq(req);
 		ah = HashUtils.argHash(req.getArgs());
+		sb.reset();
+		*/
+		
+		ah = HashUtils.hash32(sb);
 		msg.putExtra(Message.EXTRA_KEY_ARG_HASH, ah);
 
 		return ah;
@@ -109,7 +115,7 @@ public interface IServer{
 		try {
 			RpcRequestJRso req = new RpcRequestJRso();
 			JDataInput ji = new JDataInput((ByteBuffer) msg.getPayload());
-			req.setRequestId(ji.readLong());
+			//req.setRequestId(ji.readLong());
 			// req.setServiceName(ji.readUTF());
 			// req.setNamespace(ji.readUTF());
 			// req.setVersion(ji.readUTF());

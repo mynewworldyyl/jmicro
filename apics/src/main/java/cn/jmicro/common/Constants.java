@@ -27,6 +27,8 @@ import java.util.Set;
  */
 public final class Constants {
 	
+	public static final long DAY_IN_MILLIS = 24*60*60*1000;
+	
 	//系统固定的HTTP路径前缀，应用不能使用此前缀作它用
 	//public static final String  HTTP_txtContext= "_txt_";
 	public static final String  HTTP_binContext = "/_bin_";//专用于web Socket rpc

@@ -7,7 +7,7 @@
     "build": "vue build src/main.js",
     "lint": "vue lint",
     "dev": "cross-env BABEL_ENV=development webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
-	"packrpc": "webpack --config ./build/webpack.packlib.conf.js"
+    "packrpc": "webpack --config ./build/webpack.packlib.conf.js"
   },
   "dependencies": {
     "cross-env": "^5.2.0",
@@ -42,6 +42,8 @@
     "sass-loader": "^7.0.3",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "vue-cli-plugin-element": "~1.0.1",
-    "vue-template-compiler": "^2.6.14"
+    "vue-template-compiler": "^2.6.14",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0"
   }
 }

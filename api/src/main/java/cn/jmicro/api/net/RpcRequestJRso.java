@@ -157,7 +157,7 @@ public final class RpcRequestJRso implements IRequest{
 
 	@Override
 	public long getRequestId() {
-		return this.reqId;
+		return this.msg != null? this.msg.getMsgId():0;
 	}
 	
 	@Override

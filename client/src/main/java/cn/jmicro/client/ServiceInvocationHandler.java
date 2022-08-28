@@ -81,7 +81,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			req = new RpcRequestJRso();
 			req.setSm(sm);
 			req.setArgs(args);
-			req.setRequestId(idGenerator.getLongId(IRequest.class));
+			//req.setRequestId(idGenerator.getLongId(IRequest.class));
 			/*if(ids.contains(req.getRequestId())) {
 				throw new CommonException("Reqeust ID repeated: " +methodName);
 			} else {

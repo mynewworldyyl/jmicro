@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 
 import cn.jmicro.api.RespJRso;
+import cn.jmicro.api.data.AbstractReportElt;
+import cn.jmicro.api.data.ReportDataJRso;
 import cn.jmicro.api.storage.FileJRso;
 import cn.jmicro.common.Utils;
 
@@ -84,6 +86,12 @@ public interface IObjectStorage {
 	RespJRso<String> saveSteam2Db(FileJRso pr,InputStream is);
 	
 	RespJRso<String> saveByteArray2Db(FileJRso pr,byte[] byteData);
+	
+	ReportDataJRso<AbstractReportElt> statisDataByCreatedDate(Map<String,Object> filter, String table,
+			String[] keys, String grpFieldName, Byte dayNum, Byte timeLen, Boolean counter);
+	
+	ReportDataJRso<AbstractReportElt> statisDataByGroupName(
+			Map<String,Object> filter, String table, String[] keys, String grpFieldName, Boolean counter);
 	
 	boolean fileSystemEnable();
 	/**

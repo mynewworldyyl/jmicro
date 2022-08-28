@@ -93,6 +93,7 @@ public class FileStorageMng implements IMessageHandler{
 	public String getFileId(String fn) {
 		return idGenerator.getStringId(FileJRso.class)+"."+FileUtils.getFileExt(fn);
 	}
+	
 	/**
 	 * 
 	 * @param attr 对象的附加属性

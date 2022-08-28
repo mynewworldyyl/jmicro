@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,6 +29,7 @@ import com.mongodb.DBObject;
 import com.mongodb.client.DistinctIterable;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.DeleteResult;
@@ -37,11 +40,17 @@ import com.mongodb.gridfs.GridFSInputFile;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
+import cn.jmicro.api.data.AbstractReportElt;
+import cn.jmicro.api.data.ReportDataJRso;
+import cn.jmicro.api.data.ReportSeriesArrayEltJRso;
+import cn.jmicro.api.data.ReportSeriesSingleEltJRso;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.storage.FileJRso;
+import cn.jmicro.api.utils.DateUtils;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.FileUtils;
 import cn.jmicro.common.util.JsonUtils;
@@ -779,6 +788,305 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		 FindIterable<Document> rst = mdb.getCollection(table,Document.class).find(fs).projection(prj);
 		 return rst.first();
 	}
+	
+	/**
+	 * 
+	 * @param filter 数据过虑条件
+	 * @param table  表名
+	 * @param keys  要选择的列名
+	 * @param grpFieldName 分组名
+	 * @param dayNum 查询多少天的数据
+	 * @param timeLen 日期格式，参考ReportDataJRso.TIME_LEN_YMD,TIME_LEN_MD,TIME_LEN_YM
+	 * @param counter 是否统计记录条数，默认否
+	 * @return
+	 */
+	public ReportDataJRso<AbstractReportElt> statisDataByCreatedDate(Map<String,Object> filter, String table,
+			String[] keys, String grpFieldName, Byte dayNum, Byte timeLen,Boolean counter) {
+		
+		ReportDataJRso<AbstractReportElt> report = new ReportDataJRso<>();
+		
+		long ed =  getYesterday();
+		report.setCategories(getDateCategories(ed,dayNum,timeLen));
+		
+		/*
+		String[] keys = new String[] {"settlement","amount"};
+		String grpFieldName = "dateStr";
+		String table = ShareBuyJRso.TABLE;
+		*/
+		
+		if(counter) {
+			String[] ks = new String[keys.length+1];
+			System.arraycopy(keys, 0, ks, 0, keys.length);
+			ks[keys.length] = "count";
+			keys = ks;
+		}
+		
+		ReportSeriesArrayEltJRso[] series = new ReportSeriesArrayEltJRso[keys.length];
+		report.setSeries(series);
+		
+		//report.setSeries(new ReportSeriesArrayEltJRso("buyNum","购买数",dayNum), 0);
+		for(int i = 0; i < keys.length; i++) {
+			report.setSeries(new ReportSeriesArrayEltJRso(keys[i], null, dayNum), i);
+		}
+
+		List<Document> aggregateList = new ArrayList<Document>();
+		
+		Document qryMatch = Document.parse(JsonUtils.getIns().toJson(filter));
+		//qryMatch.put("shareActId", aid);//由自己的分享带来的购买
+		//qryMatch.put("status", ShareBuyJRso.STATUS_FINISH);
+		
+		Document timeLimit = new Document();
+		timeLimit.put("$gt", ed - dayNum * Constants.DAY_IN_MILLIS);
+		timeLimit.put("$lt",ed);
+		
+		qryMatch.put("createdTime", timeLimit);
+		
+		Document match = new Document("$match", qryMatch);
+		aggregateList.add(match);
+		
+		Document p = new Document();
+		p.append(IObjectStorage._ID, 0);
+		for(String k : keys) {
+			p.append(k, 1);
+		}
+		
+		//1970-01-01
+		switch(timeLen) {
+		case ReportDataJRso.TIME_LEN_YM:
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,0,7)));
+			break;
+		case ReportDataJRso.TIME_LEN_MD:
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,5,5)));
+					break;
+		case ReportDataJRso.TIME_LEN_YMD:
+			p.append(grpFieldName, 1);
+			break;
+		case ReportDataJRso.TIME_LEN_Y:
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,0,4)));
+			break;
+		case ReportDataJRso.TIME_LEN_M:
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,5,2)));
+			break;
+		case ReportDataJRso.TIME_LEN_D:
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,8,2)));
+			break;
+		default:
+			p.append(grpFieldName, 1);
+		}
+		
+		/*if(timeLen == ReportDataJRso.TIME_LEN_YM) {
+			//ProductName: { $substr: [ "$ProductName", 0, 7]
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,0,7)));
+		} else if(timeLen == ReportDataJRso.TIME_LEN_MD){
+			//1970-01-01
+			p.append(grpFieldName, new Document("$substr",Arrays.asList("$"+grpFieldName,5,5)));
+		} else {
+			p.append(grpFieldName, 1);
+		}*/
+		
+		Document prj = new Document("$project", p);
+		aggregateList.add(prj);
+		
+		
+		Document groupDoc = new Document();
+		groupDoc.append("_id", "$"+grpFieldName);
+		for(String k : keys) {
+			groupDoc.append(k, new Document("$sum","$"+k));
+		}
+		
+		if(counter) {
+			//计算条数
+			groupDoc.append("count", new Document("$sum",1));
+		}
+		
+		Document grp = new Document("$group", groupDoc);
+		aggregateList.add(grp);
+		
+		qryData(report, table, aggregateList, keys);
+		
+		return report;
+	}
+	
+	public ReportDataJRso<AbstractReportElt> statisDataByGroupName(
+			Map<String,Object> filter, String table, String[] keys, String grpFieldName, Boolean counter) {
+		
+		ReportDataJRso<AbstractReportElt> report = new ReportDataJRso<>();
+	
+		if(counter) {
+			String[] ks = new String[keys.length+1];
+			System.arraycopy(keys, 0, ks, 0, keys.length);
+			ks[keys.length] = "count";
+			keys = ks;
+		}
+
+		List<Document> aggregateList = new ArrayList<Document>();
+		
+		Document qryMatch = Document.parse(JsonUtils.getIns().toJson(filter));
+		Document match = new Document("$match", qryMatch);
+		aggregateList.add(match);
+		
+		Document p = new Document();
+		p.append(IObjectStorage._ID, 0);
+		for(String k : keys) {
+			p.append(k, 1);
+		}
+		
+		Document prj = new Document("$project", p);
+		aggregateList.add(prj);
+		
+		Document groupDoc = new Document();
+		
+		if(Utils.isEmpty(grpFieldName)) {
+			groupDoc.append("_id", null);
+		}else {
+			groupDoc.append("_id", "$" + grpFieldName);
+		}
+		
+		for(String k : keys) {
+			groupDoc.append(k, new Document("$sum","$"+k));
+		}
+		
+		if(counter) {
+			//计算条数
+			groupDoc.append("count", new Document("$sum",1));
+		}
+		
+		Document grp = new Document("$group", groupDoc);
+		aggregateList.add(grp);
+		
+		MongoCollection<Document> rpcLogColl = this.mdb.getCollection(table);
+		MongoCursor<Document> cursor = rpcLogColl.aggregate(aggregateList).iterator();
+		
+		if(Utils.isEmpty(grpFieldName)) {
+			qrySingleReportData(report, table, cursor, keys);
+		}else {
+			qryGrpData(report, table, cursor, keys);
+		}
+		
+		return report;
+	}
+	
+	private void qrySingleReportData(ReportDataJRso<AbstractReportElt> report, String table, 
+			MongoCursor<Document> cursor, String[] keys) {
+
+		ReportSeriesSingleEltJRso[] series = new ReportSeriesSingleEltJRso[keys.length];
+		report.setSeries(series);
+		
+		for(int i = 0; i < keys.length; i++) {
+			report.setSeries(new ReportSeriesSingleEltJRso(keys[i], null,0D), i);
+		}
+		
+		if(cursor.hasNext()) {
+			Document d = cursor.next();
+			for(int i = 0; i < keys.length; i++) {
+				if(d.containsKey(keys[i])) {
+					AbstractReportElt s = report.getSeries(keys[i]);
+					s.setData(0, new Double(d.getInteger(keys[i])));
+				}
+			}
+		}
+	}
+	
+	private void qryGrpData(ReportDataJRso<AbstractReportElt> report, String table, 
+			MongoCursor<Document> cursor, String[] keys) {
+		
+		Set<String> cs = new HashSet<>();
+		
+		List<Document> rst = new ArrayList<>();
+		
+		while(cursor.hasNext()) {
+			Document d = cursor.next();
+			rst.add(d);
+			cs.add(d.getString("_id"));
+		}
+		
+		String[] categories = cs.toArray(new String[cs.size()]);
+		report.setCategories(categories);
+		
+		ReportSeriesArrayEltJRso[] series = new ReportSeriesArrayEltJRso[keys.length];
+		report.setSeries(series);
+		
+		for(int i = 0; i < keys.length; i++) {
+			report.setSeries(new ReportSeriesArrayEltJRso(keys[i], null, categories.length), i);
+		}
+		
+		for(Document d : rst) {
+			String ck = d.getString("_id");
+			int idx = report.getIndex(ck);
+			for(String k : keys) {
+				report.addData(idx, k, new Double(d.getInteger(k)));
+			}
+		}
+		
+	}
+
+	private void qryData(ReportDataJRso<AbstractReportElt> report, String table, List<Document> aggregateList,String[] keys) {
+		MongoCollection<Document> rpcLogColl = this.mdb.getCollection(table);
+		MongoCursor<Document> cursor = rpcLogColl.aggregate(aggregateList).iterator();
+		while(cursor.hasNext()) {
+			Document d = cursor.next();
+			String ck = d.getString("_id");
+			int idx = report.getIndex(ck);
+			if(idx < 0) continue;
+			for(String k : keys) {
+				report.addData(idx,k,new Double(d.getInteger(k)));
+			}
+		}
+		
+	}
+
+	private String[] getDateCategories(long ed,Byte dayNum,Byte timeLen) {
+		String[] categories = new String[dayNum];
+		long ct = ed;
+		
+		String pattern = "YYYY-MM";
+		if(timeLen == ReportDataJRso.TIME_LEN_YM) {
+			pattern = "YYYY-MM-dd";
+		}else if(timeLen == ReportDataJRso.TIME_LEN_MD){
+			pattern = "MM-dd";
+		}
+		
+		switch(timeLen) {
+		case ReportDataJRso.TIME_LEN_YM:
+			pattern = "YYYY-MM";
+			break;
+		case ReportDataJRso.TIME_LEN_MD:
+			pattern = "MM-dd";
+			break;
+		case ReportDataJRso.TIME_LEN_YMD:
+			pattern = "YYYY-MM-dd";
+			break;
+		case ReportDataJRso.TIME_LEN_Y:
+			pattern = "YYYY";
+			break;
+		case ReportDataJRso.TIME_LEN_M:
+			pattern = "MM";
+			break;
+		case ReportDataJRso.TIME_LEN_D:
+			pattern = "dd";
+			break;
+		default:
+			pattern = "MM-dd";
+		}
+		
+		for(int i = dayNum-1; i >= 0; i--) {
+			categories[i] = DateUtils.formatDate(new Date(ct),pattern);
+			ct -= Constants.DAY_IN_MILLIS;
+		}
+		return categories;
+	}
+
+	private long getYesterday() {
+		Calendar c = Calendar.getInstance();
+		//转换为昨天的结束时间
+		c.set(Calendar.DAY_OF_MONTH, c.get(Calendar.DAY_OF_MONTH)-1);
+		c.set(Calendar.HOUR_OF_DAY, 23);
+		c.set(Calendar.MINUTE, 59);
+		c.set(Calendar.SECOND, 59);
+		c.set(Calendar.MILLISECOND, 999);
+		return c.getTimeInMillis();
+	}
+
 
 	class SaveOp {
 		List vals;
