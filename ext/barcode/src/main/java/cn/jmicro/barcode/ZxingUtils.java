@@ -72,7 +72,9 @@ public class ZxingUtils {
 		// 本地完整路径
 //      String pathname = path + "/" + uuid + "." + format;
 		// 生成二维码
-		BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height);
+		Map<EncodeHintType, Object> hints = new HashMap<EncodeHintType, Object>();
+        hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+		BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height,hints);
 //      Path file = new File(pathname).toPath();
 		// 将二维码保存到路径下
 //      MatrixToImageWriter.writeToPa(bitMatrix, format, file);

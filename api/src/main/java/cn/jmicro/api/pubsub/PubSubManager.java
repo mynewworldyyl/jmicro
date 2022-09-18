@@ -19,7 +19,6 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Reference;
 import cn.jmicro.api.async.AsyncFailResult;
-import cn.jmicro.api.client.IAsyncCallback;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
@@ -36,7 +35,6 @@ import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.service.ServiceInvokeManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 

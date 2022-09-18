@@ -191,6 +191,8 @@ public final class ServiceMethodJRso {
 	//整个HTTP请求数据作为一个整体作为参数唯一方法，参数可以是字符串或VO对象
 	private boolean httpReqBody;
 	
+	private byte httpRespType;
+	
 	private String[] paramNames;
 	
 	public void formPersisItem(ServiceMethodJRso p){
@@ -250,6 +252,7 @@ public final class ServiceMethodJRso {
 		this.external = p.external;
 		
 		this.httpMethod = p.httpMethod;
+		this.httpRespType = p.httpRespType;
 		this.httpPath = p.httpPath;
 		this.httpReqContentType = p.httpReqContentType;
 		this.httpReqBody = p.httpReqBody;

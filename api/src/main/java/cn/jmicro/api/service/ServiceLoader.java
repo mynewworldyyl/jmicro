@@ -310,6 +310,21 @@ public class ServiceLoader{
 		return flag;
 	}
 	
+	public boolean exportOne(Class<?> c, Object srv) {
+
+		if(c.isInterface() || Modifier.isAbstract(c.getModifiers())){
+			return true;
+		}
+		
+		ServiceItemJRso si = createSrvItemByClass(c);
+		
+		registService(si,srv);
+		
+		logger.info("Export service:"+c.getName());
+		
+		return true;
+	}
+	
 	private boolean exportOne(Class<?> c,boolean waiting) {
 
 		if(c.isInterface() || Modifier.isAbstract(c.getModifiers())){
@@ -784,6 +799,7 @@ public class ServiceLoader{
 					sm.setHttpPath(manno.httpPath());
 					sm.setHttpReqContentType(manno.httpReqContentType());
 					sm.setHttpReqBody(manno.httpReqBody());
+					sm.setHttpRespType(manno.httpRespType());
 				}
 				
 				Parameter[] ps = srvMethod.getParameters();

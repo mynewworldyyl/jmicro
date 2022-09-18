@@ -41,6 +41,15 @@ public final class Constants {
 	
 	public static final String  HTTP_JSON_CONTENT_TYPE = "application/json;chartset=utf-8";
 	
+	//纯文本数据，对应于spring-web的restcontroller注解
+	public static final byte  HTTP_RESP_TYPE_RESTFULL= 1;
+	
+	//返回HTML，后端返回文件视图路径，网关读取文件并与数据整合后返回给客户端
+	public static final byte  HTTP_RESP_TYPE_VIEW= 2;
+	
+	//返回进制流，后端通过文件系统返回文件ID，在网关读取文件流返回给客户端
+	public static final byte  HTTP_RESP_TYPE_STREAM= 3;
+	
 	public static final Set<String>  HTTP_PREFIX_LIST;
 	static {
 		HashSet<String> h = new HashSet<>();
@@ -93,7 +102,8 @@ public final class Constants {
 	
 	public static final String SYSTEM_PCK_NAME_PREFIXE = "cn.jmicro";
 	
-	public static final String[] SYSTEM_PCK_NAME_PREFIXES = new String[] {SYSTEM_PCK_NAME_PREFIXE};
+	public static final String[] SYSTEM_PCK_NAME_PREFIXES = new String[] {SYSTEM_PCK_NAME_PREFIXE,
+			"sun.reflect","com.alibaba.fastjson"};
 	
 	public static final String PUBLIC_KEYS_FILES = "publicKeyFiles";
 	
@@ -115,8 +125,9 @@ public final class Constants {
 	
 	//public static final String ADMIN_CLIENT_ID = "adminClientId";
 	
-	public static final String CLIENT_ONLY="client";
-	public static final String SERVER_ONLY="server";
+	public static final String CLIENT_ONLY = "client";
+	
+	public static final String SERVER_ONLY = "server";
 	
 	public static final String TYPE_CODE_PRODUCER = "typeCodeProducer";
 	
@@ -202,6 +213,7 @@ public final class Constants {
 	public static final String LocalIp = "localIp";
 	
 	public static final String BASE_PACKAGES_KEY = "basePackages";
+	public static final String JMICRO_COMPONENTS_KEY = "components";
 	public static final String INSTANCE_PREFIX = "instanceName";
 	public static final String INSTANCE_NAME_GEN_CLASS = "instanceNameGenClass";
 	

@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson2.JSONObject;
+
 import cn.jmicro.api.http.HttpRequest;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
@@ -106,7 +108,14 @@ public class JMicroNettyHttpRequest implements HttpRequest {
 				byte[] bts = new byte[bb.readableBytes()];
 				bb.readBytes(bts);
 				try {
-					this.textBody = new String(bts,charset);
+					this.textBody = new String(bts,charset).trim();
+					if(contentType.startsWith(HttpHeaderValues.APPLICATION_JSON.toString())&&
+							this.textBody.startsWith("{") && this.textBody.endsWith("}")) {
+						JSONObject jo = JSONObject.parseObject(this.textBody);
+						jo.forEach((k,v)->{
+							reqParams.put(k, v != null ? v.toString():null);
+						});
+					}
 				} catch (UnsupportedEncodingException e) {
 					this.success = false;
 					this.retMsg = "请求体编码类型错误：" + charset;

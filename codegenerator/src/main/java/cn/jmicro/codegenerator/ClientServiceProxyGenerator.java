@@ -60,9 +60,9 @@ public class ClientServiceProxyGenerator extends AbstractProcessor {
 				 throw new RuntimeException(AsyncClientProxy.class + " only support interface, not suport " + tn);
 		     }
 			 
-			 if(tn.contains("ISimpleRpc")) {
+/*			 if(tn.contains("ISimpleRpc")) {
 				 System.out.println("ClientServiceProxyGenerator: "+tn);
-			 }
+			 }*/
 			 
 			 TypeElement typeElement = (TypeElement)element;
 			 generateGatewayInterfaceClass(typeElement);

@@ -56,13 +56,14 @@ public @interface SMethod {
 	 */
 	public int debugMode() default -1;
 	
-	//-1： depend on service config
+	//-1:depend on service config
 	//1: enable
 	//0: disable
 	public int monitorEnable() default -1;
 	
 	//dump 下行流，用于下行数问题排查
 	public boolean dumpDownStream() default false;
+	
 	//dump 上行流，用于上行数问题排查
 	public boolean dumpUpStream() default false;
 	
@@ -70,8 +71,10 @@ public @interface SMethod {
 	public byte logLevel() default MC.LOG_DEPEND;
 	
 	public int retryInterval() default 500;
+	
 	//method must can be retry, or 1
 	public int retryCnt() default 0;
+	
 	public int timeout() default 15000;
 	
 	/**
@@ -169,6 +172,7 @@ public @interface SMethod {
 	//登录相关
 	//是否需要强制赋予账号权限才能使用
 	public boolean perType() default false;
+	
 	//必须登陆才能使用
 	public boolean needLogin() default true;
 	
@@ -177,17 +181,22 @@ public @interface SMethod {
 	
 	//加密相关
 	public boolean downSsl() default false;
+	
 	public boolean upSsl()  default false;
+	
 	//0:对称加密，1：RSA 非对称加密
 	public byte encType() default 0;
 	
 	//事务相关
 	public byte txType() default TxConstants.TYPE_TX_NO;
+	
 	public byte txPhase() default TxConstants.TX_2PC;
+	
 	public byte txIsolation() default Connection.TRANSACTION_READ_COMMITTED;
 	
 	//缓存类型
 	public byte cacheType() default Constants.CACHE_TYPE_NO;
+	
 	public int cacheExpireTime() default 60;//单位秒
 	
 	//处理httpy请求的URL，默认不处理HTTP请求
@@ -198,6 +207,8 @@ public @interface SMethod {
 	
 	//HTTP请求体内容类型
 	public String httpReqContentType() default "application/json;charset=UTF-8";
+	
+	public byte httpRespType() default Constants.HTTP_RESP_TYPE_RESTFULL;
 	
 	//默认和请求类型（httpReqContentType）相同
 	//public String httpRespContentType() default "";

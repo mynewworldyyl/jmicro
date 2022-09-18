@@ -16,6 +16,8 @@
  */
 package cn.jmicro.client;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +73,7 @@ public class ServiceInvocationHandler implements InvocationHandler{
 	
 	public <T> T invoke(Object proxy, String methodName, Object[] args){
 		
-		RpcRequestJRso req = null;
+		final RpcRequestJRso req;
 		JMicroContext cxt = JMicroContext.get();
 		ServiceMethodJRso sm = null;
 		try {
@@ -94,6 +96,16 @@ public class ServiceInvocationHandler implements InvocationHandler{
 			if(JMicroContext.get().exists(TxConstants.TX_ID)) {
 				req.putObject(TxConstants.TX_ID, JMicroContext.get().getLong(TxConstants.TX_ID, null));
 				req.putObject(TxConstants.TX_SERVER_ID, JMicroContext.get().getInt(TxConstants.TX_SERVER_ID, null));
+			}
+			
+			if(cxt.getBoolean(JMicroContext.HTTP_REQ, false)) {
+				//处理HTTP请求参数
+				Map<String,String> hps = (Map<String,String>)cxt.getParam(JMicroContext.HTTP_PARAM_KEY,null);
+				if(hps != null) {
+					hps.forEach((k,v)->{
+						req.putObject(k, v);
+					});
+				}
 			}
 			
 			/*if(sm.getForType() == Constants.FOR_TYPE_SYS) {

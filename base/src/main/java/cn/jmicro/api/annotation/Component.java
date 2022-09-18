@@ -21,8 +21,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import cn.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -57,7 +55,7 @@ public @interface Component {
 	 * 如果指定了服务提供方或消费方，则该组件所依赖的组件也被限制为指定方
 	 * @return
 	 */
-	public String side() default Constants.SIDE_ANY;
+	public String side() default "any";// Constants.SIDE_ANY;
 	
 	/**
 	 * 指定包下的类才可使用

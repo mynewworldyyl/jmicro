@@ -56,6 +56,11 @@ public class JMicroContext  {
 
 	static final Logger logger = LoggerFactory.getLogger(JMicroContext.class);
 	
+	//标识此RPC是否HTTP请求
+	public static final String HTTP_REQ = "Http-Req";
+	//HTTP请求头参数
+	public static final String HTTP_PARAM_KEY = "__http_params";
+	
 	//value should be true or false, for provider or consumer side
 	public static final String CALL_SIDE_PROVIDER = "_callSideProvider";
 	public static final String SESSION_DATA_PREFIX = "__SESS_D:";
@@ -63,6 +68,7 @@ public class JMicroContext  {
 	public static final String LOCAL_HOST = "_host";
 	public static final String LOCAL_PORT = "_port";
 	
+	public static final String User_Agent = "User-Agent";
 	public static final String REMOTE_HOST = "_remoteHost";
 	public static final String REMOTE_PORT = "_remotePort";
 	public static final String REMOTE_INS_ID = "_remoteInsId";
@@ -341,6 +347,19 @@ public class JMicroContext  {
 		setCallSide(true);
 		
 		ISession s = req.getSession();
+		
+		cx.setBoolean(HTTP_REQ, true);
+		
+		//将HTTP头部信息全部放RPC上下文中，然后在RPC调用时上送服务端
+		Map<String,String> httpParams = new HashMap<>();
+		cx.setParam(HTTP_PARAM_KEY, httpParams);
+		
+		Map<String,String>  hs = req.getHeaderParams();
+		if(hs != null && !hs.isEmpty()) {
+			for(Map.Entry<String, String> e : hs.entrySet()) {
+				httpParams.put(e.getKey(), e.getValue());
+			}
+		}
 		
 		cx.setParam(JMicroContext.SESSION_KEY, s);
 		
@@ -708,8 +727,18 @@ public class JMicroContext  {
 	public <T> T getParam(String key,T defautl){
 		T v = (T)this.curCxt.get(key);
 		if(v == null){
+			Boolean b = (Boolean)this.curCxt.get(HTTP_REQ);
+			if(b != null && b) {
+				//http参数必须是字符串String类型
+				Map<String,String> hps = (Map<String,String>)this.curCxt.get(HTTP_PARAM_KEY);
+				if(hps != null) {
+					v = (T)hps.get(key);
+					if(v != null) return v;
+				}
+			}
 			return defautl;
 		}
+		
 		return v;
 	}
 	

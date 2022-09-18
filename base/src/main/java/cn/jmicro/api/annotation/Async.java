@@ -22,8 +22,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import cn.jmicro.api.registry.AsyncConfigJRso;
-
 /**
  * 
  * @author Yulei Ye
@@ -39,7 +37,7 @@ public @interface Async {
 	
 	//异步条件timeout:超时转异步， speedlimit:限速转异步
 	//留给应用场影决定什么条件下做异步处理
-	public String condition() default AsyncConfigJRso.ASYNC_DISABLE;
+	public String condition() default "";// AsyncConfigJRso.ASYNC_DISABLE;
 	
 	//结果回调用服务名称
 	public String serviceName() default "";

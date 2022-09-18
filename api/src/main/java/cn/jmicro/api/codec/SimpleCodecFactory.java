@@ -82,6 +82,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 	}
 	
 	private IDecoder<ByteBuffer> byteBufferDecoder = new IDecoder<ByteBuffer>(){
+		@SuppressWarnings("unchecked")
 		@Override
 		public <R> R decode(ByteBuffer data,Class<R> clazz) {
 			//return (R)Decoder.decodeObject(data);

@@ -22,9 +22,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import cn.jmicro.api.monitor.MC;
-import cn.jmicro.api.net.Message;
-import cn.jmicro.common.Constants;
 @Target({TYPE})
 @Retention(RUNTIME)
 public @interface Service {
@@ -89,7 +86,7 @@ public @interface Service {
 	 * 服务级的日志启用标识
 	 * @return
 	 */
-	public byte logLevel() default MC.LOG_ERROR;
+	public byte logLevel() default 5;//MC.LOG_ERROR;
 	
 	/**
 	 * 如果超时了，要间隔多久才重试
@@ -147,13 +144,13 @@ public @interface Service {
 	public long checkInterval() default -1;
 	
 	// @link SMethod
-	public String baseTimeUnit() default Constants.TIME_MILLISECONDS;
+	public String baseTimeUnit() default "MS";// Constants.TIME_MILLISECONDS;
 	
 	/**
 	 * 用于代理处理类，有特殊需求的定制代码才需要设置，如ID请求处理器，使用的RpcRequest及Message不需要ID等特殊实现
 	 * @return
 	 */
-	public String handler() default Constants.DEFAULT_INVOCATION_HANDLER;
+	public String handler() default "defaultInvocationHandler";//Constants.DEFAULT_INVOCATION_HANDLER;
 	
 	/**
 	 * 直接从接口获取代理时，拿取的是客户端实例还是服务端实例
@@ -168,7 +165,7 @@ public @interface Service {
 	 */
 	public String[] limit2Packages() default {};
 	
-	public int clientId() default Constants.USE_SYSTEM_CLIENT_ID;
+	public int clientId() default -2;// Constants.USE_SYSTEM_CLIENT_ID;
 	
 	//public int clazzVersion() default 0;
 }

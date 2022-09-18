@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSONObject;
+
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -100,12 +102,19 @@ public class Encoder{
 			buffer.put(b?(byte)1:(byte)0);
 		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
 			buffer.putChar((Character)obj);
+		}else if(JSONObject.class == cls){
+			 encodeJSONObject(buffer,(JSONObject)obj);
 		} else {
 			encodeByReflect(buffer,cls,obj);
 		}
 	
 	}
 	
+	private static void encodeJSONObject(ByteBuffer buffer, JSONObject obj) {
+		String json = obj == null?"{}":obj.toJSONString();
+		encodeString(buffer,json);
+	}
+
 	private static void encodeByteBuffer(ByteBuffer buffer, ByteBuffer obj) {
 		buffer.putInt(obj.remaining());
 		buffer.put(obj);

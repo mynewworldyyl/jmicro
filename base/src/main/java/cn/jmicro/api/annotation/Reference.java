@@ -22,9 +22,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import cn.jmicro.api.area.IAreaDataServiceJMSrv;
-import cn.jmicro.common.Constants;
-
 /**
  *
  * 在服务接口相同的情况下：

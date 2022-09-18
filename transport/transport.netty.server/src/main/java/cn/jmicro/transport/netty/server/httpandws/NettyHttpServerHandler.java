@@ -182,9 +182,8 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 			//ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 		}
 		
-		if(req.method().equals(HttpMethod.GET) && path != null 
-			&& path.startsWith(Constants.HTTP_fsContext)) {
-			//静态资源
+		if(req.method().equals(HttpMethod.GET) && path != null && path.startsWith(Constants.HTTP_fsContext)) {
+			//静态资源,文件下载
 			fsDispatcher.handle(rr, resp);
 			return true;
 		}

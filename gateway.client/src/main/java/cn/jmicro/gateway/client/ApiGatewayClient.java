@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.crypto.SecretKey;
 
-import com.google.gson.reflect.TypeToken;
+import com.alibaba.fastjson.TypeReference;
 
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.WithContext;
@@ -268,7 +268,8 @@ public class ApiGatewayClient {
 			p0.done();
 			p = p0;
 		} else {
-			Type returnType = TypeToken.getParameterized(RespJRso.class, ActInfoJRso.class).getType();
+			//Type returnType = TypeToken.getParameterized(RespJRso.class, ActInfoJRso.class).getType();
+			Type returnType = new TypeReference<RespJRso<ActInfoJRso>>(){}.getType();
 			p = this.callService(SEC_SRV, SEC_NS, SEC_VER, "login", 
 					returnType, new Object[] {actName, pwd});
 			p.then((RespJRso<ActInfoJRso> resp, AsyncFailResult fail, Object ctx)->{
@@ -289,7 +290,8 @@ public class ApiGatewayClient {
 			p0.done();
 			p = p0;
 		} else {
-			Type returnType = TypeToken.getParameterized(RespJRso.class, Boolean.class).getType();
+			//Type returnType = TypeToken.getParameterized(RespJRso.class, Boolean.class).getType();
+			Type returnType = new TypeReference<RespJRso<Boolean>>(){}.getType();
 			p = callService(SEC_SRV_, SEC_NS, SEC_VER, "logout", returnType, new Object[] {});
 			p.success((rst,cxt0)->{
 				setActInfo(null);
@@ -349,8 +351,8 @@ public class ApiGatewayClient {
     	if(gt == null) {
     		return rawType;
     	}
-    	return TypeToken.get(gt).getType();
-    	
+    	//return TypeToken.get(gt).getType();
+    	return new TypeReference(gt){}.getType();
     }
 	
 	public <T> IPromise<T> callService(String serviceName, String namespace, String version, String methodName, 

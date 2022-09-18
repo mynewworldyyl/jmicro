@@ -16,4 +16,9 @@ public interface HttpResponse {
 	void write(InputStream in,int len);
 	
 	void setHeader(String key,Object value) ;
+	
+	void setStatusCode(int statusCode);
+	
+	//30*重定向
+	void redirect(int code,String url);
 }

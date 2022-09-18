@@ -17,10 +17,6 @@
 package cn.jmicro.common.util;
 
 import java.lang.reflect.Type;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.HashMap;
@@ -28,11 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 
 /**
  * 
@@ -51,7 +44,7 @@ public class JsonUtils {
              .toFormatter();
 	 
 	 //序列化
-    final static JsonSerializer<LocalDateTime> jsonSerializerDateTime = (localDateTime, type, jsonSerializationContext) -> new JsonPrimitive(localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+   /* final static JsonSerializer<LocalDateTime> jsonSerializerDateTime = (localDateTime, type, jsonSerializationContext) -> new JsonPrimitive(localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     final static JsonSerializer<LocalDate> jsonSerializerDate = (localDate, type, jsonSerializationContext) -> new JsonPrimitive(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
   
     //反序列化
@@ -70,7 +63,7 @@ public class JsonUtils {
     };
     
     final static JsonDeserializer<LocalDate> jsonDeserializerDate = (jsonElement, type, jsonDeserializationContext) -> LocalDate.parse(jsonElement.getAsJsonPrimitive().getAsString(), DateTimeFormatter.ISO_LOCAL_DATE);
-
+*/
 	
 	private JsonUtils() {}
 	
@@ -78,7 +71,7 @@ public class JsonUtils {
 		return instance;
 	}
 	
-	public GsonBuilder builder() {
+	/*public GsonBuilder builder() {
 		GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
@@ -94,49 +87,50 @@ public class JsonUtils {
         .registerTypeAdapter(LocalDateTime.class, jsonDeserializerDateTime)
         .registerTypeAdapter(LocalDate.class, jsonDeserializerDate)
 		.enableComplexMapKeySerialization().serializeNulls();
-	}
+	}*/
 	
 	
 	public<T> T fromJson(String json, Class<T> c) {
-		GsonBuilder builder = b();
+		//GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
-		T obj = builder.create().fromJson(json, c);
+		T obj = JSON.parseObject(json, c);
 		return obj;
 	}
 	
 	public <T> T fromJson(String json, java.lang.reflect.Type type) {
-		GsonBuilder builder = b();
+		//GsonBuilder builder = b();
 		//System.out.println(this.getClass().getName()+": " + json);
-		T obj = builder.create().fromJson(json, type);
+		//TypeReference r = new TypeReference(type);
+		T obj = JSON.parseObject(json, type);
 		return obj;
 	}
 	
 	public Map<String,String> getStringMap(String json) {
-		Type type = new TypeToken<HashMap<String,String>>(){}.getType();
+		Type type = new TypeReference<HashMap<String,String>>(){}.getType();
 		Map<String,String> m = this.fromJson(json, type);
 		return m;
 	}
 	
 	public Map<String,Object> getStringKeyMap(String json) {
-		Type type = new TypeToken<HashMap<String,Object>>(){}.getType();
+		Type type = new TypeReference<HashMap<String,Object>>(){}.getType();
 		Map<String,Object> m = this.fromJson(json, type);
 		return m;
 	}
 	
 	public List<String> getStringValueList(String json,boolean innerJson) {
-		Type type = new TypeToken<List<String>>(){}.getType();
+		Type type = new TypeReference<List<String>>(){}.getType();
 		List<String> m = this.fromJson(json, type);
 		return m;
 	}
 	
 	public Set<String> getStringValueSet(String json,boolean innerJson) {
-		Type type = new TypeToken<Set<String>>(){}.getType();
+		Type type = new TypeReference<Set<String>>(){}.getType();
 		return JsonUtils.getIns().fromJson(json, type);
 	}
 	
 	public Object[] getObjectArray(String json,boolean innerJson) {
-		Type type = new TypeToken<Object[]>(){}.getType();
+		Type type = new TypeReference<Object[]>(){}.getType();
 		return JsonUtils.getIns().fromJson(json, type);
 	}
 	
@@ -144,33 +138,33 @@ public class JsonUtils {
 		if(obj == null) {
 			return "";
 		}
-		GsonBuilder builder = b();
+		//GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
-		String json = builder.create().toJson(obj);
-		return json;
+		//String json = builder.create().toJson(obj);
+		return  toJson( obj);
 	}
 	
 	public String toJson(Object obj) {
 		if(obj == null) {
 			return "";
 		}
-		GsonBuilder builder = b();
+		//GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
-		String json = builder.create().toJson(obj);
-		return json;
+		//String json = builder.create().toJson(obj);
+		return JSON.toJSONString(obj);
 	}
 	
 	public String toJson(Object obj,java.lang.reflect.Type type) {
 		if(obj == null) {
 			return "";
 		}
-		GsonBuilder builder = b();
+		//GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
-		String json = builder.create().toJson(obj,type);
-		return builder.create().toJson(obj,type);
+		//String json = builder.create().toJson(obj,type);
+		return JSON.toJSONString(obj);
 	}
 	
 	 public String processToJson(String json) {

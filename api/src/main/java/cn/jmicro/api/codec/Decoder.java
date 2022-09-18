@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSONObject;
+
 import cn.jmicro.api.gateway.ApiRequestJRso;
 import cn.jmicro.api.gateway.ApiResponseJRso;
 import cn.jmicro.api.net.Message;
@@ -122,6 +124,7 @@ public class Decoder {
 		//registType(MRpcItem.class,type--);
 		registType(java.util.Date.class,type--);
 		registType(java.sql.Date.class,type--);
+		registType(JSONObject.class,type--);
    }
    
 	public static void registType(Class<?> clazz,Short type){
@@ -133,6 +136,11 @@ public class Decoder {
 	}
 	
 	 static Short getType(Class<?> cls){
+		 
+		 Short t = clazz2Short.get(cls);
+		 if(t != null) {
+			 return t;
+		 }
 
 		if(cls == Void.TYPE || cls == Void.class) {
 			return clazz2Short.get(Void.class);
@@ -163,12 +171,12 @@ public class Decoder {
 		}else if(cls == ByteBuffer.class) {
 			return clazz2Short.get(ByteBuffer.class);
 		}else {
-			Short t = clazz2Short.get(cls);
+			/*Short t = clazz2Short.get(cls);
 			if(t==null) {
 				 //无类型编码
 				t = NON_ENCODE_TYPE;
-			}
-			return t;
+			}*/
+			return NON_ENCODE_TYPE;
 		}
 	   
 	}
@@ -246,6 +254,8 @@ public class Decoder {
 			v = buffer.get() == 1;
 		}else if(cls == char.class || cls == Character.TYPE || cls == Character.class){
 			v = buffer.getChar();
+		}else if(cls == JSONObject.class) {
+			v =  decodeJSONObject(buffer);
 		} else {	
 			v = decodeByReflect(buffer,cls);
 		}
@@ -253,14 +263,18 @@ public class Decoder {
 		return (V)v;
 	}
 	
+	private static JSONObject decodeJSONObject(ByteBuffer buffer) {
+		String json = decodeString(buffer);
+		if(Utils.isEmpty(json)) return null;
+		return JSONObject.parseObject(json);
+	}
+
 	private static Object decodeByteBuffer(ByteBuffer buffer) {
 		int len = buffer.getInt();
 		byte[] data = new byte[len];
 		buffer.get(data, 0, len);
 		return ByteBuffer.wrap(data);
 	}
-
-	
 	
 	private static Object decodeByReflect(ByteBuffer buffer,Class<?> cls) {
 		if(cls == null){

@@ -12,6 +12,7 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.http.HttpRequest;
 import cn.jmicro.api.http.HttpResponse;
 import cn.jmicro.api.http.IHttpRequestHandler;
+import cn.jmicro.api.http.JHttpStatus;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -28,6 +29,11 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
+import cn.jmicro.gateway.fs.FsDownloadHttpHandler;
+import cn.jmicro.transport.netty.server.NettyServerSession;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.extern.slf4j.Slf4j;
 
 @Component("srvDispatcher")
@@ -53,59 +59,11 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 	
 	@Inject
 	private PermissionManager pm;
+	
+	@Inject(required=false, value="fsd")
+	private FsDownloadHttpHandler fsDispatcher;
 
 	public void jready() {}
-	
-	public void handler0(HttpRequest req, HttpResponse resp) {
-		ServiceMethodJRso sm = this.smng.getMethodByHttpPath(req.getPath());
-		Class<?>[] psClasses = sm.getKey().getParameterClasses();
-		
-		String body = req.getTextBody();
-		if(req.isKv()) {
-			body = JsonUtils.getIns().toJson(req.getAllParam());
-		}
-		
-		Object[] args = null;
-		
-		if(psClasses == null || psClasses.length == 0) {
-			//无需参数
-			args = new Object[0];
-		} else if(sm.isHttpReqBody()) {
-			//单参数请求体类型
-			if(psClasses.length > 1) {
-				this.resp(resp, "请求参数不匹配", req.getContentType());
-				return;
-			}
-			
-			Class<?> paramClass = psClasses[0];
-			if(paramClass == String.class) {
-				args = new Object[]{body};
-			} else {
-				Object arg = JsonUtils.getIns().fromJson(body,paramClass);
-				args = new Object[]{arg};
-			}
-		} else {
-			int idx = 0;
-			args = new Object[psClasses.length];
-			Map<String,String> ps = req.getAllParam();
-			for(Class<?> ac : psClasses) {
-				String mn = sm.getParamNames()[idx];
-				String strVal = ps.get(mn);
-				if(Utils.isEmpty(strVal)) {
-					args[idx] = null;
-				} else {
-					args[idx] = getArgVal(ac, strVal);
-				}
-				idx++;
-			}
-		}
-		
-		String loginKey = req.getHeaderParam(Constants.LOGIN_KEY);
-		Message msg = this.createMessage(sm.getKey().getSnvHash(), args, loginKey);
-		
-		req.getSession().getReceiver().receive(req.getSession(), msg);
-		
-	}
 	
 	public boolean handle(HttpRequest req, HttpResponse resp) {
 		ServiceMethodJRso sm = this.smng.getMethodByHttpPath(req.getPath());
@@ -127,7 +85,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		
 		JMicroContext.configHttpProvider(req, sm);
 		
-		if(!checkLoginAndPermission(req,resp,sm)) {
+		if(!checkLoginAndPermission(req, resp, sm)) {
 			return true;
 		}
 		
@@ -181,7 +139,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		}
 		
 		p.success((rst,cxt)->{
-			this.resp(resp,JsonUtils.getIns().toJson(rst), req.getContentType());
+			this.respRpcResult(resp,req, rst,sm);
 		})
 		.fail((code,msg,cxt)->{
 			this.resp(resp, "{\"code\":\"" + code+"\",\"msg\":\""+msg+"\"}", 
@@ -224,7 +182,6 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
 			JMicroContext.get().setAccount(ai);
 		}
-		
 
 		if(ai == null && sm.isNeedLogin()) {
 			String errMsg = "JRPC check invalid login key: "+req.getUri();
@@ -252,18 +209,6 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		
 		return true;
 	}
-
-	
-	private Message createMessage(Integer hash, Object[] args, String loginKey) {
-		
-		Long reqId = idGenerator.getLongId(RpcRequestJRso.class);
-		
-		Message msg = Message.createRpcMessage(hash, args, reqId, "", loginKey, Message.PROTOCOL_BIN, Message.PROTOCOL_JSON);
-		
-		//signAndEncrypt(msg,((ByteBuffer)msg.getPayload()).array());
-		
-		return msg;
-    }
 	
 	private Object getArgVal(Class<?> valCls, String strVal) {
 
@@ -348,6 +293,63 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		} catch (UnsupportedEncodingException e) {
 			log.error(content,e);
 		}
+	}
+	
+	//application/json;charset:utf-8
+	private void respRpcResult(HttpResponse resp,HttpRequest req, Object rst,ServiceMethodJRso sm) {
+		
+		if(rst instanceof RespJRso) {
+			RespJRso rr = (RespJRso)rst;
+			int code = rr.getCode();
+			if(!(code == RespJRso.CODE_SUCCESS || JHttpStatus.HTTP_OK == code)) {
+				if(JHttpStatus.HTTP_MOVED_TEMP == code || JHttpStatus.HTTP_MOVED_PERM == code ||
+						JHttpStatus.HTTP_SEE_OTHER == code) {
+					//重定向
+					resp.redirect(code,rr.getData().toString());
+					return;
+				} else {
+					HttpResponseStatus s = HttpResponseStatus.valueOf(code);
+					if(s != null) {
+						resp.setStatusCode(rr.getCode());
+					}else {
+						resp.setStatusCode(JHttpStatus.HTTP_NOT_FOUND);
+					}
+					this.resp(resp, JsonUtils.getIns().toJson(rst), req.getContentType());
+				}
+			}
+		}
+		
+		if(sm.getHttpRespType() == Constants.HTTP_RESP_TYPE_RESTFULL) {
+			this.resp(resp, JsonUtils.getIns().toJson(rst), req.getContentType());
+		}else if(sm.getHttpRespType() == Constants.HTTP_RESP_TYPE_VIEW) {
+			//通过模板文件返回动态内容
+			respView(resp,req,rst,sm);
+		}else if(sm.getHttpRespType() == Constants.HTTP_RESP_TYPE_STREAM) {
+			//返回文件流
+			if(rst instanceof RespJRso) {
+				RespJRso rr = (RespJRso)rst;
+				if(rr.getData() != null) {
+					fsDispatcher.downloadFile(req, resp, rr.getData().toString(),true);
+				} else {
+					resp.setStatusCode(JHttpStatus.HTTP_NOT_FOUND);
+					this.resp(resp, JsonUtils.getIns().toJson(rst), req.getContentType());
+				}
+			} else {
+				//内容即为文件的ID
+				fsDispatcher.downloadFile(req, resp, rst.toString(),true);
+			}
+		}
+	}
+
+	/**
+	 * 通过模板文件返回动态内容
+	 * @param resp
+	 * @param req
+	 * @param rst 
+	 * @param sm
+	 */
+	private void respView(HttpResponse resp, HttpRequest req, Object rst, ServiceMethodJRso sm) {
+		
 	}
 
 	@Override

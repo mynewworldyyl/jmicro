@@ -1,5 +1,7 @@
 package cn.jmicro.transport.netty.server.httpandws;
 
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -7,11 +9,16 @@ import java.nio.ByteBuffer;
 
 import cn.jmicro.api.http.HttpResponse;
 import cn.jmicro.common.Constants;
+import cn.jmicro.transport.netty.server.NettyServerSession;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -72,5 +79,24 @@ public class JMicroNettyHttpResponse implements HttpResponse {
 	public void flush() {
 		ctx.writeAndFlush(r).addListener(ChannelFutureListener.CLOSE);
 	}
+
+	@Override
+	public void setStatusCode(int statusCode) {
+		HttpResponseStatus s = HttpResponseStatus.valueOf(statusCode);
+		if(s != null) {
+			r.setStatus(s);
+		}
+	}
+
+	@Override
+	public void redirect(int code,String url) {
+		this.setStatusCode(code);
+		HttpHeaders hs = r.headers();
+		hs.set(HttpHeaderNames.LOCATION, url);
+		NettyServerSession.cors(hs);
+		hs.set(HttpHeaderNames.CONTENT_LENGTH, r.content().readableBytes());
+		flush();
+	}
+	
 	
 }

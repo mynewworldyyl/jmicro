@@ -37,7 +37,7 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		
 		//System.out.println(className);
 		if(className.endsWith("RpcRequestJRso")) {
-			System.out.println("AddSerializedToObject: " + className);
+			System.out.println(this.getClass().getName() + ": AddSerializedToObject: " + className);
 		}
 		
 		try {
@@ -76,9 +76,33 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		 
 		 ct.addInterface(cp.get(ISerializeObject.class.getName()));
 		 
-		 ct.addMethod(CtMethod.make(getEncodeMethod(ct), ct));
+		 String mc = null;
+		 try {
+			mc = getEncodeMethod(ct);
+			if(mc == null || mc.trim().equals("")) {
+				System.out.println("编码方法块为空：" +className);
+				return null;
+			}
+			ct.addMethod(CtMethod.make(mc, ct));
+		} catch (javassist.CannotCompileException e) {
+			System.out.println("getEncodeMethod: "+className);
+			System.out.println("codeblock: "+mc);
+			e.printStackTrace();
+		}
 		 
-		 ct.addMethod(CtMethod.make(getDecodeMethod(ct), ct));
+		 try {
+			mc = getDecodeMethod(ct);
+			if(mc == null || mc.trim().equals("")) {
+				//throw new NullPointerException("解码方法块不能为空：" +className);
+				System.out.println("解码方法块为空：" +className);
+				return null;
+			}
+			ct.addMethod(CtMethod.make(mc, ct));
+		} catch (javassist.CannotCompileException e) {
+			System.out.println("getDecodeMethod: "+className);
+			System.out.println("codeblock: "+mc);
+			e.printStackTrace();
+		}
 		 
 		 byte[] data = ct.toBytecode();
 		 ct.detach();
@@ -97,16 +121,22 @@ public class AddSerializedToObject implements ClassFileTransformer {
 		
 		StringBuffer sb = new StringBuffer(" public void decode(java.io.DataInput __buffer)  throws java.io.IOException {\n");
 		
+		CtClass supcls = cls.getSuperclass();
+		if(supcls.getName().endsWith("JRso")) {
+			sb.append("super.decode(__buffer); ");
+		}
+		
+		CtField[] fields = cls.getDeclaredFields();
+		if(fields.length == 0 ) {
+			sb.append(" } ");
+			return sb.toString();
+		}
+		
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		
 		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder();\n\n");
 		
 		sb.append(" cn.jmicro.api.codec.JDataInput in = (cn.jmicro.api.codec.JDataInput)__buffer;\n");
-		
-		CtField[] fields = cls.getDeclaredFields();
-		if(fields.length == 0 ) {
-			return "";
-		}
 		
 		boolean d = cls.getName().contains("ActInfo");
 		
@@ -194,6 +224,12 @@ public class AddSerializedToObject implements ClassFileTransformer {
 
 	private static String getEncodeMethod(CtClass cls) throws NotFoundException, CannotCompileException {
 		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer) throws java.io.IOException { \n");
+		
+		CtClass supcls = cls.getSuperclass();
+		if(supcls.getName().endsWith("JRso")) {
+			sb.append("super.encode(__buffer); ");
+		}
+		
 		sb.append(cls.getName()).append(" __obj =  this;\n ");
 		sb.append(" cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)__buffer;\n");
 		sb.append(" cn.jmicro.api.codec.typecoder.TypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactory.getIns().getDefaultCoder(); \n");
@@ -206,9 +242,11 @@ public class AddSerializedToObject implements ClassFileTransformer {
 			return "";
 		}*/
 		
-		boolean d = cls.getName().contains("ActInfo");
+		//boolean d = cls.getName().contains("ActInfo");
 		
 		CtField[] fields = cls.getDeclaredFields();
+		
+		//CtField[] fields = cls.;
 		
 		for(int i = 0; i < fields.length; i++) {
 			CtField f = fields[i];

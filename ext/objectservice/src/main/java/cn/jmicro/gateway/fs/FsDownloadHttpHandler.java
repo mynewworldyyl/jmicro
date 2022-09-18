@@ -33,44 +33,45 @@ public class FsDownloadHttpHandler implements IHttpRequestHandler{
 		String uri = req.getUri();
 		String[] ps = uri.split("/");
 		String n = ps[ps.length-1];
-		
-		//Long fid = Long.parseLong(n);//最后一个是文件ID
+		return downloadFile(req,resp,n,false);
+	}
+	
+	public boolean downloadFile(HttpRequest req, HttpResponse resp, String fileId, boolean deleteFile) {
+		String uri = req.getUri();
+		// Long fid = Long.parseLong(n);//最后一个是文件ID
 		DBObject q = new BasicDBObject();
-		q.put(IObjectStorage._ID, n);
-		
+		q.put(IObjectStorage._ID, fileId);
+
 		GridFSDBFile file = fs.findOne(q);
-		if(file == null) {
-			boolean suc = this.imgMng.getFile(n, resp);
-			if(suc) {
+		if (file == null) {
+			boolean suc = this.imgMng.getFile(fileId, resp);
+			if (suc) {
 				return true;
 			}
 		}
-		
+
 		/*
-		InputStreamReader r = new InputStreamReader(file.getInputStream());
-		BufferedReader br = new BufferedReader(r);
-		
-		StringBuffer sb = new StringBuffer();
-		String str = null;
-		try {
-			while(null != (str = br.readLine())) {
-				sb.append(str);
+		 * InputStreamReader r = new InputStreamReader(file.getInputStream());
+		 * BufferedReader br = new BufferedReader(r);
+		 * 
+		 * StringBuffer sb = new StringBuffer(); String str = null; try { while(null !=
+		 * (str = br.readLine())) { sb.append(str); } } catch (IOException e) {}
+		 * 
+		 * log.info(sb.toString());
+		 */
+
+		if (file != null) {
+			resp.setHeader("Content-Type", file.getContentType());
+			resp.write(file.getInputStream(), (int) file.getLength());
+			if(deleteFile) {
+				fs.remove(q);
+				
 			}
-		} catch (IOException e) {}
-		
-		log.info(sb.toString());
-		*/
-		
-		if(file != null) {
-			resp.setHeader("Content-Type",file.getContentType());
-			resp.write(file.getInputStream(), (int)file.getLength());
-			return true;
 		} else {
-			resp.setHeader("Content-Type",Constants.HTTP_JSON_CONTENT_TYPE);
-			resp.write("{'code':'1','msg':'"+uri+"'}");
-			return false;
+			resp.setHeader("Content-Type", Constants.HTTP_JSON_CONTENT_TYPE);
+			resp.write("{'code':'1','msg':'" + uri + "'}");
 		}
-		
+		return true;
 	}
 
 	@Override

@@ -22,8 +22,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import cn.jmicro.common.Constants;
-
 /**
  * 
  * @author Yulei Ye
@@ -33,6 +31,6 @@ import cn.jmicro.common.Constants;
 @Retention(RUNTIME)
 public @interface Server {
 
-	public String transport() default Constants.TRANSPORT_NETTY;
+	public String transport() default "netty";
 	
 }

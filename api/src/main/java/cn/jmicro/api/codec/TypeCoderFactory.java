@@ -19,6 +19,8 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSONObject;
+
 import cn.jmicro.api.ClassScannerUtils;
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.typecoder.AbstractComparableTypeCoder;
@@ -431,6 +433,27 @@ public class TypeCoderFactory {
 
 		});
 		registClass(ByteBuffer.class,tcp.getTypeCode(ByteBuffer.class.getName()));
+		
+		registCoder(new AbstractShortTypeCoder<JSONObject>(tcp.getTypeCode(JSONObject.class.getName()), JSONObject.class) {
+			@Override
+			public void encodeData(DataOutput buffer, JSONObject val, Class<?> fieldDeclareType,
+					Type genericType) throws IOException {
+				String json = val== null? "{}":val.toJSONString();
+				TypeCoder.encodeString(buffer, json);
+			}
+
+			@Override
+			public JSONObject decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
+				try {
+					String json = buffer.readUTF();
+					return JSONObject.parseObject(json);
+				} catch (IOException e) {
+					e.printStackTrace();
+					return null;
+				}
+			}
+		});
+		registClass(JSONObject.class,tcp.getTypeCode(JSONObject.class.getName()));
 
 		/*registCoder(new ReflectTypeCoder<RpcRequest>(type--, RpcRequest.class));
 		registClass(RpcRequest.class,type);

@@ -89,26 +89,34 @@ public class PSDataJRso implements Serializable{
 	
 	public static final byte INVALID_ITEM_COUNT = -8;
 	
+	//消息上下文
 	private Map<String,Object> cxt = null;
 	
 	//消息ID,唯一标识一个消息
 	private long id = 0;
 	
+	//标志
 	private byte flag = 0;
 	
+	//主题
 	private String topic;
 	
+	//源租户
 	private int srcClientId;
 	
+	//消息来源
 	private Integer fr;
 	
+	//消息发送给谁
 	private Integer to;
 	
+	//消息数据
 	private Object data;
 	
 	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
 	private String callback = null;
 	
+	//本地回调
 	private transient ILocalCallback localCallback;
 	
 	//客户端发送失败次数，用于重发计数，如果消息失败次数到达一定量，将消息丢弃，并调用localCallback（如果存在）通知调用者，

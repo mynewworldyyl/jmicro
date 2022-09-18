@@ -1,6 +1,7 @@
 package cn.jmicro.api;
 
 import cn.jmicro.api.annotation.SO;
+import cn.jmicro.api.http.JHttpStatus;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import lombok.Data;
@@ -61,6 +62,22 @@ public class RespJRso<T> implements IResp{
 	public RespJRso(int code,String msg) {this.code = code;this.msg=msg;};
 	public RespJRso(int code,T data) {this.code = code;this.data=data;};
 	
+	public static <T> RespJRso<T> r() {
+		return new RespJRso<>();
+	}
+	
+	public static <T> RespJRso<T> r(int code) {
+		return new RespJRso<>(code);
+	}
+	
+	public static <T> RespJRso<T> r(int code,T data) {
+		return new RespJRso<>(code,data);
+	}
+	
+	public static <T> RespJRso<T> r(int code,String msg) {
+		return new RespJRso<>(code,msg);
+	}
+	
 	@Override
 	public String toString() {
 		return "code: " + this.getCode()+" ,msg: " + this.getMsg();
@@ -71,4 +88,23 @@ public class RespJRso<T> implements IResp{
 		return this.data;
 	}
 	
+	//http 302重定向
+	public RespJRso<T> httpRedirect(T url) {
+		return this.code(JHttpStatus.HTTP_MOVED_TEMP).data(url);
+	}
+	
+	public RespJRso<T> code(int code) {
+		this.code = code;
+		return this;
+	}
+	
+	public RespJRso<T> msg(String msg) {
+		this.msg = msg;
+		return this;
+	}
+	
+	public RespJRso<T> data(T data) {
+		this.data = data;
+		return this;
+	} 
 }

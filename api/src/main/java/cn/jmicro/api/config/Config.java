@@ -351,17 +351,17 @@ public class Config{
 	
 
 	private static void loadExtConfig() {
-		List<String> configFiles = ClassScannerUtils.getClasspathResourcePaths("META-INF/jmicro", "*.properties");
-		Map<String,String> params = new HashMap<>();
-		ClassLoader cl = Config.class.getClassLoader();
-		Set<String> basePackages = new HashSet<>();
-		for(String f : configFiles) {
-			InputStream is = null;
+		
+		final Map<String,String> params = new HashMap<>();
+		final Set<String> basePackages = new HashSet<>();
+		final StringBuffer componentsSb = new StringBuffer();
+		
+		ClassScannerUtils.classPathInputStream("META-INF/jmicro", "*.properties",
+		(path,is)->{
 			try {
-				is = cl.getResourceAsStream(f);
 				Properties p = new Properties();
 				p.load(is);
-				logger.info("Path:{}",f);
+				logger.info("Path:{}",path);
 				for(Object k : p.keySet()) {
 					String key = k.toString();
 					String v = p.getProperty(key);
@@ -374,21 +374,21 @@ public class Config{
 						}
 						logger.info("basePackages:{}",ps);
 						continue;
+					} else if(Constants.JMICRO_COMPONENTS_KEY.equals(key)) {
+						if(!StringUtils.isEmpty(v)){
+							componentsSb.append(",").append(v);
+						}
+						continue;
 					}
 					
 					if(params.containsKey(key)) {
 						logger.warn("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
 						//throw new CommonException("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
 					}
-					
-					/*if(!key.startsWith("/")) {
-						key = "/" + key;
-					}
-					key = key.replaceAll("\\.", "/");*/
-					
 					params.put(key, v);
 				}
-				logger.debug("End config {}******************************************",f);
+				
+				logger.debug("End config {}******************************************",path);
 			} catch (IOException e) {
 				logger.error("loadExtConfig",e);
 			} finally {
@@ -400,13 +400,21 @@ public class Config{
 					}
 				}
 			}
-		}
+		
+		});
+
 		if(!basePackages.isEmpty()) {
 			setBasePackages0(basePackages);
 		}
 		
 		if(!params.isEmpty()) {
 			extConfig.putAll(params);
+		}
+		
+		if(componentsSb.length() > 1) {
+			componentsSb.delete(0, 1);
+			logger.info("All components: " + componentsSb.toString());
+			extConfig.put(Constants.JMICRO_COMPONENTS_KEY, componentsSb.toString());
 		}
 		
 	}

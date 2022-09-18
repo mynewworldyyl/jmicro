@@ -21,8 +21,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import cn.jmicro.common.Constants;
 /**
  * 
  * @author Yulei Ye
@@ -32,6 +30,6 @@ import cn.jmicro.common.Constants;
 @Retention(RUNTIME)
 public @interface ObjFactory {
 
-	public String value() default Constants.DEFAULT_OBJ_FACTORY;
+	public String value() default "defaultObjFactory";// Constants.DEFAULT_OBJ_FACTORY;
 
 }

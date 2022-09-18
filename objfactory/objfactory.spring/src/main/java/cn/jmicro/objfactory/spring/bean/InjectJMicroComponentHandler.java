@@ -4,22 +4,28 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.annotation.JMicroComponent;
-import cn.jmicro.api.config.Config;
+import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.objectfactory.IObjectFactory;
 import cn.jmicro.api.objectsource.IObjectSource;
+import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -27,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
-public class InjectJMicroComponentHandler implements BeanPostProcessor/*,ApplicationListener<ApplicationEvent>*/{
+public class InjectJMicroComponentHandler implements BeanPostProcessor, ApplicationListener<ApplicationEvent>{
 
 	private Set<CfgFieldHolder> cfgFields = new HashSet<>();
 	
@@ -35,11 +41,17 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 	
 	private Set<ReadyMethodHolder> jmicroReadyMethods = new HashSet<>();
 	
+	private Map<Class<?>,Object> springRemoteSrvs = new HashMap<>();
+	
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		 List<Field> fields = new ArrayList<>();
 		 
+		 //Spring容器定义的JMicro服务组件
 		 Class<?> beanClass = AopUtils.getTargetClass(bean);
+		 if(beanClass.isAnnotationPresent(Service.class)) {
+			 springRemoteSrvs.put(beanClass,bean);
+		 }
 		 
 		 Utils.getIns().getFields(fields, beanClass);
 		 for(Field f : fields) {
@@ -63,7 +75,6 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 				 log.info("{}.{}",beanName,f.getName());
 				 cfgFields.add(fh);
 			 }
-		 
 		 }
 		 
 		 List<Method> methods = new ArrayList<>();
@@ -97,7 +108,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 		if(jmicroComponentFields.isEmpty()) return;
 		IObjectFactory of = beanFactory.getBean(IObjectFactory.class);
 		IObjectSource jmicroSource = beanFactory.getBean(IObjectSource.class);
-		Config cfg = jmicroSource.get(Config.class);
+		//Config cfg = jmicroSource.get(Config.class);
 		
 		for(FieldComponentHolder fc : jmicroComponentFields) {
 			Object com = null;
@@ -141,6 +152,9 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 			}
 		}
 		
+		jmicroComponentFields.clear();
+		jmicroComponentFields = null;
+		
 		for(CfgFieldHolder fc : cfgFields) {
 			try {
 				Object to = AopTargetUtils.getTarget(fc.bean);
@@ -154,6 +168,9 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 			}
 		}
 		
+		cfgFields.clear();
+		cfgFields = null;
+		
 		if(!this.jmicroReadyMethods.isEmpty()) {
 			for(ReadyMethodHolder rm : this.jmicroReadyMethods) {
 				try {
@@ -163,8 +180,29 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor/*,Applica
 				}
 			}
 		}
+		
+		jmicroReadyMethods.clear();
+		jmicroReadyMethods = null;
+		
+		//导出Spring定义的JMIcro服务组长件
+		if(!this.springRemoteSrvs.isEmpty()) {
+			ServiceLoader sl = of.get(ServiceLoader.class, false);
+			for(Map.Entry<Class<?>, Object> e : this.springRemoteSrvs.entrySet()) {
+				sl.exportOne(e.getKey(), e.getValue());
+			}
+		}
+		
+		springRemoteSrvs.clear();
+		springRemoteSrvs = null;
 	}
 	
+	@Override
+	public void onApplicationEvent(ApplicationEvent event) {
+		if(event instanceof ApplicationReadyEvent) {
+			postProcessBeanFactory(((ApplicationReadyEvent)event).getApplicationContext());
+		}
+	}
+
 	private class FieldComponentHolder {
 		private Object bean;
 		private Field f;
