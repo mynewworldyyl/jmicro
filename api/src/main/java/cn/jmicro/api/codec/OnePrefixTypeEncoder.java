@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.codec.typecoder.TypeCoder;
+import cn.jmicro.api.codec.typecoder.ITypeCoder;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -61,7 +61,7 @@ public class OnePrefixTypeEncoder implements IEncoder<ByteBuffer>{
 		
 		if(obj == null) {
 			buffer = ByteBuffer.allocate(32);
-			TypeCoder<Void> coder = typeCf.getByClass(Void.class);
+			ITypeCoder<Void> coder = typeCf.getByClass(Void.class);
 			
 			return buffer;
 		}

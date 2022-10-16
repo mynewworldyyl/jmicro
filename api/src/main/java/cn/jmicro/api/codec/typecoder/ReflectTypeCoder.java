@@ -14,12 +14,12 @@ public class ReflectTypeCoder<T> extends AbstractShortTypeCoder<T>{
 		@Override
 		public void encodeData(DataOutput buffer, T val,Class<?> fieldDeclareType,
 				Type genericType) throws IOException {
-			TypeCoder.encodeByReflect(buffer,val,fieldDeclareType, genericType);
+			TypeCoderUtils.encodeByReflect(buffer,val,fieldDeclareType, genericType);
 		}
 
 		@SuppressWarnings("unchecked")
 		@Override
 		public T decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
-			return (T)TypeCoder.decodeByReflect(buffer,declareFieldType,genericType);
+			return (T)TypeCoderUtils.decodeByReflect(buffer,declareFieldType,genericType);
 		}
 }

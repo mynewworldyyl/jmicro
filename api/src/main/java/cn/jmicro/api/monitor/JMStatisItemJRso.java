@@ -21,14 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.utils.TimeUtils;
+import lombok.Serial;
 
 /**
  * @author yeyulei
  */
-@SO
+@Serial
 public final class JMStatisItemJRso{
 	
 	//RPC上下文下账号的id，非RPC上下文，则是运行实例账号ID

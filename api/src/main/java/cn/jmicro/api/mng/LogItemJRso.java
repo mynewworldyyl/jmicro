@@ -1,25 +1,25 @@
 package cn.jmicro.api.mng;
 
-import cn.jmicro.api.annotation.SO;
-import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.JMLogItemJRso;
+import cn.jmicro.api.monitor.MC;
+import lombok.Serial;
 
-@SO
+@Serial
 public class LogItemJRso {
 
 	private JMLogItemJRso item;
-	
+
 	private short type = 0;
-	
+
 	private int num = 1;
 	private long val = 0;
-	
-	private String desc=null;
+
+	private String desc = null;
 	private long time = 0;
-	
+
 	private String tag = null;
 	private byte level = MC.LOG_NO;
-	
+
 	private String instanceName;
 
 	public JMLogItemJRso getItem() {
@@ -93,5 +93,5 @@ public class LogItemJRso {
 	public void setInstanceName(String instanceName) {
 		this.instanceName = instanceName;
 	}
-	
+
 }

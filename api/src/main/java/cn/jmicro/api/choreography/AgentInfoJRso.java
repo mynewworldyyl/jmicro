@@ -17,11 +17,11 @@
 package cn.jmicro.api.choreography;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.sysstatis.SystemStatisJRso;
+import lombok.Serial;
 
 @IDStrategy(1)
-@SO
+@Serial
 public final class AgentInfoJRso {
 
 	//每个Agent每次运行分配唯一ID

@@ -1,8 +1,8 @@
 package cn.jmicro.api.choreography;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class AgentInfo0JRso {
 
 	private AgentInfoJRso agentInfo;

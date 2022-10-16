@@ -1,9 +1,9 @@
 package cn.jmicro.api;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.util.HashUtils;
+import lombok.Serial;
 
-@SO
+@Serial
 public class CfgMetadataJRso {
 
 	private String name ="";

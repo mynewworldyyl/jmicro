@@ -1,8 +1,10 @@
 package cn.jmicro.api.schedule;
 
 import lombok.Data;
+import lombok.Serial;
 
 @Data
+@Serial
 public class ScheduleConfigJRso {
 	
 	public static final String TABLE = "t_schedule_job_cfg";

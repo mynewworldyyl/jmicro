@@ -1,8 +1,8 @@
 package cn.jmicro.api.test;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public final class PersonJRso {
 	
 	private String username ="Yeu";

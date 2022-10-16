@@ -1,8 +1,10 @@
 package cn.jmicro.api;
 
 import lombok.Data;
+import lombok.Serial;
 
 @Data
+@Serial
 public class QryDefJRso {
 	
 	public static final byte OP_EQ = 1;

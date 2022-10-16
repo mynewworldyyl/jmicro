@@ -3,8 +3,10 @@ package cn.jmicro.ext.bbs.entities;
 import java.util.List;
 
 import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
 @SO
+@Serial
 public class TopicVoJRso {
 	
 	private TopicJRso topic;

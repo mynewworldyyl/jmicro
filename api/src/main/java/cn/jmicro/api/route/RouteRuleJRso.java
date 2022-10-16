@@ -16,8 +16,8 @@
  */
 package cn.jmicro.api.route;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.util.JsonUtils;
+import lombok.Serial;
 
 /**
  * 
@@ -25,7 +25,7 @@ import cn.jmicro.common.util.JsonUtils;
  *
  * @date: 2018年11月10日 下午9:32:20
  */
-@SO
+@Serial
 public final class RouteRuleJRso implements Comparable<RouteRuleJRso> {
 	
 	public static final String TYPE_FROM_IP_ROUTER = "ipRouter";

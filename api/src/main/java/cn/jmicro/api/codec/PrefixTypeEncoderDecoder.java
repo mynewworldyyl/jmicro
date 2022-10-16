@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.codec.typecoder.TypeCoder;
+import cn.jmicro.api.codec.typecoder.ITypeCoder;
 import cn.jmicro.common.CommonException;
 
 /**
@@ -37,13 +37,13 @@ public class PrefixTypeEncoderDecoder{
 	//@Inject
 	//private TypeCoderFactory typeCf;
 	
-	private TypeCoder<Object> dc = null;
+	private ITypeCoder<Object> dc = null;
 	
 	@Cfg(value="/OnePrefixTypeEncoder",defGlobal=true,required=true)
 	private int encodeBufferSize = 4092;
 	
 	public void jready() {
-		dc = TypeCoderFactory.getIns().getDefaultCoder();
+		dc = TypeCoderFactoryUtils.getIns().getDefaultCoder();
 	}
 	
 	@SuppressWarnings("unchecked")

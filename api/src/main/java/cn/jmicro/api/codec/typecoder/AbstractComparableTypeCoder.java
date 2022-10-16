@@ -7,7 +7,7 @@ import java.lang.reflect.Type;
 import cn.jmicro.api.codec.TypeUtils;
 import cn.jmicro.common.CommonException;
 
-public abstract class AbstractComparableTypeCoder<T> implements TypeCoder<T>{
+public abstract class AbstractComparableTypeCoder<T> implements ITypeCoder<T>{
 	
 	protected final byte prefixCode;
 	
@@ -25,7 +25,7 @@ public abstract class AbstractComparableTypeCoder<T> implements TypeCoder<T>{
 	}
 
 	@Override
-	public int compareTo(TypeCoder<T> o) {
+	public int compareTo(ITypeCoder<T> o) {
 		if(o == null) {
 			return 1;
 		}

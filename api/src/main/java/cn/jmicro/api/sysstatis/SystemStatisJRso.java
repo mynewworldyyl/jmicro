@@ -1,8 +1,8 @@
 package cn.jmicro.api.sysstatis;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class SystemStatisJRso {
 
 	private long totalMemory;

@@ -1,12 +1,11 @@
 package cn.jmicro.api;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.http.JHttpStatus;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import lombok.Data;
 
-@SO
+//@Serial
 @Data
 public class RespJRso<T> implements IResp{
 	

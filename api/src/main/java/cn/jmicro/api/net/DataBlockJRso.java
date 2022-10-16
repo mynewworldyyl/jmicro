@@ -4,7 +4,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import cn.jmicro.api.utils.TimeUtils;
 import lombok.Data;
+import lombok.Serial;
 
+@Serial
 @Data
 public class DataBlockJRso {
 	

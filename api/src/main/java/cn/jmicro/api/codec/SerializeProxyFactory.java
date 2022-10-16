@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import cn.jmicro.api.codec.typecoder.TypeCoder;
+import cn.jmicro.api.codec.typecoder.TypeCoderUtils;
 import cn.jmicro.common.Utils;
 
 public class SerializeProxyFactory {
@@ -77,7 +77,7 @@ public class SerializeProxyFactory {
 		
 		sb.append(" java.lang.reflect.Field f = null; ");
 		
-		List<Field> fields = TypeCoder.loadClassFieldsFromCache(cls);
+		List<Field> fields = TypeCoderUtils.loadClassFieldsFromCache(cls);
 		for(int i = 0; i < fields.size(); i++) {
 			Field f = fields.get(i);
 			if(Modifier.isTransient(f.getModifiers())) {
@@ -132,7 +132,7 @@ public class SerializeProxyFactory {
 		StringBuffer sb = new StringBuffer("public void encode(java.io.DataOutput __buffer,Object obj)   throws java.io.IOException { \n");
 		sb.append(cls.getName() ).append(" __obj =  (").append(cls.getName()).append(")").append("obj; \n");
 		
-		List<Field> fields = TypeCoder.loadClassFieldsFromCache(cls);
+		List<Field> fields = TypeCoderUtils.loadClassFieldsFromCache(cls);
 		for(int i = 0; i < fields.size(); i++) {
 			Field f = fields.get(i);
 			if(Modifier.isTransient(f.getModifiers())) {

@@ -1,8 +1,8 @@
 package cn.jmicro.api.monitor;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class MCConfigJRso {
 
 	private int clientId;

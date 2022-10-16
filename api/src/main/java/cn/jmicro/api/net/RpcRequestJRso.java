@@ -20,16 +20,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.registry.ServiceMethodJRso;
+import lombok.Serial;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:07:03
  */
-@SO
+@Serial
 public final class RpcRequestJRso implements IRequest{
 	
 	protected Map<String,Object> params = new HashMap<String,Object>();

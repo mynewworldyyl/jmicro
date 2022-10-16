@@ -18,12 +18,12 @@ package cn.jmicro.api.registry;
 
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  * 在服务标识基础上加上方法签名
@@ -31,7 +31,7 @@ import lombok.Data;
  * @author Yulei Ye
  * @date 2018年12月2日 下午11:22:50
  */
-@SO
+@Serial
 @Data
 public final class UniqueServiceMethodKeyJRso {
 

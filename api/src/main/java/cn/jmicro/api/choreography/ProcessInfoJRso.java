@@ -7,14 +7,14 @@ import java.util.Set;
 
 import cn.jmicro.api.CfgMetadataJRso;
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
 import lombok.Data;
+import lombok.Serial;
 
-@SO
+@Serial
 @IDStrategy(1)
 @Data
 public class ProcessInfoJRso {
@@ -91,7 +91,6 @@ public class ProcessInfoJRso {
 	public Set<CfgMetadataJRso> setMetadatas(String key,Set<CfgMetadataJRso> ms) {
 		return metadatas.put(key, ms);
 	}
-	
 
 	public Set<CfgMetadataJRso> getMetadatas(String key) {
 		return metadatas.get(key);

@@ -1,9 +1,9 @@
 package cn.jmicro.api.tx;
 
-import cn.jmicro.api.annotation.SO;
 import lombok.Data;
+import lombok.Serial;
 
-@SO
+@Serial
 @Data
 public class TxConfigJRso {
 

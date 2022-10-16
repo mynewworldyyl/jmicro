@@ -19,7 +19,6 @@ package cn.jmicro.api.gateway;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.net.IResp;
@@ -27,6 +26,7 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
+import lombok.Serial;
 
 /**
  * 
@@ -34,7 +34,7 @@ import cn.jmicro.common.util.JsonUtils;
  * @date 2018年11月16日 上午12:22:02
  *
  */
-@SO
+//@Serial
 public final class ApiResponseJRso implements IResp {
 	private Long id = -1L;
 	private transient Message msg = null;

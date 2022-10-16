@@ -164,7 +164,8 @@ public class NettySocketServer implements IServer {
              }
              
 		} catch (InterruptedException e) {
-			logger.error("",e);
+			logger.error("启动Socket监听错误",e);
+			System.exit(1);
 		}finally{
             //bossGroup.shutdownGracefully();
             //workerGroup.shutdownGracefully();

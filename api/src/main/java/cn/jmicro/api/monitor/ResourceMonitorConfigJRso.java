@@ -3,11 +3,11 @@ package cn.jmicro.api.monitor;
 import java.io.BufferedWriter;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
+import lombok.Serial;
 
-@SO
+@Serial
 @IDStrategy(1)
 public class ResourceMonitorConfigJRso {
 

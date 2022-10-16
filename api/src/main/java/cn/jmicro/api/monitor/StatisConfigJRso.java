@@ -4,13 +4,13 @@ import java.io.BufferedWriter;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
+import lombok.Serial;
 
-@SO
+@Serial
 public class StatisConfigJRso {
 
 	public static final String STATIS_CONFIG_ROOT = Config.getRaftBasePath("") + "/statisConfigs";

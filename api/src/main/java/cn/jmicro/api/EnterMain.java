@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.codec.JDataOutput;
-import cn.jmicro.api.codec.TypeCoderFactory;
+import cn.jmicro.api.codec.TypeCoderFactoryUtils;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.objectfactory.IObjectFactory;
@@ -268,7 +268,7 @@ public class EnterMain {
 						if(Message.PROTOCOL_BIN == protocol) {
 							JDataOutput jo = new JDataOutput(2048);
 							
-							TypeCoderFactory.getIns().getDefaultCoder().encode(jo, args, null, null);
+							TypeCoderFactoryUtils.getIns().getDefaultCoder().encode(jo, args, null, null);
 							
 							ByteBuffer bb = jo.getBuf();
 							

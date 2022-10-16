@@ -7,8 +7,10 @@ import java.util.Map;
 
 import cn.jmicro.common.Utils;
 import lombok.Data;
+import lombok.Serial;
 
 @Data
+@Serial
 public class QueryJRso {
 	
 	private int size;

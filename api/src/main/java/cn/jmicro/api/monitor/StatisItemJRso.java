@@ -1,14 +1,14 @@
 package cn.jmicro.api.monitor;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.utils.TimeUtils;
+import lombok.Serial;
 
 /**
  * 
  * @author yeyulei
  *
  */
-@SO
+@Serial
 public class StatisItemJRso {
 
 	private short type;

@@ -4,9 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class MonitorInfoJRso {
 
 	private Map<String,Set> subsriber2Types = new HashMap<>();

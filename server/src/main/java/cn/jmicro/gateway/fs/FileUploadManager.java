@@ -71,7 +71,7 @@ public class FileUploadManager {
 		}
 		
 		//taskMng = new TaskManager(5000);
-		TimerTicker.doInBaseTicker(120, "ResourceReponsitoryChecker", null,
+		TimerTicker.doInBaseTicker(120, "fileUploadMngChecker", null,
 		(key,att)->{
 			try {
 				doChecker();

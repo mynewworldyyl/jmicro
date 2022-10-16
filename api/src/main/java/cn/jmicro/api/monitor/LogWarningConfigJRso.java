@@ -2,11 +2,11 @@ package cn.jmicro.api.monitor;
 
 import java.io.BufferedWriter;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.exp.Exp;
 import cn.jmicro.api.monitor.genclient.ILogWarningJMSrv$JMAsyncClient;
+import lombok.Serial;
 
-@SO
+@Serial
 public class LogWarningConfigJRso {
 	
 	//将匹配的日志转发给cfgParams（服务方法KEY）指定的RPC方法

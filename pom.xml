@@ -120,7 +120,7 @@
         <zkclient.version>2.0</zkclient.version>
         <!-- <redis.version>2.10.0</redis.version> -->
         <redis.version>3.7.0</redis.version>
-        <lombok.version>1.18.4</lombok.version>
+        <lombok.version>1.18.25</lombok.version>
         <skip_maven_deploy>false</skip_maven_deploy>
     </properties>
 
@@ -484,7 +484,13 @@
 			<artifactId>jmicro.codegenerator</artifactId>
 			 <version>${jmicro.version}</version>
 			  <scope>provided</scope>
-		</dependency>  
+		</dependency>
+		
+	    <dependency>
+	      <groupId>fr.inria.gforge.spoon</groupId>
+	      <artifactId>spoon-core</artifactId>
+	      <version>9.1.0</version>
+	    </dependency>
         </dependencies>
         
     </dependencyManagement>
@@ -821,6 +827,38 @@
 	            </executions>  
 	        </plugin> 
             
+            <!-- <plugin>
+			      <groupId>fr.inria.gforge.spoon</groupId>
+				  <artifactId>spoon-maven-plugin</artifactId>
+				  <version>3.6-SNAPSHOT</version>
+			    <configuration>
+			      <skip>false</skip>
+			      <processors>
+			        <processor>cn.jmicro.codegenerator.spoon.EncodeDecodeMethodProcessor</processor>
+			         <processor>cn.jmicro.codegenerator.spoon.ClassProcessor</processor>
+			      </processors>
+			      <executions>
+				    <execution>
+				      <phase>generate-sources</phase>
+				      <goals>
+				        <goal>generate</goal>
+				      </goals>
+				    </execution>
+				  </executions>
+				  <dependencies>
+				   	<dependency>
+				    	<groupId>cn.jmicro</groupId>
+						<artifactId>jmicro.codegenerator</artifactId>
+						<version>${jmicro.version}</version>
+					</dependency>
+				     <dependency>
+				      <groupId>fr.inria.gforge.spoon</groupId>
+				      <artifactId>spoon-core</artifactId>
+				    </dependency>
+				  </dependencies>
+			    </configuration>
+			</plugin> -->
+			
              <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>${maven_jar_version}</version>
@@ -845,14 +883,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
             
-           <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <version>${maven_deploy_version}</version>
                 <configuration>
                     <skip>${skip_maven_deploy}</skip>
                 </configuration>
-            </plugin> 
+            </plugin>
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -973,6 +1011,13 @@
 
         <pluginManagement>
             <plugins>
+	            <plugin>
+	              <groupId>fr.inria.gforge.spoon</groupId>
+				  <artifactId>spoon-maven-plugin</artifactId>
+				  <version>3.6-SNAPSHOT</version>
+				  <!-- <version>1.7.1</version> -->
+				</plugin>
+            
               	<plugin>
 					<groupId>com.vlkan</groupId>
 					<artifactId>quasar-maven-plugin</artifactId>

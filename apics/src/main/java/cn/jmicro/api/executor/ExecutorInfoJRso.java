@@ -1,8 +1,8 @@
 package cn.jmicro.api.executor;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class ExecutorInfoJRso {
 
 	private ExecutorConfigJRso ec;

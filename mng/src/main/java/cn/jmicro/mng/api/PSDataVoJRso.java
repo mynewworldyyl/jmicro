@@ -2,8 +2,10 @@ package cn.jmicro.mng.api;
 
 import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.pubsub.PSDataJRso;
+import lombok.Serial;
 
 @SO
+@Serial
 public class PSDataVoJRso extends PSDataJRso {
 
 	private static final long serialVersionUID = 323374730999L;

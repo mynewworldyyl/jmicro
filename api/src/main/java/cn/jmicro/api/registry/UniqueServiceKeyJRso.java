@@ -19,12 +19,12 @@ package cn.jmicro.api.registry;
 import java.util.HashSet;
 import java.util.Set;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.StringUtils;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  * 服务标识 
@@ -32,7 +32,7 @@ import lombok.Data;
  * @author Yulei Ye
  * @date 2018年12月2日 下午11:22:38
  */
-@SO
+@Serial
 @Data
 public final class UniqueServiceKeyJRso {
 	

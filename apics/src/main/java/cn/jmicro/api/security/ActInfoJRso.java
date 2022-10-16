@@ -4,12 +4,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
+import lombok.Serial;
 
-@SO
+@Serial
 public class ActInfoJRso {
 	
 	public static final byte LV_NORMAL = 0;// 0 普通用户

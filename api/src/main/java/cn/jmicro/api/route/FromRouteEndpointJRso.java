@@ -16,7 +16,7 @@
  */
 package cn.jmicro.api.route;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
 /**
  * 
@@ -24,7 +24,7 @@ import cn.jmicro.api.annotation.SO;
  *
  * @date: 2018年11月10日 下午10:27:53
  */
-@SO
+@Serial
 public class FromRouteEndpointJRso {
 	
 	private String type;

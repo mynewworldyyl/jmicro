@@ -1,8 +1,10 @@
 package cn.jmicro.resource;
 
 import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
 @SO
+@Serial
 public class ResourceDataReqJRso {
 
 	private int toType;

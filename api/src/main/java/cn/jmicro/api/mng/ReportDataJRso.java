@@ -1,8 +1,8 @@
 package cn.jmicro.api.mng;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class ReportDataJRso {
 
 	private Short[] types;

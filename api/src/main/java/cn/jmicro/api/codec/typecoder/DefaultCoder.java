@@ -56,7 +56,7 @@ import cn.jmicro.common.CommonException;
  * @author Yulei Ye
  * @date 2018年12月28日 下午10:57:11
  */
-public class DefaultCoder implements TypeCoder<Object> {
+public class DefaultCoder implements ITypeCoder<Object> {
 	
 	public DefaultCoder() {
 	}
@@ -189,7 +189,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 		if(Collection.class.isAssignableFrom(valCls) ||
 				Map.class.isAssignableFrom(valCls) || valCls.isArray()) {
 			//val已经非空值，肯定能获取到一个编码器，至少是DefaultCoder
-			TypeCoder coder = null;
+			ITypeCoder coder = null;
 			if(fieldDeclareType != null && TypeUtils.isFinal(fieldDeclareType)) {
 				//基本数据类型的非引用类型
 				coder = TypeCoderFactory.getIns().getCoder(fieldDeclareType);
@@ -204,12 +204,12 @@ public class DefaultCoder implements TypeCoder<Object> {
 				// 不属于任何类的成员字段时，fieldDeclareType==null
 				if (fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
 					//写入类型前缀码Decoder.PREFIX_TYPE_STRING，类型编码信息
-					TypeCoder.putStringType(buffer, val.getClass().getName());
+					TypeCoderUtils.putStringType(buffer, val.getClass().getName());
 				} else {
 					buffer.write(DecoderConstant.PREFIX_TYPE_FINAL);
 				}
 				//默认编码器通过反射编码数据
-				TypeCoder.encodeByReflect(buffer, val, fieldDeclareType,genericType);
+				TypeCoderUtils.encodeByReflect(buffer, val, fieldDeclareType,genericType);
 			}
 		
 		} else {
@@ -234,7 +234,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 				if(so != null) {
 					so.encode(buffer,val);
 				}else {
-					TypeCoder coder = TypeCoderFactory.getIns().getCoder(valCls);
+					ITypeCoder coder = TypeCoderFactory.getIns().getCoder(valCls);
 					if (coder != this) {
 						//有指定类型的编码器，使用指定类型的编码器
 						jo.position(pos);//具体编码器写其对应的前缀码及编码
@@ -247,7 +247,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 							buffer.write(Decoder.PREFIX_TYPE_FINAL);
 						}*/
 						//默认编码器通过反射编码数据
-						TypeCoder.encodeByReflect(buffer, val, fieldDeclareType,genericType);
+						TypeCoderUtils.encodeByReflect(buffer, val, fieldDeclareType,genericType);
 					}
 				}
 			}
@@ -310,7 +310,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 			}else if(DecoderConstant.PREFIX_TYPE_DATE == prefixCodeType) {
 				return new Date(buffer.readLong());
 			}else if(DecoderConstant.PREFIX_TYPE_PROXY == prefixCodeType) {
-				Class<?> cls = TypeCoder.getType(buffer);
+				Class<?> cls = TypeCoderUtils.getType(buffer);
 				if(ISerializeObject.class.isAssignableFrom(cls)) {
 					try {
 						ISerializeObject obj = (ISerializeObject)cls.newInstance();
@@ -332,22 +332,22 @@ public class DefaultCoder implements TypeCoder<Object> {
 						 Object o = so.decode(buffer);
 						 return o;
 					} else {
-						TypeCoder cd = TypeCoderFactory.getIns().getCoder(cls);
+						ITypeCoder cd = TypeCoderFactory.getIns().getCoder(cls);
 						if(cd != null && cd != this) {
 							return cd.decode(buffer,cls,null);
 						} else {
-							return TypeCoder.decodeByReflect(buffer, cls, genericType);
+							return TypeCoderUtils.decodeByReflect(buffer, cls, genericType);
 						}
 					}
 				}
 			}else if(DecoderConstant.PREFIX_TYPE_STRING == prefixCodeType) {
-				fieldDeclareType = TypeCoder.getType(buffer);
+				fieldDeclareType = TypeCoderUtils.getType(buffer);
 				if(fieldDeclareType == null) {
 					throw new CommonException("Invalid class data buffer: "+buffer.toString());
 				}
-				return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
+				return TypeCoderUtils.decodeByReflect(buffer, fieldDeclareType, genericType);
 			}else if(DecoderConstant.PREFIX_TYPE_FINAL == prefixCodeType) {
-				TypeCoder<?> coder = null;
+				ITypeCoder<?> coder = null;
 				if(fieldDeclareType == null || !TypeUtils.isFinal(fieldDeclareType)) {
 					coder = TypeCoderFactory.getIns().getCoder(buffer.readShort());
 				} else {
@@ -357,19 +357,19 @@ public class DefaultCoder implements TypeCoder<Object> {
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				} else {
-					return TypeCoder.decodeByReflect(buffer, fieldDeclareType, genericType);
+					return TypeCoderUtils.decodeByReflect(buffer, fieldDeclareType, genericType);
 				}
 			} else if(DecoderConstant.PREFIX_TYPE_SHORT == prefixCodeType) {
 				Short code = buffer.readShort();
 				//Class<?> cls = TypeCoderFactory.getIns().getClassByCode(code);
-				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(code);
+				ITypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(code);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
 					throw new CommonException("Invalid type code: "+code);
 				}
 			} else if(DecoderConstant.PREFIX_TYPE_LIST == prefixCodeType) {
-				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(List.class);
+				ITypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(List.class);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
@@ -377,14 +377,14 @@ public class DefaultCoder implements TypeCoder<Object> {
 				}
 				
 			}  else if(DecoderConstant.PREFIX_TYPE_SET == prefixCodeType) {
-				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(Set.class);
+				ITypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(Set.class);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
 					throw new CommonException("Invalid Set type coder: " + coder.type().getName());
 				}
 			}  else if(DecoderConstant.PREFIX_TYPE_MAP == prefixCodeType) {
-				TypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(Map.class);
+				ITypeCoder<?> coder = TypeCoderFactory.getIns().getCoder(Map.class);
 				if(coder != this) {
 					return coder.decode(buffer, fieldDeclareType, genericType);
 				}else {
@@ -402,7 +402,7 @@ public class DefaultCoder implements TypeCoder<Object> {
 	}
 	
 	@Override
-	public int compareTo(TypeCoder<Object> o) {
+	public int compareTo(ITypeCoder<Object> o) {
 		return -1;
 	}
 

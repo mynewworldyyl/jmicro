@@ -2,9 +2,9 @@ package cn.jmicro.api.mng;
 
 import java.util.List;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class LogFileEntryJRso {
 
 	private String agentId;

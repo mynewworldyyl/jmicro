@@ -1,8 +1,8 @@
 package cn.jmicro.api.security;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class SecretDataJRso {
 
 	private String data;

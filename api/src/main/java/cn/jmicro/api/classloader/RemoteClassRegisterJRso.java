@@ -17,9 +17,9 @@
 package cn.jmicro.api.classloader;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 @IDStrategy
 public class RemoteClassRegisterJRso {
 	

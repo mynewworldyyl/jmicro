@@ -28,9 +28,10 @@ import cn.jmicro.api.codec.typecoder.AbstractFinalTypeCoder;
 import cn.jmicro.api.codec.typecoder.AbstractShortTypeCoder;
 import cn.jmicro.api.codec.typecoder.ArrayCoder;
 import cn.jmicro.api.codec.typecoder.DefaultCoder;
+import cn.jmicro.api.codec.typecoder.ITypeCoder;
 import cn.jmicro.api.codec.typecoder.PrimitiveTypeArrayCoder;
 import cn.jmicro.api.codec.typecoder.PrimitiveTypeCoder;
-import cn.jmicro.api.codec.typecoder.TypeCoder;
+import cn.jmicro.api.codec.typecoder.TypeCoderUtils;
 import cn.jmicro.api.codec.typecoder.VoidTypeCoder;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Utils;
@@ -50,19 +51,13 @@ import cn.jmicro.common.Utils;
 //@Component
 public class TypeCoderFactory {
 
-	private static final Logger logger = LoggerFactory.getLogger(TypeCoderFactory.class);
-
-	private static final TypeCoderFactory ins = new TypeCoderFactory();
-
-	public static TypeCoderFactory getIns() {
-		return ins;
-	}
+	private static final Logger logger = LoggerFactory.getLogger(TypeCoderFactoryUtils.class);
 
 	@SuppressWarnings("rawtypes")
-	private Map<Short, TypeCoder> code2Coder = new TreeMap<>();
+	private Map<Short, ITypeCoder> code2Coder = new TreeMap<>();
 
 	@SuppressWarnings("rawtypes")
-	private Map<Class, TypeCoder> clazz2Coder = new HashMap<>();
+	private Map<Class, ITypeCoder> clazz2Coder = new HashMap<>();
 	
 	//@SuppressWarnings("rawtypes")
 	private Map<Short, Class<?>> code2class = new HashMap<>();
@@ -71,14 +66,21 @@ public class TypeCoderFactory {
 	private Map<Class<?>,Short> class2code = new HashMap<>();
 
 	private ITypeCodeProducer tcp;
+	
+	@SuppressWarnings("rawtypes")
+	private ITypeCoder<Object> defaultCoder = new DefaultCoder();
+
+	private ITypeCoder<Void> voidCoder = null;
 
 	private TypeCoderFactory() {
+		TypeCoderFactoryUtils.getIns().setDefaultCoder(defaultCoder);
 	}
+	
+	private static final TypeCoderFactory ins = new TypeCoderFactory();
 
-	@SuppressWarnings("rawtypes")
-	private TypeCoder<Object> defaultCoder = new DefaultCoder();
-
-	private TypeCoder<Void> voidCoder = null;
+	public static TypeCoderFactory getIns() {
+		return ins;
+	}
 	
 	public synchronized void  setTypeCodeProducer(ITypeCodeProducer tc) {
 		if(tcp != null) {
@@ -88,12 +90,12 @@ public class TypeCoderFactory {
 		create();
 	}
 
-	public TypeCoder<Object> getDefaultCoder() {
+	public ITypeCoder<Object> getDefaultCoder() {
 		checkTcp();
 		return defaultCoder;
 	}
 
-	public TypeCoder<Void> getVoidCoder() {
+	public ITypeCoder<Void> getVoidCoder() {
 		checkTcp();
 		return voidCoder;
 	}
@@ -352,7 +354,7 @@ public class TypeCoderFactory {
 			
 			@Override
 			public Map decode(DataInput buffer, Class<?> fieldDeclareType, Type genericType) {
-				return TypeCoder.decodeMap(buffer, fieldDeclareType, TypeCoder.genericType(genericType));
+				return TypeCoderUtils.decodeMap(buffer, fieldDeclareType, TypeCoderUtils.genericType(genericType));
 			}
 
 			@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -360,7 +362,7 @@ public class TypeCoderFactory {
 			public void encode(DataOutput buffer, Map val, Class<?> fieldDeclareType, 
 					Type genericType) throws IOException {
 				buffer.write(DecoderConstant.PREFIX_TYPE_MAP);
-				TypeCoder.encodeMap(buffer, (Map) val, TypeCoder.genericType(genericType));
+				TypeCoderUtils.encodeMap(buffer, (Map) val, TypeCoderUtils.genericType(genericType));
 			}
 		});
 		registClass(Map.class,tcp.getTypeCode(Map.class.getName()));
@@ -371,14 +373,14 @@ public class TypeCoderFactory {
 			public void encode(DataOutput buffer, Set val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
 				buffer.write(DecoderConstant.PREFIX_TYPE_SET);
-				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
+				TypeCoderUtils.encodeCollection(buffer, val, fieldDeclareType, TypeCoderUtils.genericType(genericType));
 			}
 
 			@SuppressWarnings("rawtypes")
 			@Override
 			public Set decode(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 				Set result = new HashSet();
-				TypeCoder.decodeCollection(buffer, result, declareFieldType, TypeCoder.genericType(genericType));
+				TypeCoderUtils.decodeCollection(buffer, result, declareFieldType, TypeCoderUtils.genericType(genericType));
 				return result;
 			}
 			
@@ -391,14 +393,14 @@ public class TypeCoderFactory {
 			public void encode(DataOutput buffer, List val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
 				buffer.write(DecoderConstant.PREFIX_TYPE_LIST);
-				TypeCoder.encodeCollection(buffer, val, fieldDeclareType, TypeCoder.genericType(genericType));
+				TypeCoderUtils.encodeCollection(buffer, val, fieldDeclareType, TypeCoderUtils.genericType(genericType));
 			}
 
 			@SuppressWarnings("rawtypes")
 			@Override
 			public List decode(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 				List result = new ArrayList();
-				TypeCoder.decodeCollection(buffer, result, declareFieldType, TypeCoder.genericType(genericType));
+				TypeCoderUtils.decodeCollection(buffer, result, declareFieldType, TypeCoderUtils.genericType(genericType));
 				return result;
 			}
 			
@@ -410,7 +412,7 @@ public class TypeCoderFactory {
 			public void encodeData(DataOutput buffer, ByteBuffer val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
 				
-				TypeCoder.putLength(buffer, val.remaining());
+				TypeCoderUtils.putLength(buffer, val.remaining());
 				
 				byte[] data = new byte[val.remaining()];
 				val.get(data);
@@ -420,7 +422,7 @@ public class TypeCoderFactory {
 			@Override
 			public ByteBuffer decodeData(DataInput buffer, Class<?> declareFieldType, Type genericType) {
 				try {
-					int len =TypeCoder.getLength(buffer);
+					int len =TypeCoderUtils.getLength(buffer);
 					byte[] data = new byte[len];
 					buffer.readFully(data, 0, len);
 					return ByteBuffer.wrap(data);
@@ -439,7 +441,7 @@ public class TypeCoderFactory {
 			public void encodeData(DataOutput buffer, JSONObject val, Class<?> fieldDeclareType,
 					Type genericType) throws IOException {
 				String json = val== null? "{}":val.toJSONString();
-				TypeCoder.encodeString(buffer, json);
+				TypeCoderUtils.encodeString(buffer, json);
 			}
 
 			@Override
@@ -500,30 +502,30 @@ public class TypeCoderFactory {
 		}
 	}
 
-	public <T> TypeCoder<T> getByCode(short code) {
+	public <T> ITypeCoder<T> getByCode(short code) {
 		checkTcp();
 		return getCoder(code);
 	}
 
-	public <T> TypeCoder<T> getByClass(Class<T> clazz) {
+	public <T> ITypeCoder<T> getByClass(Class<T> clazz) {
 		checkTcp();
 		return getCoder(clazz);
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> TypeCoder<T> getCoder(Class<T> cls) {
+	public <T> ITypeCoder<T> getCoder(Class<T> cls) {
 		checkTcp();
-		TypeCoder<T> c = clazz2Coder.get(cls);
+		ITypeCoder<T> c = clazz2Coder.get(cls);
 
 		if (c == null) {
-			for (TypeCoder<T> e : code2Coder.values()) {
+			for (ITypeCoder<T> e : code2Coder.values()) {
 				if (e.canSupport(cls)) {
 					return e;
 				}
 			}
 		}
 
-		return c != null ? c : (TypeCoder<T>) defaultCoder;
+		return c != null ? c : (ITypeCoder<T>) defaultCoder;
 	}
 
 	/**
@@ -533,14 +535,14 @@ public class TypeCoderFactory {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public <T> TypeCoder<T> getCoder(Short code) {
+	public <T> ITypeCoder<T> getCoder(Short code) {
 		checkTcp();
 		checkTcp();
-		TypeCoder<T> c = code2Coder.get(code);
-		return c != null ? c : (TypeCoder<T>) defaultCoder;
+		ITypeCoder<T> c = code2Coder.get(code);
+		return c != null ? c : (ITypeCoder<T>) defaultCoder;
 	}
 
-	public synchronized void registCoder(TypeCoder<?> coder) {
+	public synchronized void registCoder(ITypeCoder<?> coder) {
 		checkTcp();
 		if (clazz2Coder.containsKey(coder.type())) {
 			System.out.println("clazz[" + coder.type().getName() + "], code [" + coder.code() + "] REregist");
@@ -583,7 +585,7 @@ public class TypeCoderFactory {
 		
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		if(cl == null) {
-			cl = TypeCoderFactory.class.getClassLoader();
+			cl = TypeCoderFactoryUtils.class.getClassLoader();
 		}
 		
 		try {

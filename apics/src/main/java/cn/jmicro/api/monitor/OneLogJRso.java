@@ -16,9 +16,9 @@
  */
 package cn.jmicro.api.monitor;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.utils.TimeUtils;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  * 
@@ -26,7 +26,7 @@ import lombok.Data;
  * @author Yulei Ye
  * @date 2020年4月4日
  */
-@SO
+@Serial
 @Data
 public class OneLogJRso {
 	

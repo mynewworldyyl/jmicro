@@ -28,7 +28,7 @@ public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 				e.printStackTrace();
 			}
 			Class<?> eltType = TypeCoder.getType(buffer);*/
-			return (Object[])TypeCoder.decodeArray(buffer,null,null);
+			return (Object[])TypeCoderUtils.decodeArray(buffer,null,null);
 		}
 
 		@Override
@@ -39,6 +39,6 @@ public class ArrayCoder extends AbstractShortTypeCoder<Object[]>{
 				eltType = val[0].getClass();
 			}*/
 			//TypeCoder.putStringType(buffer, eltType.getName());
-			TypeCoder.encodeArray(buffer,val,null,null);
+			TypeCoderUtils.encodeArray(buffer,val,null,null);
 		}
 }

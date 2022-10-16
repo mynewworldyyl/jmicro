@@ -21,9 +21,7 @@ import javax.tools.StandardLocation;
 
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Interceptor;
-import cn.jmicro.api.annotation.JMicroComponent;
 import cn.jmicro.api.annotation.PostListener;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.annotation.Server;
 import cn.jmicro.api.annotation.Service;
 
@@ -44,7 +42,7 @@ public class JMicroComponentScanner extends AbstractProcessor {
 		set.add(Server.class.getCanonicalName());
 		set.add(Component.class.getCanonicalName());
 		set.add(ObjectFactory.class.getCanonicalName());
-		set.add(SO.class.getCanonicalName());
+		//set.add(SO.class.getCanonicalName());
 		set.add(PostListener.class.getCanonicalName());
 		return set;
 	}
@@ -86,7 +84,9 @@ public class JMicroComponentScanner extends AbstractProcessor {
 			p = p.substring("file:/".length());
 		}
 		
-		File dir = new File(p+"/target/classes/META-INF/jmicro");
+		//File dir = new File(p+"/target/classes/META-INF/jmicro");
+		File dir = new File(p+"/src/main/resources/META-INF/jmicro");
+		
 		if(!dir.exists()) {
 			dir.mkdirs();
 		}

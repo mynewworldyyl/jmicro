@@ -5,8 +5,10 @@ import cn.jmicro.api.pubsub.PSDataJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
+import lombok.Serial;
 
 @SO
+@Serial
 public class SendItemJRso {
 
 	transient public static final int TYPY_RESEND = 1;

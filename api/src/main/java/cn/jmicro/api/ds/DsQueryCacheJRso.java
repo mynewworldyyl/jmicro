@@ -1,11 +1,11 @@
 package cn.jmicro.api.ds;
 
 import cn.jmicro.api.RespJRso;
-import cn.jmicro.api.annotation.SO;
 import lombok.Data;
+import lombok.Serial;
 
 @Data
-@SO
+@Serial
 public class DsQueryCacheJRso {
 
 	public static final String TABLE = "t_ds_req_resp";

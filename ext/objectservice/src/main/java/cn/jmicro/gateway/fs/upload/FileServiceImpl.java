@@ -121,7 +121,7 @@ public class FileServiceImpl implements IFileJMSrv{
 		}
 		
 		//taskMng = new TaskManager(5000);
-		TimerTicker.doInBaseTicker(120, "ResourceReponsitoryChecker", null, (key,att)->{
+		TimerTicker.doInBaseTicker(120, "ObjectServiceFileServieChecker", null, (key,att)->{
 			try {
 				doChecker();	
 			} catch (Throwable e) {

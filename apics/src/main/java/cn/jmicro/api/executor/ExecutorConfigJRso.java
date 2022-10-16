@@ -2,9 +2,9 @@ package cn.jmicro.api.executor;
 
 import java.util.concurrent.RejectedExecutionHandler;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class ExecutorConfigJRso {
 
     private int msCoreSize = 1;

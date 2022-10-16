@@ -1,9 +1,9 @@
 package cn.jmicro.api.choreography;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 @IDStrategy(1)
 public class DeploymentJRso {
 	

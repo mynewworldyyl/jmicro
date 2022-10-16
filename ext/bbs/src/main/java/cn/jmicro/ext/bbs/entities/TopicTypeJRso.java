@@ -1,8 +1,10 @@
 package cn.jmicro.ext.bbs.entities;
 
 import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
 @SO
+@Serial
 public class TopicTypeJRso {
 
 	private int id;

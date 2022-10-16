@@ -18,16 +18,16 @@ package cn.jmicro.api.registry;
 
 import java.util.concurrent.TimeUnit;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.util.StringUtils;
+import lombok.Serial;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年12月2日 下午11:23:14
  */
-@SO
+@Serial
 public final class BreakRuleJRso {
 
 	//启用此熔断规则

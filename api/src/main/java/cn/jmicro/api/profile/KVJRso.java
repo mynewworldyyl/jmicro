@@ -1,8 +1,8 @@
 package cn.jmicro.api.profile;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public  class KVJRso {
 
 	private Object val;

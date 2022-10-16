@@ -21,15 +21,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年12月22日 下午11:10:43
  */
-@SO
+@Serial
 @IDStrategy(100)
 @Data
 public class PSDataJRso implements Serializable{

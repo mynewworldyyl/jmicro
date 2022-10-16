@@ -1,9 +1,9 @@
 package cn.jmicro.api.classloader;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.common.Constants;
+import lombok.Serial;
 
-@SO
+@Serial
 public class ClassInfoJRso {
 
 	private String clazzName;

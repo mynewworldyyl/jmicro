@@ -19,7 +19,7 @@ package cn.jmicro.api.registry;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
 /**
  * 
@@ -27,7 +27,7 @@ import cn.jmicro.api.annotation.SO;
  * @author Yulei Ye
  * @date 2020年1月17日
  */
-@SO
+@Serial
 final public class AsyncConfigJRso {
 	
 	//超时时做异步调用

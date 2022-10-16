@@ -1,8 +1,10 @@
 package cn.jmicro.api;
 
 import lombok.Data;
+import lombok.Serial;
 
 @Data
+@Serial
 public abstract class PersistVo {
 
 	private long createdTime;

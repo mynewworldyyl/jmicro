@@ -3,10 +3,10 @@ package cn.jmicro.api.storage;
 import java.util.Map;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import lombok.Data;
+import lombok.Serial;
 
-@SO
+@Serial
 @IDStrategy
 @Data
 public class FileJRso {

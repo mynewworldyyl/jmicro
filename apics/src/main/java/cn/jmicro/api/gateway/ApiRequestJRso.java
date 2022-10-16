@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.Message;
@@ -34,7 +33,7 @@ import cn.jmicro.common.util.JsonUtils;
  * @date 2018年11月16日 上午12:21:55
  *
  */
-@SO
+//@Serial
 public final class ApiRequestJRso implements IReq {
 	
 	private Map<String,Object> params = new HashMap<>();

@@ -1,8 +1,8 @@
 package cn.jmicro.api.registry;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public final class ServerJRso {
 
 	private String host;

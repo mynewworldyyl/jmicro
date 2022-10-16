@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.utils.TimeUtils;
@@ -35,6 +34,7 @@ import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  *  单位时间处理速度，类似QPS，但是间单位可定制
@@ -50,7 +50,7 @@ import lombok.Data;
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:29
  */
-@SO
+@Serial
 @IDStrategy(value=10)
 @Data
 public final class ServiceItemJRso implements Comparable<ServiceItemJRso>{

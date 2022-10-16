@@ -3,9 +3,9 @@ package cn.jmicro.api.monitor;
 import java.util.HashMap;
 import java.util.Map;
 
-import cn.jmicro.api.annotation.SO;
+import lombok.Serial;
 
-@SO
+@Serial
 public class ResourceDataJRso {
 
 	private int clientId;

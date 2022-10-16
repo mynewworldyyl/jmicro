@@ -17,19 +17,19 @@
 package cn.jmicro.api.monitor;
 
 import cn.jmicro.api.annotation.IDStrategy;
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.registry.UniqueServiceMethodKeyJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月5日-下午12:50:47
  */
-@SO
+@Serial
 @IDStrategy(100)
 @Data
 public final class JMFlatLogItemJRso{

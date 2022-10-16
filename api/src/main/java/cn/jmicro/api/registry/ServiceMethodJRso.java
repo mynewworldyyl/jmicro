@@ -20,19 +20,19 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.tx.TxConstants;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import lombok.Data;
+import lombok.Serial;
 
 /**
  * 
  * @author Yulei Ye
  * @date 2018年10月4日-下午12:04:38
  */
-@SO
+@Serial
 @Data
 public final class ServiceMethodJRso {
 	
