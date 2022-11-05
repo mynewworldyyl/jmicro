@@ -54,7 +54,7 @@ public class RpcClassLoaderHelper {
 	
 	private static final String COM_CLASS_LOADER_VERSION = "0.0.1";
     
-    Map<String,Set<String>> classesName2Instance = new HashMap<>();
+    private Map<String,Set<String>> classesName2Instance = new HashMap<>();
     
     private Map<String,Class<?>> ownerClasses = new HashMap<>();
     
@@ -415,13 +415,13 @@ public class RpcClassLoaderHelper {
     		if(clazz.isAnnotationPresent(AsyncClientProxy.class)) {
     			try {
     				String asynSrvImpl = AsyncClientUtils.genAsyncServiceImplName(className);
-					respClasses.put(asynSrvImpl,clazz.getClassLoader().loadClass(asynSrvImpl));
+					respClasses.put(asynSrvImpl, clazz.getClassLoader().loadClass(asynSrvImpl));
 					
 					String asynSrv = AsyncClientUtils.genAsyncServiceName(className);
-					respClasses.put(asynSrv,clazz.getClassLoader().loadClass(asynSrv));
+					respClasses.put(asynSrv, clazz.getClassLoader().loadClass(asynSrv));
 					
 					String gatewaySrv = AsyncClientUtils.genGatewayServiceName(className);
-					respClasses.put(gatewaySrv,clazz.getClassLoader().loadClass(gatewaySrv));
+					respClasses.put(gatewaySrv, clazz.getClassLoader().loadClass(gatewaySrv));
 					
 				} catch (ClassNotFoundException e) {
 					//logger.error("",e);

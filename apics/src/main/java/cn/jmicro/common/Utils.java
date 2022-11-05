@@ -45,6 +45,8 @@ import java.util.regex.Pattern;
 
 import javax.activation.MimetypesFileTypeMap;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import cn.jmicro.api.utils.DateUtils;
 import cn.jmicro.common.util.JsonUtils;
 
@@ -477,5 +479,42 @@ public class Utils {
 		//Utils.getIns().getMsByStringDate("2022-08-11 10:30:00 000");
 		//Utils.getIns().getMsByStringDate("2022-08-11 11:00:00 000");
 	}
-
+	 public static boolean isNotEmpty(final CharSequence cs) {
+	        return !isEmpty(cs);
+	    }
+	 public static boolean isNotBlank(final CharSequence cs) {
+	        return !isBlank(cs);
+	    }
+	 public static boolean isBlank(final CharSequence cs) {
+	        int strLen;
+	        if (cs == null || (strLen = cs.length()) == 0) {
+	            return true;
+	        }
+	        for (int i = 0; i < strLen; i++) {
+	            if (Character.isWhitespace(cs.charAt(i)) == false) {
+	                return false;
+	            }
+	        }
+	        return true;
+	    }
+	 
+	 public static boolean isEmpty(final CharSequence cs) {
+	        return cs == null || cs.length() == 0;
+	    }
+	 
+	 public static boolean isAnyEmpty(final CharSequence... css) {
+	      if (ArrayUtils.isEmpty(css)) {
+	        return true;
+	      }
+	      for (final CharSequence cs : css){
+	        if (isEmpty(cs)) {
+	          return true;
+	        }
+	      }
+	      return false;
+	    }
+	 
+	  public static <T extends CharSequence> T defaultIfEmpty(final T str, final T defaultStr) {
+	        return isEmpty(str) ? defaultStr : str;
+	    }
 }

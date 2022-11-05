@@ -72,6 +72,7 @@ public class ZxingUtils {
 		// 本地完整路径
 //      String pathname = path + "/" + uuid + "." + format;
 		// 生成二维码
+		
 		Map<EncodeHintType, Object> hints = new HashMap<EncodeHintType, Object>();
         hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
 		BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height,hints);
@@ -80,6 +81,30 @@ public class ZxingUtils {
 //      MatrixToImageWriter.writeToPa(bitMatrix, format, file);
 //      return pathname;
 	    MatrixToImageWriter.writeToFile(bitMatrix, "png", targetFile);
+	}
+	
+	public static byte[] enQRCodeToBytes(String contents, int width, int height) throws WriterException, IOException {
+		Map<EncodeHintType, Object> hints = new HashMap<EncodeHintType, Object>();
+        hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+		BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height,hints);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	    MatrixToImageWriter.writeToStream(bitMatrix, "png", baos);
+	    return baos.toByteArray();
+	}
+	
+	public static String enQRCodeToBase64(String contents, int width, int height) {
+		try {
+			Map<EncodeHintType, Object> hints = new HashMap<EncodeHintType, Object>();
+			hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
+			BitMatrix bitMatrix = new MultiFormatWriter().encode(contents, BarcodeFormat.QR_CODE, width, height,hints);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			MatrixToImageWriter.writeToStream(bitMatrix, "png", baos);
+			byte[] bytes = baos.toByteArray();
+			String bstr = "data:image/png;base64,"+Base64Utils.encodeToStr(bytes);
+			return bstr;
+		} catch (WriterException | IOException e) {
+			throw new RuntimeException(contents,e);
+		}
 	}
 
 	/**

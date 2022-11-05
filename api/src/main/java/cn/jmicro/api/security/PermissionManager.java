@@ -38,7 +38,6 @@ public class PermissionManager {
 	
 	public static final boolean checkClientPermission(int loginAccountId,int targetDataClientId) {
 		if(targetDataClientId == Constants.NO_CLIENT_ID || targetDataClientId == loginAccountId || loginAccountId == Config.getClientId()) {
-			//一般账户启动的服务
 			return true;
 		}
 		return false;

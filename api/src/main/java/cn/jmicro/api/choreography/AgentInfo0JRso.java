@@ -4,7 +4,8 @@ import lombok.Serial;
 
 @Serial
 public class AgentInfo0JRso {
-
+	  
+	  
 	private AgentInfoJRso agentInfo;
 	
 	private String[] depIds;

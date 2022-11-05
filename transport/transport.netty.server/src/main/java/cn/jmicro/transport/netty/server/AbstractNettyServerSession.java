@@ -32,6 +32,7 @@ import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.server.IServerSession;
+import cn.jmicro.transport.netty.server.httpandws.NettyHttpServerHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -39,7 +40,6 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 
 public abstract class AbstractNettyServerSession extends AbstractSession implements IServerSession {
@@ -86,7 +86,7 @@ public abstract class AbstractNettyServerSession extends AbstractSession impleme
 			FullHttpResponse response =  new DefaultFullHttpResponse(HTTP_1_1, OK,bbf);
 			response.headers().set(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.BINARY);
 			response.headers().set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
-			cors(response.headers());
+			NettyHttpServerHandler.cors(response.headers());
 			/* 
 			if(HttpHeaders.isKeepAlive(request)) {
 				response.headers().set(CONNECTION, Values.KEEP_ALIVE);
@@ -126,11 +126,11 @@ public abstract class AbstractNettyServerSession extends AbstractSession impleme
 		}
 	}
 	
-	public static void cors(HttpHeaders h) {
+	/*public static void cors(HttpHeaders h) {
 		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS, "POST,GET");
 		 h.set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS, "x-requested-with,content-type");
-	}
+	}*/
 
 	@Override
 	public void close(boolean flag) {

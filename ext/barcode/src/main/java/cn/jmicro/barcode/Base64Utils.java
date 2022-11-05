@@ -1,12 +1,11 @@
-package cn.jmicro.common.util;
+package cn.jmicro.barcode;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import cn.jmicro.common.CommonException;
+import java.io.UnsupportedEncodingException;
 
 public class Base64Utils {
 
@@ -31,7 +30,7 @@ public class Base64Utils {
             in.read(data);
             return encodeToStr(data);
         } catch (Exception e) {
-           throw new CommonException("",e);
+           throw new RuntimeException("",e);
         }finally {
         	if(in != null) {
         		try {
@@ -65,7 +64,7 @@ public class Base64Utils {
             out.write(b);
             return true;
         } catch (Exception e) {
-        	throw new CommonException(imgFilePath,e);
+        	throw new RuntimeException(imgFilePath,e);
         }finally {
         	if(out != null) {
         		try {
@@ -76,17 +75,17 @@ public class Base64Utils {
         }
     }
     
-	public static String encodeToStr(String inStr) throws Exception {
+	public static String encodeToStr(String inStr) throws UnsupportedEncodingException {
 		byte[] tmp = encode(inStr.getBytes("UTF-8"));
 		return new String(tmp);
 	}
 	
-	public static String encodeToStr(byte[] data) throws Exception {
+	public static String encodeToStr(byte[] data) {
 		byte[] tmp = encode(data);
 		return new String(tmp);
 	}
 
-	public static String decodeToStr(String inStr) throws Exception {
+	public static String decodeToStr(String inStr) throws UnsupportedEncodingException {
 		byte[] tmp = decode(inStr.getBytes());
 		return new String(tmp, "UTF-8");
 	}

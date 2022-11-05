@@ -124,6 +124,10 @@ public class ServiceLoader{
 	
 	private Set<Class<?>> waitings = new HashSet<>();
 	
+	private Set<Runnable> runs = new HashSet<>();
+	
+	private boolean isReady = false;
+	
 	//private Map<String,Class<?>> servicesAnno = new ConcurrentHashMap<String,Class<?>>();
 	
 	public void jready0(){
@@ -139,6 +143,8 @@ public class ServiceLoader{
 				doExportService();
 			}
 		});*/
+		
+		isReady = false;
 		
 		doExportService();
 		
@@ -165,6 +171,18 @@ public class ServiceLoader{
 					}
 				}
 			});
+		}
+		
+		if(!runs.isEmpty()) {
+			Iterator<Runnable> ite = runs.iterator();
+			while(ite.hasNext()) {
+				try {
+					ite.next().run();
+				} catch (Throwable e) {
+					logger.error("",e);
+				}
+				ite.remove();
+			}
 		}
 	}
 	

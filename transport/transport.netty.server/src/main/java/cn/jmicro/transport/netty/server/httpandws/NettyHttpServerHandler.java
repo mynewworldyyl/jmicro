@@ -6,9 +6,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,6 +108,13 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 		FullHttpRequest req = (FullHttpRequest)msg;
 		try {
 			
+			if("options".equalsIgnoreCase(req.method().name())) {
+				FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+				NettyHttpServerHandler.cors(response.headers());
+				ctx.writeAndFlush(response);
+				return;
+			}
+			
 			NettyServerSession session = ctx.attr(sessionKey).get();
 			if(httpsEnable) {
 				if(session.getLocalAddress().getPort() == 80) {
@@ -155,6 +160,17 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	
     }
     
+    public static void cors(HttpHeaders hs) {
+    	//String vary = "Vary";
+		//HttpHeaders hs = response.headers(); itoken
+		hs.add("Origin","*");
+		hs.add("Access-Control-Request-Method","POST,GET");
+		hs.add("Access-Control-Request-Headers","*");
+		hs.add("Access-Control-Allow-Headers","*");
+		hs.add("Access-Control-Allow-Origin","*");
+		hs.add("Access-Control-Allow-Method","POST,GET");
+    }
+    
     public boolean handleHttpToRpc(NettyServerSession session,
     		ChannelHandlerContext ctx,FullHttpRequest req) throws IOException {
     	
@@ -164,6 +180,8 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 		}
 		
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+		NettyHttpServerHandler.cors(response.headers());
+		
 		JMicroNettyHttpRequest rr = new JMicroNettyHttpRequest(req,session);
 		if(!rr.isSuccess()) {
 			this.responseText(ctx, rr.getRetMsg());
@@ -204,7 +222,7 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 		HttpHeaders hs = response.headers();
 		String url = req.uri();
 		hs.set(HttpHeaderNames.LOCATION, "https://"+this.host+":"+this.port+url);
-		NettyServerSession.cors(hs);
+		NettyHttpServerHandler.cors(response.headers());
 		hs.set(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
 		ctx.writeAndFlush(response);
 	}

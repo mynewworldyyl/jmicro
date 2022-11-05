@@ -10,7 +10,7 @@ public class TestFiber {
 
 	@Test
 	public void testEndoceArrayResult(){
-		RespJRso resp = new RespJRso(1,new Integer[]{1,2,3});
+		RespJRso resp = RespJRso.r(1,new Integer[]{1,2,3});
 		
 		ByteBuffer dest = ByteBuffer.allocate(1024);
 		Encoder.encodeObject(dest, resp);

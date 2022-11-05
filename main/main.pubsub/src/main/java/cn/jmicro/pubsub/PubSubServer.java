@@ -198,9 +198,10 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	}
 	
 	@Override
+	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0,forType=Constants.FOR_TYPE_ALL)
 	public IPromise<RespJRso<Boolean>> hasTopic(String topic) {
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r =new RespJRso<>(RespJRso.CODE_SUCCESS,true);
+			RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_SUCCESS,true);
 			r.setData(this.subManager.isValidTopic(topic));
 			suc.success(r);
 		});
@@ -210,7 +211,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
 	 */
 	@Override
-	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
+	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0,forType=Constants.FOR_TYPE_ALL)
 	public Promise<RespJRso<Integer>> publishItem(PSDataJRso item) {
 		return publishItems(item.getTopic(),new PSDataJRso[]{item});
 	}
@@ -218,7 +219,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	/**
 	 * asyncable=false，此方法不能是异步方法，否则会构成异步死循环
 	 */
-	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0)
+	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0,forType=Constants.FOR_TYPE_ALL)
 	public Promise<RespJRso<Integer>> publishString(String topic,String content) {
 		/*if(!this.subManager.isValidTopic(topic)) {
 			if(LG.isLoggable(MC.LOG_DEBUG)) {

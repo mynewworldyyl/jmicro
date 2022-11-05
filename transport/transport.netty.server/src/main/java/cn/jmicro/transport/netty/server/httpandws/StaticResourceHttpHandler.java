@@ -85,7 +85,8 @@ public class StaticResourceHttpHandler  {
 		
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
 		//response.headers().set("content-Type",getContentType(path));
-
+		NettyHttpServerHandler.cors(response.headers());
+		
 		String path0 = URLDecoder.decode(path, Constants.CHARSET);
 		byte[] content = this.getContent(path0,request,response);
 		response.headers().set("Content-Length",content.length);
@@ -101,7 +102,7 @@ public class StaticResourceHttpHandler  {
 		FileNameMap fileNameMap = URLConnection.getFileNameMap();
 		if(path== null || "/".equals(path.trim())){
 			return "text/html;charset=UTF-8";
-		}else {
+		} else {
 			String ct = fileNameMap.getContentTypeFor(path);
 			if(ct == null) {
 				ct = "text/html;charset=UTF-8";

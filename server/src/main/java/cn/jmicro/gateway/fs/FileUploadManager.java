@@ -84,7 +84,7 @@ public class FileUploadManager {
 	public RespJRso<FileJRso> addFileData(String id, byte[] data, int blockNum) {
 
 		FileJRso zkrr = this.files.get(id);
-		RespJRso<FileJRso> resp = new RespJRso<>(RespJRso.CODE_FAIL,zkrr);
+		RespJRso<FileJRso> resp = RespJRso.r(RespJRso.CODE_FAIL,zkrr);
 
 		if(zkrr == null) {
 			String msg = "Resource is not ready to upload!";

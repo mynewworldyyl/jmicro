@@ -23,7 +23,7 @@ public class TestOnePrefixCoder {
 	
 	@Test
 	public void testEndoceArrayResult(){
-		RespJRso resp = new RespJRso(1,new Integer[]{1,2,3});
+		RespJRso resp = RespJRso.r(1,new Integer[]{1,2,3});
 		/*resp.setSuccess(true);
 		resp.getParams().put("key01", 3);
 		resp.getParams().put("key02","hello");

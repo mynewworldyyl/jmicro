@@ -11,8 +11,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import cn.jmicro.api.annotation.SO;
 import cn.jmicro.api.codec.ISerializeObject;
+import lombok.Serial;
 import spoon.processing.AbstractAnnotationProcessor;
 import spoon.reflect.code.CtBlock;
 import spoon.reflect.code.CtCodeSnippetStatement;
@@ -23,10 +23,10 @@ import spoon.reflect.declaration.ModifierKind;
 import spoon.reflect.reference.CtFieldReference;
 import spoon.reflect.reference.CtTypeReference;
 
-public class EncodeDecodeMethodProcessor extends AbstractAnnotationProcessor<SO,CtClass<?>> {
+public class EncodeDecodeMethodProcessor extends AbstractAnnotationProcessor<Serial,CtClass<?>> {
 	
 	@Override
-	public void process(SO so, CtClass<?> ctClass) {
+	public void process(Serial so, CtClass<?> ctClass) {
 		
 		//实现ISerializeObject接口
 		final CtTypeReference<ISerializeObject> seriObjectType = getFactory().Code().createCtTypeReference(ISerializeObject.class);
@@ -99,7 +99,7 @@ public class EncodeDecodeMethodProcessor extends AbstractAnnotationProcessor<SO,
 		StringBuffer sb = new StringBuffer();
 		
 		CtTypeReference<?> superType = cls.getSuperclass();
-		if(superType != null && superType.getTypeDeclaration().hasAnnotation(SO.class)) {
+		if(superType != null && superType.getTypeDeclaration().hasAnnotation(Serial.class)) {
 			sb.append("super.decode(__buffer); ");
 		}
 		
@@ -172,13 +172,13 @@ public class EncodeDecodeMethodProcessor extends AbstractAnnotationProcessor<SO,
 				//sb.append(" byte preCode"+i+" = in.readByte();\n");
 				sb.append(" if(in.readByte() == cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL) { "+varName+"=null; } else { \n");
 				
-				if(fd.isAnnotationPresent(SO.class)) {
+				if(fd.isAnnotationPresent(Serial.class)) {
 					sb.append(varName).append(" = new ").append(fd.getName()).append("();\n");
 					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)"+varName+").decode(__buffer);\n }");
 				} else {
 					sb.append(varName).append(" = (")
 					.append(fd.getName()).append(") __coder.decode(__buffer,")
-					.append(fd.getName()).append(".class,").append(" null );\n }");
+					/*.append(fd.getName()).append(".class,")*/.append("null,").append(" null );\n }");
 				}
 			}
 			
@@ -192,7 +192,7 @@ public class EncodeDecodeMethodProcessor extends AbstractAnnotationProcessor<SO,
 		StringBuffer sb = new StringBuffer();
 		
 		CtTypeReference<?> superType = cls.getSuperclass();
-		if(superType != null && superType.getTypeDeclaration().hasAnnotation(SO.class)) {
+		if(superType != null && superType.getTypeDeclaration().hasAnnotation(Serial.class)) {
 			sb.append("super.encode(__buffer);");
 		}
 		
@@ -266,11 +266,11 @@ public class EncodeDecodeMethodProcessor extends AbstractAnnotationProcessor<SO,
 			}else {
 				sb.append("if(__val"+i+" == null){  out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL); \n} \n") ;
 				sb.append(" else { out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_PROXY); \n");
-				if(fd.isAnnotationPresent(SO.class)) {
+				if(fd.isAnnotationPresent(Serial.class)) {
 					sb.append("java.lang.Object __o"+i).append("=__val"+i).append("; \n");
 					sb.append(" ((cn.jmicro.api.codec.ISerializeObject)__o"+i+").encode(__buffer);\n }");
 				} else {
-					sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append(fd.getName()).append(".class,").append(" null ); \n }");
+					sb.append(" __coder.encode(__buffer,__val").append(i).append(",").append("null,")/*.append(fd.getName()).append(".class,")*/.append(" null ); \n }");
 				}
 			}
 			//fieldDeclareType.detach();

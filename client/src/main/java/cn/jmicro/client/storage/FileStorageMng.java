@@ -112,15 +112,20 @@ public class FileStorageMng implements IMessageHandler{
 			fvo.setType(Utils.getContentType(file.getAbsolutePath()));
 			fvo.setUpdatedTime(file.lastModified());
 			fvo.setLastModified(file.lastModified());
-			fvo.setClientId(ai.getClientId());
-			fvo.setCreatedBy(ai.getId());
+			
+			if(ai != null) {
+				fvo.setClientId(ai.getClientId());
+				fvo.setCreatedBy(ai.getId());
+				fvo.setClientId(ai.getClientId());
+				fvo.setCreatedBy(ai.getId());
+			}
+			
 			fvo.setId(this.getFileId(fvo.getName()));
-			fvo.setUpdatedTime(ai.getId());
-			fvo.setClientId(ai.getClientId());
-			fvo.setCreatedBy(ai.getId());
+			fvo.setUpdatedTime(TimeUtils.getCurTime());
 			fvo.setLocalPath(filePath);
 			fvo.setAttr(attr);
-			fvo.setMcode(-1984341167);//存文件系统
+			fvo.setMcode(-1984341167);
+			//存文件系统
 			
 			if(os != null && os.fileSystemEnable()) {
 				RespJRso<String> r = os.saveFile2Db(fvo);

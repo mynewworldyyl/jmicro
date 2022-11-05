@@ -214,8 +214,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 			}else if(l.size() > 1) {
 				throw new CommonException("More than one instance of class ["+cls.getName()+"].");
 			}
-			if(obj == null && cls.isAnnotationPresent(Service.class)){
-				obj = this.clientServiceProxyManager.getRefRemoteService(cls,Config.getNamespace(),null);
+			if(obj == null && cls.isAnnotationPresent(Service.class) && create){
+				obj = this.clientServiceProxyManager.getRefRemoteService(cls,null,null);
 			}
 		} else {
 			obj = objs.get(cls);

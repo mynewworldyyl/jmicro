@@ -30,74 +30,77 @@ import lombok.Serial;
  * @date 2018年10月4日-下午12:07:03
  */
 @Serial
-public final class RpcRequestJRso implements IRequest{
-	
-	protected Map<String,Object> params = new HashMap<String,Object>();
-	
+public final class RpcRequestJRso implements IRequest/*,ISerializeObject*/ {
+
+	protected Map<String, Object> params = new HashMap<String, Object>();
+
 	private Object[] args;
 
 	private int impl;
-	
+
 	private String transport;
-	
+
 	protected long reqId = -1L;
-	
+
 	protected long reqParentId = -1L;
-	
-/*	private  transient  String serviceName;
-	
-	private  transient  String method;
-	
-	private  transient  String namespace;
-	
-	private  transient  String version;*/
-	
+
+	/*
+	 * private transient String serviceName;
+	 * 
+	 * private transient String method;
+	 * 
+	 * private transient String namespace;
+	 * 
+	 * private transient String version;
+	 */
+
 	private transient ISession session;
-	
+
 	private transient boolean isMonitorEnable = false;
-	
+
 	private transient Message msg;
-	
+
 	private transient ServiceMethodJRso sm;
-	
+
 	private transient boolean success = false;
-	
+
 	private transient boolean finish = false;
-	
-	public RpcRequestJRso(){}
-	
+
+	public RpcRequestJRso() {
+	}
+
 	@SuppressWarnings("unchecked")
-	public <T> T getParam(String key,T defautl){
-		T v = (T)this.params.get(key);
-		if(v == null){
+	public <T> T getParam(String key, T defautl) {
+		T v = (T) this.params.get(key);
+		if (v == null) {
 			return defautl;
 		}
 		return v;
 	}
-	
+
 	public int getLogLevel() {
-		if(msg != null) {
+		if (msg != null) {
 			return msg.getLogLevel();
 		}
 		return MC.LOG_NO;
 	}
-	
-	public Long getMsgId(){
-		if(this.msg != null){
+
+	public Long getMsgId() {
+		if (this.msg != null) {
 			return this.msg.getMsgId();
 		}
-		//super.getFloat("", 33F);
+		// super.getFloat("", 33F);
 		return -1l;
 	}
-	
+
 	public boolean isFinish() {
 		return finish;
 	}
-	
-	public boolean needResponse(){
+
+	public boolean needResponse() {
 		return this.msg.isNeedResponse();
 	}
-	
+
 	public String getTransport() {
 		return transport;
 	}
@@ -149,7 +152,7 @@ public final class RpcRequestJRso implements IRequest{
 	public void setSession(ISession session) {
 		this.session = session;
 	}
-	
+
 	@Override
 	public void setRequestId(long reqId) {
 		this.reqId = reqId;
@@ -157,20 +160,20 @@ public final class RpcRequestJRso implements IRequest{
 
 	@Override
 	public long getRequestId() {
-		return this.msg != null? this.msg.getMsgId():0;
+		return this.msg != null ? this.msg.getMsgId() : 0;
 	}
-	
+
 	@Override
 	public int hashCode() {
-		return (int)reqId;
+		return (int) reqId;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if(obj == null || !(obj instanceof RpcRequestJRso)) {
+		if (obj == null || !(obj instanceof RpcRequestJRso)) {
 			return false;
 		}
-		return reqId == ((RpcRequestJRso)obj).reqId;
+		return reqId == ((RpcRequestJRso) obj).reqId;
 	}
 
 	public boolean isMonitorEnable() {
@@ -185,7 +188,7 @@ public final class RpcRequestJRso implements IRequest{
 	public Map<String, Object> getRequestParams() {
 		return this.getParams();
 	}
-	
+
 	public int getSvnHash() {
 		return impl;
 	}
@@ -217,40 +220,41 @@ public final class RpcRequestJRso implements IRequest{
 	public void setArgs(Object[] args) {
 		this.args = args;
 	}
-	public Map<String,Object> getParams(){
+
+	public Map<String, Object> getParams() {
 		return this.params;
 	}
-	
-	//public abstract ByteBuffer newBuffer();
-	
-	public Integer getInt(String key,int defautl){
-		return this.getParam(key,defautl);
+
+	// public abstract ByteBuffer newBuffer();
+
+	public Integer getInt(String key, int defautl) {
+		return this.getParam(key, defautl);
 	}
-	
-	public String getString(String key,String defautl){
-		return this.getParam(key,defautl);
+
+	public String getString(String key, String defautl) {
+		return this.getParam(key, defautl);
 	}
-	
-	public Boolean getBoolean(String key,boolean defautl){
-		return this.getParam(key,defautl);
+
+	public Boolean getBoolean(String key, boolean defautl) {
+		return this.getParam(key, defautl);
 	}
-	
-	public Float getFloat(String key,Float defautl){
-		return this.getParam(key,defautl);
+
+	public Float getFloat(String key, Float defautl) {
+		return this.getParam(key, defautl);
 	}
-	
-	public Double getDouble(String key,Double defautl){
-		return this.getParam(key,defautl);
+
+	public Double getDouble(String key, Double defautl) {
+		return this.getParam(key, defautl);
 	}
-	
-	public Object getObject(String key,Object defautl){
-		return this.getParam(key,defautl);
+
+	public Object getObject(String key, Object defautl) {
+		return this.getParam(key, defautl);
 	}
-	
-	public void putObject(String key,Object value){
-		 this.params.put(key, value);
+
+	public void putObject(String key, Object value) {
+		this.params.put(key, value);
 	}
-	
+
 	@Override
 	public byte getProtocol() {
 		return this.msg.getUpProtocol();
@@ -266,5 +270,5 @@ public final class RpcRequestJRso implements IRequest{
 	public int getPacketSize() {
 		return msg != null ? msg.getLen() : 0;
 	}
-	
+
 }

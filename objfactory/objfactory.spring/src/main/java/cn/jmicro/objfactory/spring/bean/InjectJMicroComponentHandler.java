@@ -153,7 +153,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor, Applicat
 		}
 		
 		jmicroComponentFields.clear();
-		jmicroComponentFields = null;
+		//jmicroComponentFields = null;
 		
 		for(CfgFieldHolder fc : cfgFields) {
 			try {
@@ -169,7 +169,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor, Applicat
 		}
 		
 		cfgFields.clear();
-		cfgFields = null;
+		//cfgFields = null;
 		
 		if(!this.jmicroReadyMethods.isEmpty()) {
 			for(ReadyMethodHolder rm : this.jmicroReadyMethods) {
@@ -182,7 +182,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor, Applicat
 		}
 		
 		jmicroReadyMethods.clear();
-		jmicroReadyMethods = null;
+		//jmicroReadyMethods = null;
 		
 		//导出Spring定义的JMIcro服务组长件
 		if(!this.springRemoteSrvs.isEmpty()) {
@@ -193,7 +193,7 @@ public class InjectJMicroComponentHandler implements BeanPostProcessor, Applicat
 		}
 		
 		springRemoteSrvs.clear();
-		springRemoteSrvs = null;
+		//springRemoteSrvs = null;
 	}
 	
 	@Override

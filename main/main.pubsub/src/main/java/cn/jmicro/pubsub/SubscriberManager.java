@@ -387,9 +387,11 @@ class SubscriberManager {
 			
 			Object srv = null;
 			try {
+				//优先本地加载
 				PubSubServer.class.getClassLoader().loadClass(sui.sm.getKey().getUsk().getServiceName());
 				srv = of.getRemoteServie(item, null);
 			} catch (ClassNotFoundException e) {
+				//本地没找到，远程加载
 				srv = this.getRemoteService(sui,item);
 			}
 

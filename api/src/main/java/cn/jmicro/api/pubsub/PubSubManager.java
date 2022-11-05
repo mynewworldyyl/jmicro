@@ -138,6 +138,7 @@ public class PubSubManager {
 	}
 	
 	private void doLog(int itemNum,String msg) {
+		logger.info(msg);
 		if(LG.isLoggable(MC.LOG_DEBUG)) {
 			StringBuffer sb = new StringBuffer(msg + " Pubsub disable by: ");
 			if(this.defaultServer == null) {

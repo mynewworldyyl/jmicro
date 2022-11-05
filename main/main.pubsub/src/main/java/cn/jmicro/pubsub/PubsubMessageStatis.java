@@ -19,14 +19,15 @@ import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MonitorClientStatusAdapter;
 import cn.jmicro.api.monitor.ServiceCounter;
 import cn.jmicro.api.objectfactory.IObjectFactory;
+import cn.jmicro.api.objectfactory.PostFactoryAdapter;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.registry.ServiceItemJRso;
 import cn.jmicro.api.service.ServiceLoader;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 
-@Component(level=3)
-public class PubsubMessageStatis {
+@Component(level=100)
+public class PubsubMessageStatis extends PostFactoryAdapter{
 	
 	public static final String KEY_SPERATOR = "##";
 	
@@ -67,7 +68,12 @@ public class PubsubMessageStatis {
 		for(int i = 0; i < TYPES.length; i++) {
 			typeLabels[i] = MC.MONITOR_VAL_2_KEY.get(TYPES[i]);
 		}
-		
+	}
+	
+	
+	
+	@Override
+	public void afterInit(IObjectFactory of) {
 		String group = "PubsubServer";
 		statusMonitorAdapter = new MonitorClientStatusAdapter(PubsubMessageStatis.TYPES,
 				PubsubMessageStatis.typeLabels,Config.getInstanceName()+"_PubsubServerStatuCheck",group);
@@ -75,6 +81,7 @@ public class PubsubMessageStatis {
 		ServiceLoader sl = of.get(ServiceLoader.class);
 		ServiceItemJRso si = sl.createSrvItem(IMonitorAdapterJMSrv.class, Config.getNamespace()+"."+group, 
 				"0.0.1", IMonitorAdapterJMSrv.class.getName(),Config.getClientId());
+		
 		of.regist("MonitorManagerStatuCheckAdapter", statusMonitorAdapter);
 		sl.registService(si,statusMonitorAdapter);
 		
@@ -82,7 +89,7 @@ public class PubsubMessageStatis {
 			doChecker();
 		});
 	}
-	
+
 	private void doChecker() {
 		if(counters.isEmpty()) {
 			return;

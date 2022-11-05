@@ -170,7 +170,7 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 	@Override
 	public IPromise<RespJRso<Boolean>> addKv(Integer scid, String module, String key, String valStr, Short type) {
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = new RespJRso<Boolean>(RespJRso.CODE_SUCCESS,true);
+			RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_SUCCESS,true);
 			Object val = DecoderConstant.getValFromString(type, valStr);
 			pm.setVal(scid, module, key, val);
 			suc.success(r);
@@ -180,7 +180,7 @@ public class ProfileServiceImpl implements IProfileServiceJMSrv {
 	@Override
 	public IPromise<RespJRso<Boolean>> addModule(Integer scid, String module) {
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = new RespJRso<Boolean>(RespJRso.CODE_FAIL,false);
+			RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_FAIL,false);
 			String mpath = ProfileManager.profileRoot(scid) + module;
 			if(op.exist(mpath)) {
 				r.setMsg(module +" exist for clientId: " + scid);

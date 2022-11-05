@@ -1,13 +1,16 @@
 package cn.jmicro.api;
 
+import com.alibaba.fastjson.JSON;
+
 import cn.jmicro.api.http.JHttpStatus;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
 import lombok.Data;
+import lombok.Serial;
 
-//@Serial
+@Serial
 @Data
-public class RespJRso<T> implements IResp{
+public class RespJRso<T> implements IResp/*,cn.jmicro.api.codec.ISerializeObject*/{
 	
 	public static final int CODE_SUCCESS = 0;
 	
@@ -51,29 +54,48 @@ public class RespJRso<T> implements IResp{
 	private T data;
 	
 	private String key;
+	private String sign;
 	
 	private int total;
 	private int pageSize;
 	private int curPage;
 	
 	public RespJRso() {};
-	public RespJRso(int code) {this.code = code;};
-	public RespJRso(int code,String msg) {this.code = code;this.msg=msg;};
-	public RespJRso(int code,T data) {this.code = code;this.data=data;};
 	
-	public static <T> RespJRso<T> r() {
+	public RespJRso(int code) {this.code = code;};
+	
+	public RespJRso(int code,String msg) {this.code = code;this.msg=msg;};
+	
+	//public RespJRso(int code,T data) {this.code = code;this.data=data;};
+	
+	public static <R> RespJRso<R> copy(RespJRso fr) {
+		RespJRso<R> r = new RespJRso<>(fr.getCode(),fr.getMsg());
+		r.setCurPage(fr.getCurPage());
+		r.setData((R)fr.getData());
+		r.setKey(fr.getKey());
+		r.setMsg(fr.getMsg());
+		r.setPageSize(fr.getPageSize());
+		r.setPkgMsg(fr.getPkgMsg());
+		r.setSign(fr.getSign());
+		r.setTotal(fr.getTotal());
+		return r;
+	}
+	
+	public static <R> RespJRso<R> r() {
 		return new RespJRso<>();
 	}
 	
-	public static <T> RespJRso<T> r(int code) {
+	public static <R> RespJRso<R> r(int code) {
 		return new RespJRso<>(code);
 	}
 	
-	public static <T> RespJRso<T> r(int code,T data) {
-		return new RespJRso<>(code,data);
+	public static <R> RespJRso<R> r(int code, R data) {
+		RespJRso<R> r = new RespJRso<>(code);
+		r.data(data);
+		return r;
 	}
 	
-	public static <T> RespJRso<T> r(int code,String msg) {
+	public static <R> RespJRso<R> r(int code,String msg) {
 		return new RespJRso<>(code,msg);
 	}
 	
@@ -88,8 +110,10 @@ public class RespJRso<T> implements IResp{
 	}
 	
 	//http 302重定向
-	public RespJRso<T> httpRedirect(T url) {
-		return this.code(JHttpStatus.HTTP_MOVED_TEMP).data(url);
+	public static RespJRso<String> httpRedirect(String url) {
+		return RespJRso.r(JHttpStatus.HTTP_MOVED_TEMP,url);
+		/* this.code(JHttpStatus.HTTP_MOVED_TEMP).data(url);
+		 return this;*/
 	}
 	
 	public RespJRso<T> code(int code) {
@@ -106,4 +130,42 @@ public class RespJRso<T> implements IResp{
 		this.data = data;
 		return this;
 	} 
+	
+	 /** 输出json格式字符串 **/
+    public String toJSONString(){
+        return JSON.toJSONString(this);
+    }
+    
+  /* // @java.lang.Override()
+    public void encode(final java.io.DataOutput buf) throws java.io.IOException {
+        cn.jmicro.api.codec.JDataOutput out = (cn.jmicro.api.codec.JDataOutput)buf;
+        out.writeInt(this.code);
+        out.writeInt(this.curPage);
+        if (this.data == null) out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL); else {
+            out.write(cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_PROXY);
+            cn.jmicro.api.codec.typecoder.ITypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactoryUtils.getIns().getDefaultCoder();
+            __coder.encode(buf, this.data, null, null);
+        }
+        if (this.key == null) out.writeUTF(""); else out.writeUTF(this.key);
+        if (this.msg == null) out.writeUTF(""); else out.writeUTF(this.msg);
+        out.writeInt(this.pageSize);
+        if (this.sign == null) out.writeUTF(""); else out.writeUTF(this.sign);
+        out.writeInt(this.total);
+    }
+    
+    //@java.lang.Override()
+    public void decode(final java.io.DataInput buf) throws java.io.IOException {
+        cn.jmicro.api.codec.JDataInput in = (cn.jmicro.api.codec.JDataInput)buf;
+        this.code = in.readInt();
+        this.curPage = in.readInt();
+        if (in.readByte() == cn.jmicro.api.codec.DecoderConstant.PREFIX_TYPE_NULL) this.data = null; else {
+            cn.jmicro.api.codec.typecoder.ITypeCoder __coder = cn.jmicro.api.codec.TypeCoderFactoryUtils.getIns().getDefaultCoder();
+            this.data = (T)__coder.decode(buf, null, null);
+        }
+        this.key = in.readUTF();
+        this.msg = in.readUTF();
+        this.pageSize = in.readInt();
+        this.sign = in.readUTF();
+        this.total = in.readInt();
+    }*/
 }

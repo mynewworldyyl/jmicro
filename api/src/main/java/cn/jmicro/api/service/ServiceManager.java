@@ -117,7 +117,8 @@ public class ServiceManager {
 	
 	private ReentrantReadWriteLock methodHash2MethodLocker = new ReentrantReadWriteLock();
 
-	/*private INodeListener nodeListener = new INodeListener(){
+	/*
+	private INodeListener nodeListener = new INodeListener(){
 		public void nodeChanged(int type, String path,String data){
 			if(type == IListener.SERVICE_ADD){
 				logger.error("NodeListener service add "+type+",path: "+path);
@@ -129,7 +130,8 @@ public class ServiceManager {
 				logger.error("rev invalid Node event type : "+type+",path: "+path);
 			}
 		}
-	};*/
+	};
+	*/
 	
 	//动态服务数据监听器
 	private IDataListener dataListener = new IDataListener(){
@@ -238,7 +240,7 @@ public class ServiceManager {
 			return;
 		}
 		
-		if(key.getServiceName().equals("cn.jmicro.api.area.IAreaDataServiceJMSrv")) {
+		if(key.getServiceName().equals("com.jeequan.jeepay.pay.mq.api.IPayOrderMchNotifyMQReceiverJMSrv")) {
 			logger.info(key.fullStringKey());
 		}
 		
@@ -288,7 +290,6 @@ public class ServiceManager {
 			logger.info(key.fullStringKey());
 		}
 		
-		//非自身服务，也非API网关模式，
 		String path = path(key.fullStringKey());
 		if(siData == null) {
 			siData = op.getData(path);

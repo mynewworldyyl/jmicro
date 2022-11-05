@@ -93,7 +93,8 @@ public class JMicroNettyHttpResponse implements HttpResponse {
 		this.setStatusCode(code);
 		HttpHeaders hs = r.headers();
 		hs.set(HttpHeaderNames.LOCATION, url);
-		NettyServerSession.cors(hs);
+		//NettyServerSession.cors(hs);
+		NettyHttpServerHandler.cors(hs);
 		hs.set(HttpHeaderNames.CONTENT_LENGTH, r.content().readableBytes());
 		flush();
 	}

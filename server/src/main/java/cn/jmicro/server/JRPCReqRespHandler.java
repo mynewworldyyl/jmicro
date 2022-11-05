@@ -335,12 +335,12 @@ public class JRPCReqRespHandler implements IMessageHandler {
 			JMicroContext.get().appendCurUseTime("Service Return", true);
 		}
 
-		if (msg.isError()) {
+		/*if (msg.isError()) {
 			msg.setDownProtocol(Message.PROTOCOL_JSON);
 			msg.setPayload(ICodecFactory.encode(codeFactory, resp, Message.PROTOCOL_JSON));
-		} else {
+		} else {*/
 			msg.setPayload(ICodecFactory.encode(codeFactory, resp, msg.getDownProtocol()));
-		}
+		//}
 
 		// 请求类型码比响应类型码大1，
 		msg.setType((byte) (msg.getType() + 1));
