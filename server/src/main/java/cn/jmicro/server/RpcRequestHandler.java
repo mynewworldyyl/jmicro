@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
+import com.alibaba.fastjson.JSONException;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
@@ -43,8 +44,6 @@ import cn.jmicro.api.net.AbstractHandler;
 import cn.jmicro.api.net.IRequest;
 import cn.jmicro.api.net.IRequestHandler;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequestJRso;
-import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.util.JsonUtils;
@@ -156,8 +155,14 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			Object arg = jsonArgs[j++];
 			//logger.info(arg.toString());
 			Type t = clses[i];
-			Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg),t);
-			args[i] = a;
+			try {
+				Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg),t);
+				args[i] = a;
+			} catch (JSONException e) {
+				logger.error("Type: "+t.toString());
+				logger.error("Value: "+JsonUtils.getIns().toJson(arg));
+				throw e;
+			}
 		}
 	
 		return args;

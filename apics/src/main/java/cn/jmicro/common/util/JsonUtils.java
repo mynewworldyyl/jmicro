@@ -25,7 +25,9 @@ import java.util.Map;
 import java.util.Set;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.TypeReference;
+import com.sun.tools.javac.util.Log;
 
 /**
  * 
@@ -94,16 +96,14 @@ public class JsonUtils {
 		//GsonBuilder builder = b();
 		//builder.registerTypeAdapter(MessageType.class, new MessageTypeAdapter());
 		//builder.registerTypeAdapter(MessageState.class, new MessageStateAdapter());
-		T obj = JSON.parseObject(json, c);
-		return obj;
+		return JSON.parseObject(json, c);
 	}
 	
 	public <T> T fromJson(String json, java.lang.reflect.Type type) {
 		//GsonBuilder builder = b();
 		//System.out.println(this.getClass().getName()+": " + json);
 		//TypeReference r = new TypeReference(type);
-		T obj = JSON.parseObject(json, type);
-		return obj;
+		return JSON.parseObject(json, type);
 	}
 	
 	public Map<String,String> getStringMap(String json) {
@@ -126,12 +126,12 @@ public class JsonUtils {
 	
 	public Set<String> getStringValueSet(String json,boolean innerJson) {
 		Type type = new TypeReference<Set<String>>(){}.getType();
-		return JsonUtils.getIns().fromJson(json, type);
+		return fromJson(json, type);
 	}
 	
 	public Object[] getObjectArray(String json,boolean innerJson) {
 		Type type = new TypeReference<Object[]>(){}.getType();
-		return JsonUtils.getIns().fromJson(json, type);
+		return fromJson(json, type);
 	}
 	
 	public String toJsonCheckProxy(Object obj) {

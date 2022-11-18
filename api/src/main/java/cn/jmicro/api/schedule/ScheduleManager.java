@@ -111,7 +111,11 @@ public class ScheduleManager {
 		
 		//系统账号登录监听
 		of.addLoginStatusListener((status,ai)->{
-			loadAndStartJobs();
+			try {
+				loadAndStartJobs();
+			} catch (Throwable e) {
+				log.error("加载任务数据错误，请确保任务配置服务已经启动",e.getMessage());
+			}
 		});
 		
 	}
