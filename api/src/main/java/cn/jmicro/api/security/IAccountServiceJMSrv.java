@@ -13,13 +13,13 @@ public interface IAccountServiceJMSrv {
 
 	public String activeAccount(Integer aid, String token);
 	
-	IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd, String code,String codeId);
+	IPromise<RespJRso<ActInfoJRso>> login(Integer loginClientId,String actName, String pwd, String code,String codeId);
 	
-	IPromise<RespJRso<ActInfoJRso>> loginWithId(int id,String pwd);
+	IPromise<RespJRso<ActInfoJRso>> loginWithId(Integer loginClientId,int id,String pwd);
 	
-	IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(String token);
+	IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(Integer loginClientId,String token);
 	
-	IPromise<RespJRso<ActInfoJRso>>  loginByWeixin(String code, int shareUserId);
+	IPromise<RespJRso<ActInfoJRso>>  loginByWeixin(Integer loginClientId,String code, int shareUserId);
 
 	RespJRso<Boolean> hearbeat(String loginKey);
 	

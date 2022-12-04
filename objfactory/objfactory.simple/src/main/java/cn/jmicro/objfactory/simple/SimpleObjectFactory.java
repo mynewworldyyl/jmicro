@@ -910,7 +910,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 				throw new CommonException("token cannot be null when specify clientId to start server: " + clientId);
 			}
 			
-			RespJRso<ActInfoJRso> r = as.loginWithClientToken(token).getResult();
+			RespJRso<ActInfoJRso> r = as.loginWithClientToken(Config.getClientId(),token).getResult();
 
 			//Resp<String> r = as.getNameById(clientId);
 			if(r != null && r.getCode() == RespJRso.CODE_SUCCESS) {
@@ -959,7 +959,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 						LG.log(MC.LOG_WARN, SimpleObjectFactory.class,msg);
 					}
 					
-					RespJRso<ActInfoJRso> lr = as0.loginWithClientToken(token).getResult();
+					RespJRso<ActInfoJRso> lr = as0.loginWithClientToken(Config.getClientId(),token).getResult();
 					if(lr != null && lr.getCode() == RespJRso.CODE_SUCCESS) {
 						pi.setAi(r.getData());
 						//op.setData(p,JsonUtils.getIns().toJson(pi));

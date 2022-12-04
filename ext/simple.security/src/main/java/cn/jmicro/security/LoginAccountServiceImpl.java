@@ -67,7 +67,7 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 
 	@Override
-	public IPromise<RespJRso<ActInfoJRso>> login(String actName, String pwd,String code,String codeId) {
+	public IPromise<RespJRso<ActInfoJRso>> login(Integer loginClientId,String actName, String pwd,String code,String codeId) {
 
 		return new Promise<RespJRso<ActInfoJRso>>((suc,fail)->{
 			RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>();
@@ -122,9 +122,9 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 
 	@Override
-	public IPromise<RespJRso<ActInfoJRso>> loginWithId(int id, String pwd) {
+	public IPromise<RespJRso<ActInfoJRso>> loginWithId(Integer loginClientId,int id, String pwd) {
 		if(id2ActName.containsKey(id)) {
-			return login(this.id2ActName.get(id),pwd,"","");
+			return login(loginClientId,this.id2ActName.get(id),pwd,"","");
 		} else {
 			return new Promise<RespJRso<ActInfoJRso>>((suc,fail)->{
 				RespJRso<ActInfoJRso> r = new RespJRso<ActInfoJRso>(RespJRso.CODE_FAIL,"Account not found!");
@@ -233,12 +233,12 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	};
 
 	@Override
-	public IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(String token) {
+	public IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(Integer loginClientId,String token) {
 		return null;
 	}
 
 	@Override
-	public IPromise<RespJRso<ActInfoJRso>> loginByWeixin(String code, int shareUserId) {
+	public IPromise<RespJRso<ActInfoJRso>> loginByWeixin(Integer loginClientId,String code, int shareUserId) {
 		return null;
 	}
 

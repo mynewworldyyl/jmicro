@@ -295,7 +295,6 @@ public class JMicroContext  {
 		}
 		
 		byte logLevel =  msg.getLogLevel();
-		
 		if(logLevel != MC.LOG_NO) {
 			cx.setParam(JMicroContext.LINKER_ID, msg.getLinkId());
 			cx.setParam(Constants.NEW_LINKID, false);
