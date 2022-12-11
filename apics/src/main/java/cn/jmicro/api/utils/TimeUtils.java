@@ -1,5 +1,6 @@
 package cn.jmicro.api.utils;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +62,10 @@ public class TimeUtils {
 		}else {
 			return updateTime();
 		}
+	}
+	
+	public static Date getCurDatetime() {
+		return new Date(getCurTime());
 	}
 	
 	public static long getCurTime(boolean aonce) {

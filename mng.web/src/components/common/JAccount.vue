@@ -134,7 +134,7 @@ export default {
             isLogin:false,
             msg:'',
 
-            rememberPwd:true,
+            rememberPwd: localStorage.get(this.$jr.cons.ACT_AUTO_LOGIN_KEY),
 			
 			showResendEmail : false
         };
@@ -247,6 +247,7 @@ export default {
 
         rememberPwdChange(){
             localStorage.set(Constants.ACT_REM_PWD_KEY,this.rememberPwd);
+			localStorage.set(this.$jr.cons.ACT_AUTO_LOGIN_KEY,this.rememberPwd)
             if(this.rememberPwd) {
                 localStorage.set(Constants.ACT_NAME_KEY,this.actName);
                 localStorage.set(Constants.ACT_PWD_KEY,this.pwd);

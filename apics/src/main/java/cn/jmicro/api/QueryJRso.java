@@ -13,6 +13,12 @@ import lombok.Serial;
 @Serial
 public class QueryJRso {
 	
+	public static String ORDER_ASC = "1";
+	public static String ORDER_DESC = "2";
+	
+	public static String ORDER_SASC = "asc";
+	public static String ORDER_SDESC = "desc";
+	
 	private int size;
 	private int curPage;
 	
