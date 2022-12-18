@@ -40,6 +40,7 @@ public final class Constants {
 	public static final String  HTTP_METHOD_GET= "GET";
 	
 	public static final String  HTTP_JSON_CONTENT_TYPE = "application/json;chartset=utf-8";
+	public static final String  HTTP_ALL_CONTENT_TYPE = "*";
 	
 	//纯文本数据，对应于spring-web的restcontroller注解
 	public static final byte  HTTP_RESP_TYPE_RESTFULL= 1;
@@ -49,6 +50,10 @@ public final class Constants {
 	
 	//返回进制流，后端通过文件系统返回文件ID，在网关读取文件流返回给客户端
 	public static final byte  HTTP_RESP_TYPE_STREAM= 3;
+	
+	//返回原始内容，如果返回值是RespJRso实例，则返回RespJRso.data，否则直接返回resp
+	//例如三方支付异步通知需要返回"SUCCESS"字符串，
+	public static final byte  HTTP_RESP_TYPE_ORIGIN= 4;
 	
 	public static final Set<String>  HTTP_PREFIX_LIST;
 	static {

@@ -33,6 +33,10 @@ public interface HttpRequest {
 	ISession getSession();
 	
 	int getContentLen();
+	
+	Integer getClient();
+	
+	String getToken();
 
 	//public String getRetMsg();
 	

@@ -182,7 +182,7 @@ public final class ServiceMethodJRso {
 	//处理httpy请求的URL，默认不处理HTTP请求
 	private String httpPath;
 	
-	//处理httpy请求方法，默认处理全部请求方法
+	//处理http请求方法，默认处理全部请求方法,post, get, put等
 	private String httpMethod;
 	
 	//HTTP请求体内容类型
@@ -190,6 +190,10 @@ public final class ServiceMethodJRso {
 	
 	//整个HTTP请求数据作为一个整体作为参数唯一方法，参数可以是字符串或VO对象
 	private boolean httpReqBody;
+	
+	//true 处理全局HTTP请求，httpPath需要保持全局唯一，否则启动报错
+	//false 处理ClientID内全局HTTP请求，httpPath需要保持ClientI内唯一，否则启动报错
+	private boolean httpGlobal;
 	
 	private byte httpRespType;
 	

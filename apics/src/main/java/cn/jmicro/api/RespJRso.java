@@ -89,7 +89,7 @@ public class RespJRso<T> implements IResp/*,cn.jmicro.api.codec.ISerializeObject
 		return new RespJRso<>(code);
 	}
 	
-	public static <R> RespJRso<R> r(int code, R data) {
+	public static <R> RespJRso<R> d(int code, R data) {
 		RespJRso<R> r = new RespJRso<>(code);
 		r.data(data);
 		return r;
@@ -114,6 +114,10 @@ public class RespJRso<T> implements IResp/*,cn.jmicro.api.codec.ISerializeObject
 		return RespJRso.r(JHttpStatus.HTTP_MOVED_TEMP,url);
 		/* this.code(JHttpStatus.HTTP_MOVED_TEMP).data(url);
 		 return this;*/
+	}
+	
+	public boolean isSuccess() {
+		return this.code == RespJRso.CODE_SUCCESS;
 	}
 	
 	public RespJRso<T> code(int code) {

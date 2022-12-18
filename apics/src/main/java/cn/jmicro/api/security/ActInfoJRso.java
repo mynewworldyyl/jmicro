@@ -75,6 +75,10 @@ public class ActInfoJRso {
 	
 	private String birthday;
 	
+	//阿里里登录账号
+	private String aliAcc;
+	
+	//微信openId
 	private String wxOpenId;
 	
 	private String sessionKey;

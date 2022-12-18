@@ -160,9 +160,9 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	public RespJRso<Boolean> hearbeat(String loginKey) {
 		ActInfoJRso ai = am.getAccount(loginKey);
 		if(ai != null) {
-			return RespJRso.r(RespJRso.CODE_SUCCESS,true);
+			return RespJRso.d(RespJRso.CODE_SUCCESS,true);
 		}else {
-			return RespJRso.r(RespJRso.CODE_FAIL,false);
+			return RespJRso.d(RespJRso.CODE_FAIL,false);
 		}
 		
 	}

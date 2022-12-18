@@ -206,7 +206,7 @@ public @interface SMethod {
 	public String httpMethod() default "";
 	
 	//HTTP请求体内容类型
-	public String httpReqContentType() default "application/json;charset=UTF-8";
+	public String httpReqContentType() default Constants.HTTP_ALL_CONTENT_TYPE;
 	
 	public byte httpRespType() default Constants.HTTP_RESP_TYPE_RESTFULL;
 	
@@ -215,4 +215,8 @@ public @interface SMethod {
 	
 	//整个HTTP请求数据作为一个整体作为参数唯一方法，参数可以是字符串或VO对象
 	public boolean httpReqBody() default false;
+	
+	//true 处理全局HTTP请求，httpPath需要保持全局唯一，否则启动报错
+	//false 处理ClientID内全局HTTP请求，httpPath需要保持ClientI内唯一，否则启动报错
+	public boolean httpGlobal() default true;
 }

@@ -38,8 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
-import cn.jmicro.api.annotation.Inject;
-import cn.jmicro.api.http.IHttpRequestHandler;
 import cn.jmicro.common.Constants;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -48,7 +46,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 

@@ -252,7 +252,7 @@ public class TransationServiceImpl implements ITransationServiceJMSrv{
 	@SMethod(retryCnt=3,timeout=3000)
 	public RespJRso<Boolean> takePartIn(int pid, long txid,byte txPhase) {
 		
-		RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_FAIL,false);
+		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 		
 		ProcessInfoJRso pi = this.insMng.getInstanceById(pid);
 		
@@ -293,7 +293,7 @@ public class TransationServiceImpl implements ITransationServiceJMSrv{
 	@Override
 	@SMethod(retryCnt=0,timeout=3000)
 	public RespJRso<Boolean> vote(int pid, long txid, boolean commit) {
-		RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_FAIL,false);
+		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 		ProcessInfoJRso pi = this.insMng.getInstanceById(pid);
 		
 		TxGroup g = txGroups.get(txid);

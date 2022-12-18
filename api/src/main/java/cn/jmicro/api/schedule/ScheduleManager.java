@@ -174,7 +174,7 @@ public class ScheduleManager {
 	}
 
 	public RespJRso<Object> createJob(ScheduleConfigJRso config) {
-		 RespJRso<Object> r =RespJRso.r(RespJRso.CODE_FAIL,false);
+		 RespJRso<Object> r =RespJRso.d(RespJRso.CODE_FAIL,false);
 		try {
 			
 			//initScheduler();

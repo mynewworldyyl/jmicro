@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.alibaba.fastjson2.JSONObject;
 
@@ -17,6 +18,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -56,6 +58,13 @@ public class JMicroNettyHttpRequest implements HttpRequest {
 			this.retMsg = "目前仅支持POST或GET请求";
 			return;
 		}
+		
+		/*HttpHeaders headers = r.headers();
+		Set<String> names = headers.names();
+		for(String n : names) {
+			String v = headers.get(n);
+			this.reqParams.put(n,v);
+		}*/
 		
 		String uri = this.getUri();
 		
@@ -125,10 +134,24 @@ public class JMicroNettyHttpRequest implements HttpRequest {
 			}
 		}
 	}
+	
+	@Override
+	public Integer getClient() {
+		String cid = reqParams.get("clientId");
+		if(cid == null) {
+			return null;
+		}
+		return Integer.parseInt(cid);
+	}
+
+	@Override
+	public String getToken() {
+		return reqParams.get("token");
+	}
 
 	@Override
 	public int getContentLen() {
-		return r.content().array().length;
+		return r.content().capacity();
 	}
 
 	@Override

@@ -144,7 +144,7 @@ public class TransactionResourceServiceIml implements ITransactionResourceJMSrv,
 
 	@Override
 	public RespJRso<Boolean> canCommit(long txid) {
-		RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_FAIL,false);
+		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 		TxEntry txe = this.txEntries.get(txid);
 		if(txe == null || txe.s == null) {
 			if(LG.isLoggable(MC.LOG_WARN)) {
@@ -171,7 +171,7 @@ public class TransactionResourceServiceIml implements ITransactionResourceJMSrv,
 	@Override
 	@SMethod(debugMode=1)
 	public RespJRso<Boolean> finish(long txid, boolean commit) {
-		RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_SUCCESS,true);
+		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_SUCCESS,true);
 		TxEntry txe = this.txEntries.get(txid);
 		if(txe == null) {
 			LG.log(MC.LOG_ERROR, this.getClass(), txid +" not found, commit: " + commit);

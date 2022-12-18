@@ -818,6 +818,7 @@ public class ServiceLoader{
 					sm.setHttpReqContentType(manno.httpReqContentType());
 					sm.setHttpReqBody(manno.httpReqBody());
 					sm.setHttpRespType(manno.httpRespType());
+					sm.setHttpGlobal(manno.httpGlobal());
 				}
 				
 				Parameter[] ps = srvMethod.getParameters();

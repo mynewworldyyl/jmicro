@@ -74,7 +74,7 @@ public class ClassloaderRpcService implements IClassloaderRpcJMSrv {
 
 	@Override
 	public RespJRso<Boolean> registRemoteClass(RemoteClassRegisterJRso r) {
-		return RespJRso.r(RespJRso.CODE_FAIL,false);
+		return RespJRso.d(RespJRso.CODE_FAIL,false);
 	}
 
 	

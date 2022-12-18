@@ -18,21 +18,17 @@ import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
 import cn.jmicro.api.net.Message;
-import cn.jmicro.api.net.RpcRequestJRso;
 import cn.jmicro.api.registry.ServiceMethodJRso;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.service.ServiceInvokeManager;
-import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
 import cn.jmicro.gateway.fs.FsDownloadHttpHandler;
-import cn.jmicro.transport.netty.server.NettyServerSession;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
+import cn.jmicro.gateway.http.HttpServiceManager;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,7 +42,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 	private ServiceInvokeManager asrv;
 	
 	@Inject
-	private ServiceManager smng;
+	private HttpServiceManager smng;
 	
 	@Inject
 	private ServiceInvokeManager invoke;
@@ -66,7 +62,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 	public void jready() {}
 	
 	public boolean handle(HttpRequest req, HttpResponse resp) {
-		ServiceMethodJRso sm = this.smng.getMethodByHttpPath(req.getPath());
+		ServiceMethodJRso sm = this.smng.getMethodByHttpPath(req.getPath(),req.getClient());
 		
 		if(sm == null) {
 			return false;
@@ -77,11 +73,14 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			return true;
 		}
 		
-		if(!Utils.isEmpty(sm.getHttpReqContentType()) && Constants.HTTP_METHOD_POST.equals(req.getMethod()) 
-				&& !sm.getHttpReqContentType().equals(req.getContentType())) {
-			this.resp(resp, "不支持内容类型: " + req.getContentType(), req.getContentType());
-			return true;
+		if(!Constants.HTTP_ALL_CONTENT_TYPE.equals(sm.getHttpReqContentType())) {
+			if(!Utils.isEmpty(sm.getHttpReqContentType()) && Constants.HTTP_METHOD_POST.equals(req.getMethod()) 
+					&& !sm.getHttpReqContentType().equals(req.getContentType())) {
+				this.resp(resp, "不支持内容类型: " + req.getContentType(), req.getContentType());
+				return true;
+			}
 		}
+		
 		
 		JMicroContext.configHttpProvider(req, sm);
 		
@@ -162,12 +161,14 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 		String lk = req.getHeaderParam(Message.EXTRA_KEY_LOGIN_KEY+"");
 		ActInfoJRso ai = null;
 		
-		String slk = req.getHeaderParam(Message.EXTRA_KEY_LOGIN_KEY+"");
+		String slk = req.getHeaderParam(Message.EXTRA_KEY_LOGIN_SYS+"");
 		ActInfoJRso sai = null;
 		
 		if(StringUtils.isNotEmpty(lk)) {
 			ai = this.accountManager.getAccount(lk);
-		}
+		}/* else if(StringUtils.isNotEmpty(req.getHeaderParam("token"))) {
+			
+		}*/
 		
 		if(StringUtils.isNotEmpty(slk)) {
 			sai = this.accountManager.getAccount(slk);
@@ -281,7 +282,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 	//application/json;charset:utf-8
 	private void resp(HttpResponse resp, String content, String respType) {
 		//"text/html;charset:utf-8"
-		log.info(content);
+		log.info(content);	
 		try {
 			if(Utils.isEmpty(respType)) {
 				respType = Constants.HTTP_JSON_CONTENT_TYPE;
@@ -304,6 +305,7 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			if(!(code == RespJRso.CODE_SUCCESS || JHttpStatus.HTTP_OK == code)) {
 				if(JHttpStatus.HTTP_MOVED_TEMP == code || JHttpStatus.HTTP_MOVED_PERM == code ||
 						JHttpStatus.HTTP_SEE_OTHER == code) {
+					//处理302重定向
 					//重定向
 					resp.redirect(code,rr.getData().toString());
 					return;
@@ -337,6 +339,23 @@ public class Http2ServiceAdapter implements IHttpRequestHandler {
 			} else {
 				//内容即为文件的ID
 				fsDispatcher.downloadFile(req, resp, rst.toString(),true);
+			}
+		}else if(sm.getHttpRespType() == Constants.HTTP_RESP_TYPE_ORIGIN) {
+			//剥离RespJRso实例数据，只返回data的值，如果rst非RespJRso实例,则直接返回rst
+			if(rst instanceof RespJRso) {
+				Object obj = ((RespJRso) rst).getData();
+				if(obj instanceof String) {
+					this.resp(resp, (String)obj, req.getContentType());
+				}else {
+					this.resp(resp, JsonUtils.getIns().toJson(obj), req.getContentType());
+				}
+			} else {
+				//内容即为文件的ID
+				if(rst instanceof String) {
+					this.resp(resp, (String)rst, req.getContentType());
+				}else {
+					this.resp(resp, JsonUtils.getIns().toJson(rst), req.getContentType());
+				}
 			}
 		}
 	}

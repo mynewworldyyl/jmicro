@@ -201,7 +201,7 @@ public class PubSubServer implements IInternalSubRpcJMSrv{
 	@SMethod(timeout=5000,retryCnt=0,asyncable=false,debugMode=0,forType=Constants.FOR_TYPE_ALL)
 	public IPromise<RespJRso<Boolean>> hasTopic(String topic) {
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_SUCCESS,true);
+			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_SUCCESS,true);
 			r.setData(this.subManager.isValidTopic(topic));
 			suc.success(r);
 		});

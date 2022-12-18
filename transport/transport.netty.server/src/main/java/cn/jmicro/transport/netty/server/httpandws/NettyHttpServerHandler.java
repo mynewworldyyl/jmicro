@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +88,15 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 	@Cfg(value="/exportHttpIP",required=false,defGlobal=false)
 	private String host = "";
 	
+	//@Cfg("/NettyHttpServerHandler/staticFileMatchPattern")
+	private String staticFileMatchPattern="^.+\\.(js|css|html|htm|jpg|png|jpeg|ico|icon|svg)$";
+	
+	private Pattern staticFilePattern = null;
+	
+	public void jready() {
+		staticFilePattern = Pattern.compile(staticFileMatchPattern);
+	}
+	
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
@@ -142,6 +152,13 @@ public class NettyHttpServerHandler extends ChannelInboundHandlerAdapter {
 				byte[] bts = new byte[bb.readableBytes()];
 				bb.readBytes(bts);
 				session.receive(ByteBuffer.wrap(bts));
+				return;
+			}
+			
+			if(staticFilePattern.matcher(req.uri()).matches()) {
+				//资源未找到
+				//剩下的交由静态资源处理
+				resourceHandler.handle(ctx, req);
 				return;
 			}
 			
