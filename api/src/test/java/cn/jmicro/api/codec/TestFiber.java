@@ -17,7 +17,7 @@ public class TestFiber {
 		dest.flip();
 		
 		RespJRso result = Decoder.decodeObject(dest);
-		Object r = result.getResult();
+		Object r = result.result();
 		System.out.println(r);
 	}
 	

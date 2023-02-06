@@ -429,17 +429,17 @@ public class ApiGatewayClient {
 			} else {
 				RespJRso apiResp = JsonUtils.getIns().fromJson(json, RespJRso.class);
 				if(apiResp.getCode() == RespJRso.CODE_SUCCESS) {
-					 if(apiResp.getResult() == null || resultType == Void.class || Void.TYPE == resultType) {
+					 if(apiResp.result() == null || resultType == Void.class || Void.TYPE == resultType) {
 						 p.done();
 					 } else {
-						 String js = JsonUtils.getIns().toJson(apiResp.getResult());
+						 String js = JsonUtils.getIns().toJson(apiResp.result());
 						 R rst = JsonUtils.getIns().fromJson(js, resultType);
 						 p.setResult(rst);
 						 p.done();
 						 return rst;
 					 }
 				} else {
-					 String js = JsonUtils.getIns().toJson(apiResp.getResult());
+					 String js = JsonUtils.getIns().toJson(apiResp.result());
 					 RespJRso se = JsonUtils.getIns().fromJson(js, RespJRso.class);
 					 if(se != null) {
 						 p.setFail(se.getCode(), se.getMsg());

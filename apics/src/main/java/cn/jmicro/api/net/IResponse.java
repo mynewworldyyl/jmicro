@@ -25,7 +25,7 @@ public interface IResponse extends IResp{
 
 	//Long getRequestId();
 	
-	Object getResult();
+	Object result();
 	
 	//boolean isMonitorEnable();
 	

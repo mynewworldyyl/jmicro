@@ -83,7 +83,7 @@ public final class RpcException extends CommonException {
 		}
 		
 		if(resp!= null) {
-			sb.append(", resp result: ").append(resp.getResult());
+			sb.append(", resp result: ").append(resp.result());
 		}
 		
 		return sb.toString();

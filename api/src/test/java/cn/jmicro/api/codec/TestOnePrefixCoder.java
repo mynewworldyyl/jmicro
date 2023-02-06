@@ -34,7 +34,7 @@ public class TestOnePrefixCoder {
 		dest.flip();
 		
 		RespJRso result = decoder.decode(dest);
-		Object r = result.getResult();
+		Object r = result.result();
 		
 		System.out.println(r.toString());
 	}
@@ -246,7 +246,7 @@ public class TestOnePrefixCoder {
 		
 		ApiResponseJRso resp = decoder.decode((ByteBuffer)respMsg.getPayload());
 		
-		System.out.println(resp.getResult());
+		System.out.println(resp.result());
 	}
 	
 	@Test
@@ -328,7 +328,7 @@ public class TestOnePrefixCoder {
 		
 		RespJRso si1 = decoder.decode(bb);
 		
-		Integer[]  arr = (Integer[])si1.getResult();
+		Integer[]  arr = (Integer[])si1.result();
 		
 		System.out.println(arr);
 		

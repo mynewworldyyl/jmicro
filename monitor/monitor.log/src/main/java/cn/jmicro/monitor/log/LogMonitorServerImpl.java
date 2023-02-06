@@ -803,7 +803,7 @@ public class LogMonitorServerImpl implements ILogMonitorServerJMSrv {
 		
 		Document doc = Document.parse(json);
 		//避免java.lang.IllegalArgumentException: Invalid BSON field name错误
-		if(mi.getResp() != null && mi.getResp().getResult() != null) {
+		if(mi.getResp() != null && mi.getResp().result() != null) {
 			Document rsp = doc.get("resp", Document.class);
 			doc.put("resp",checkDocument(rsp));
 		}

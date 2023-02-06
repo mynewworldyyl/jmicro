@@ -75,7 +75,7 @@ public class ActInfoJRso {
 	
 	private String birthday;
 	
-	//阿里里登录账号
+	//阿里里登录账号aliAcc
 	private String aliAcc;
 	
 	//微信openId
@@ -503,6 +503,14 @@ public class ActInfoJRso {
 
 	public void setGender(Byte gender) {
 		this.gender = gender;
+	}
+
+	public String getAliAcc() {
+		return aliAcc;
+	}
+
+	public void setAliAcc(String aliAcc) {
+		this.aliAcc = aliAcc;
 	}
 
 	public static enum Tag {

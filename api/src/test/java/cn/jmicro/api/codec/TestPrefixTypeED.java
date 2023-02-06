@@ -242,7 +242,7 @@ public class TestPrefixTypeED {
 		ByteBuffer bb = decoder.encode(pe);
 		
 		RespJRso ped = decoder.decode(bb);
-		int[] rs = (int[])ped.getResult();
+		int[] rs = (int[])ped.result();
 		System.out.println(rs);
 		
 	}

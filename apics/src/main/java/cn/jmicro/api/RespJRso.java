@@ -105,7 +105,7 @@ public class RespJRso<T> implements IResp/*,cn.jmicro.api.codec.ISerializeObject
 	}
 	
 	@Override
-	public Object getResult() {
+	public Object result() {
 		return this.data;
 	}
 	

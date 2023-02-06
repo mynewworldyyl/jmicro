@@ -114,7 +114,7 @@ public final class ApiResponseJRso implements IResp {
 	public void setReqId(Long reqId) {
 		this.reqId = reqId;
 	}
-	public Object getResult() {
+	public Object result() {
 		return result;
 	}
 	public void setResult(Object result) {

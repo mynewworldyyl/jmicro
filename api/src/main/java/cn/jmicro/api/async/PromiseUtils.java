@@ -37,7 +37,7 @@ public class PromiseUtils {
 			@Override
 			public void onResponse(RespJRso resp) {
 				if(resp.getCode() == RespJRso.CODE_SUCCESS) {
-					p.setResult((R)resp.getResult());
+					p.setResult((R)resp.getData());
 				} else {
 					AsyncFailResult f = new AsyncFailResult();
 					f.setCode(resp.getCode());

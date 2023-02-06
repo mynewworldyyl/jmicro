@@ -379,12 +379,12 @@ public class LG {
 		if(r instanceof RespJRso) {
 			RespJRso req = (RespJRso)r;
 			sb.append(",success:").append(req.getCode() == 0);
-			sb.append(",result:").append(req.getResult());
+			sb.append(",result:").append(req.result());
 		}else if(r instanceof ApiResponseJRso) {
 			ApiResponseJRso req = (ApiResponseJRso)r;
 			sb.append(",success:").append(req.isSuccess());
 			sb.append(",reqId:").append(req.getReqId());
-			sb.append(",result:").append(req.getResult());
+			sb.append(",result:").append(req.result());
 		}
 		return sb.toString();
 	}

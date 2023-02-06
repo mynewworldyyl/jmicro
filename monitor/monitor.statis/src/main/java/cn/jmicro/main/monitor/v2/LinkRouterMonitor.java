@@ -276,14 +276,14 @@ import cn.jmicro.monitor.api.AbstractMonitorDataSubscriber;
 	private void ApiResponseJRso(StringBuilder sb, ApiResponseJRso resp) {
 		sb.append("reqId[").append(resp.getReqId()).append("] success[")
 		.append(resp.isSuccess()).append("] result[")
-		.append(resp.getResult()).append("]");
+		.append(resp.result()).append("]");
 	}
 
 	private void rpcResponse(StringBuilder sb, IResponse resp) {
 		sb.append("success[")
 		.append(resp.isSuccess())
 		.append("] result[")
-		.append(resp.getResult()).append("]");
+		.append(resp.result()).append("]");
 	}
 
 	private void reqeust(StringBuilder sb, IRequest req) {
