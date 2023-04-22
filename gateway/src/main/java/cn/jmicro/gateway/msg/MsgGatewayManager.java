@@ -1,5 +1,6 @@
 package cn.jmicro.gateway.msg;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -90,7 +91,7 @@ public class MsgGatewayManager {
 		}
 	};
 	
-	public long forward(Message msg,Integer tactId) {
+	public long forward(Message msg, Integer tactId) {
 		//备份消息类型，返回给发消息发送者
 		byte t = msg.getType();
 		
@@ -106,6 +107,9 @@ public class MsgGatewayManager {
 			return -1;
 		}
 		
+		ByteBuffer bb = (ByteBuffer)msg.getPayload();
+		logger.info(new String(bb.array()));
+		
 		r.sess.write(msg);//直接转发消息
 		
 		//还原消息类型
@@ -113,7 +117,7 @@ public class MsgGatewayManager {
 		return msg.getMsgId();
 	}
 	
-	public int subscribe(ISession session, String topic,Message msg) {
+	public int subscribe(ISession session, String topic, Message msg) {
 		if(StringUtils.isEmpty(topic)) {
 			logger.error("Topic cannot be NULL");
 			return -1;

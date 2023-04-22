@@ -183,6 +183,13 @@ public final class RpcRequestJRso implements IRequest/*,ISerializeObject*/ {
 	public void setMonitorEnable(boolean isMonitorEnable) {
 		this.isMonitorEnable = isMonitorEnable;
 	}
+	
+	public boolean containsParam(String key) {
+		if(this.params == null || this.params.isEmpty()) {
+			return false;
+		}
+		return this.params.containsKey(key);
+	}
 
 	@Override
 	public Map<String, Object> getRequestParams() {

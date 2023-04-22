@@ -12,6 +12,9 @@ import lombok.Serial;
 @Serial
 public class ActInfoJRso {
 	
+	public static final byte TYPE_NORMAL = 0;// 0 普通用户
+	public static final byte TYPE_DEVICE = 1;//1 设备账号，只能用于设备登录，权限最小化
+	
 	public static final byte LV_NORMAL = 0;// 0 普通用户
 	public static final byte LV_VIP = 1;//1 VIP用户
 	public static final byte LV_PROXY = 2;//2 区域代理用户
@@ -31,6 +34,8 @@ public class ActInfoJRso {
 	public static final byte TOKEN_RESET_PWD = 2;
 	
 	public static final String GUEST = "guest_";
+	
+	private byte type = TYPE_NORMAL;
 	
     private String avatarUrl;
     private String city;
@@ -511,6 +516,14 @@ public class ActInfoJRso {
 
 	public void setAliAcc(String aliAcc) {
 		this.aliAcc = aliAcc;
+	}
+
+	public byte getType() {
+		return type;
+	}
+
+	public void setType(byte type) {
+		this.type = type;
 	}
 
 	public static enum Tag {

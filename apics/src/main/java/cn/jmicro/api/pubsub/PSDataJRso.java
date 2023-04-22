@@ -98,6 +98,9 @@ public class PSDataJRso implements Serializable{
 	//标志
 	private byte flag = 0;
 	
+	//消息类型，可以用于逻辑分发，相当于一个方法标识编码
+	private byte type = 0;
+	
 	//主题
 	private String topic;
 	
@@ -122,8 +125,8 @@ public class PSDataJRso implements Serializable{
 	//客户端发送失败次数，用于重发计数，如果消息失败次数到达一定量，将消息丢弃，并调用localCallback（如果存在）通知调用者，
 	private transient int failCnt = 0;
 	
-	//延迟多久发送
-	private long delay=0;
+	//延迟多久发送,单位是秒
+	private byte delay=0;
 	
 	public static boolean is(byte flag, byte mask) {
 		return (flag & mask) != 0;

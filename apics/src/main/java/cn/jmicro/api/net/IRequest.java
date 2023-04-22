@@ -76,4 +76,6 @@ public interface IRequest extends IReq{
 	public int getPacketSize();
 	
 	public byte getProtocol();
+	
+	public boolean containsParam(String key);
 }

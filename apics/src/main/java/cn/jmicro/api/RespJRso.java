@@ -21,6 +21,8 @@ public class RespJRso<T> implements IResp/*,cn.jmicro.api.codec.ISerializeObject
 	
 	public static final int NEED_CHECK_CODE = 4;
 	
+	public static final int NEED_INVALID_LOGIN = 5;
+	
 	public static final int SE_NO_PERMISSION = 0x00000005;
 	
 	public static final int SE_NOT_LOGIN = 0x00000006;

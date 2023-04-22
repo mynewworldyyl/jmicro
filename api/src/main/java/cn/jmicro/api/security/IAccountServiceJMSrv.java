@@ -20,6 +20,9 @@ public interface IAccountServiceJMSrv {
 	IPromise<RespJRso<ActInfoJRso>> loginWithClientToken(Integer loginClientId,String token);
 	
 	IPromise<RespJRso<ActInfoJRso>>  loginByWeixin(Integer loginClientId,String code, int shareUserId);
+	
+	//物联网设备登录
+	IPromise<Map<String,Object>>  loginByDevice(String userName, String pwd);
 
 	RespJRso<Boolean> hearbeat(String loginKey);
 	

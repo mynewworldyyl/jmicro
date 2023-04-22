@@ -167,8 +167,8 @@ public final class Message {
 	public static final Byte EXTRA_KEY_LOGIN_SYS = -116;
 	public static final Byte EXTRA_KEY_ARG_HASH= -115;
 	
-	public static final Byte EXTRA_KEY_PS_OP_CODE= -114;
-	public static final Byte EXTRA_KEY_PS_ARGS= -113;
+	public static final Byte EXTRA_KEY_PS_OP_CODE= -114;//消息订阅操作码
+	public static final Byte EXTRA_KEY_PS_ARGS= -113;//消息订阅操作码下所需要参数
 	
 	//服务器返回全局唯一标识ID
 	public static final Byte EXTRA_KEY_SMSG_ID= -112;
@@ -298,8 +298,8 @@ public final class Message {
 	
 	public Message(){}
 	
-	public static Message createRpcMessage(Integer mcode,Object[] args,Long reqId, String method,
-			String loginKey, byte up,byte dp) {
+	public static Message createRpcMessage(Integer mcode, Object[] args, Long reqId, String method,
+			String loginKey, byte up, byte dp) {
     	
     	ApiRequestJRso req = new ApiRequestJRso();
     	req.setReqId(reqId);

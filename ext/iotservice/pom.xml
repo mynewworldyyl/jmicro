@@ -1,0 +1,41 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+         <groupId>cn.jmicro</groupId>
+		 <artifactId>jmicro.ext</artifactId>
+		 <version>0.0.5-SNAPSHOT</version>
+    </parent>
+    <artifactId>jmicro.iotservice</artifactId>
+    <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+    <description>base iot service</description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>cn.jmicro</groupId>
+            <artifactId>jmicro.all</artifactId>
+            <type>pom</type>
+        </dependency>
+         <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.mongodb</artifactId>
+	    </dependency>
+	     <dependency>
+			 <groupId>cn.jmicro</groupId>
+			 <artifactId>jmicro.resource</artifactId>
+	    </dependency>
+	    
+	     <dependency>
+	       <groupId>org.apache.httpcomponents</groupId>
+		    <artifactId>httpclient</artifactId>
+	     </dependency>
+	     
+		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+			<version>1.2.5</version>
+		</dependency>
+		
+    </dependencies>
+   
+</project>

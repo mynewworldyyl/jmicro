@@ -55,7 +55,7 @@ public class MessageServiceImpl implements IMessageHandler{
 
 		int opCode = new Double(Double.parseDouble(op.toString())).intValue();
 		if(opCode == IGatewayMessageCallbackJMSrv.MSG_OP_CODE_FORWARD) {
-			//转发类消息,tactId为转发目标账号ID
+			//转发类消息,to actId为转发目标账号ID
 			Integer tactId = msg.getExtra(Message.EXTRA_KEY_PS_ARGS);
 			if (tactId == null) {
 				responseError(session, msg, RespJRso.SE_INVLID_ARGS, "Invalid forward tactId");
@@ -90,6 +90,7 @@ public class MessageServiceImpl implements IMessageHandler{
 			}
 			int subId = msgGm.subscribe(session, topic, msg);
 			msg.setPayload(subId);
+			msg.putExtra(Message.EXTRA_KEY_EXT0, subId);
 		}
 
 		msg.setError(false);

@@ -236,15 +236,18 @@ public class JRPCReqRespHandler implements IMessageHandler {
 						}else {
 							msg.setError(true);
 						}
+						resp2Client(resp, s, msg, sm);
 					} else {
-						resp.setCode(RespJRso.CODE_SUCCESS);
-						resp.setData(rst);
-						msg.setError(false);
+						if(req1.containsParam("NCR")) {
+							resp2Client(rst, s, msg, sm);
+						} else {
+							resp.setCode(RespJRso.CODE_SUCCESS);
+							resp.setData(rst);
+							msg.setError(false);
+							resp2Client(resp, s, msg, sm);
+						}
 					}
-					
-					resp2Client(resp, s, msg, sm);
 					finish[0] = true;
-					
 				}).fail((code, errorMsg, resultCxt) -> {
 					if (finish[0]) {
 						return;
@@ -325,7 +328,7 @@ public class JRPCReqRespHandler implements IMessageHandler {
 		}
 	}
 
-	private void resp2Client(RespJRso<Object> resp, ISession s, Message msg, ServiceMethodJRso sm) {
+	private void resp2Client(/*RespJRso<Object>*/Object resp, ISession s, Message msg, ServiceMethodJRso sm) {
 		if (!msg.isNeedResponse()) {
 			submitItem();
 			return;

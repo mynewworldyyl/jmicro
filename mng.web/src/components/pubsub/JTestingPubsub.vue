@@ -10,6 +10,8 @@
             </Button>
             &nbsp;&nbsp;
             <Button :disabled="!isLogin" @click="clearSendResult()">{{'ClearResult'|i18n}}</Button>
+			&nbsp;&nbsp;
+			<Button :disabled="!isLogin" @click="changeChannel()">{{channel=='p2p'?"P2P":'PS'}}</Button>
 
             <div>
                 <label for="Topic">{{'SendTopic'|i18n}}</label>
@@ -17,8 +19,10 @@
             </div>
 			
 			<div>
-			    <label for="To">{{'ToTarget'|i18n}}</label>
-			    <Input id="To" v-model="to" placeholder=""/>
+				<label for="To">{{'ToTarget'|i18n}}</label>
+				<Input id="To" v-model="to" placeholder=""/>
+				<label for="Type">{{'Type'|i18n}}</label>
+				<Input id="Type" v-model="type" placeholder=""/>
 			</div>
 
             <div>
@@ -71,8 +75,12 @@
 <script>
     import ps from "@/rpc/pubsub"
     import i18n from "@/rpc/i18n"
+	import{Constants} from "@/rpc/message"
 
     const cid="testingPubsub";
+	
+	const channel_p2p="p2p";//端对端消息
+	const channel_ps="ps";//通过消息代理发送
 
     export default {
         name: 'JTestingPubsub',
@@ -82,7 +90,7 @@
             return {
                 isLogin:false,
                 //sendTopic:'/jmicro/test/topic01',
-				sendTopic : "/__act/msg/25500",
+				sendTopic : "/__act/dev/testdevice001",
                 subTopic : '/jmicro/test/topic01',
                 content : this.$jr.lc.get('psContent'),
 				cxt : this.$jr.lc.get('psCxt'),
@@ -90,7 +98,8 @@
                 msg : '',
                 subState : false,
 				to: this.$jr.lc.get('psTo'),
-
+				channel : 'p2p',
+				type:this.$jr.lc.get('type'),
                 needSendResult:false,
                 sendResult:'',
                 sendResultTopic:'/jmicro/testresult/topic01',
@@ -101,6 +110,14 @@
             getMsg(key) {
                 return  i18n.get(key);
             },
+			
+			changeChannel(){
+				if(this.channel == channel_p2p) {
+					this.channel = channel_ps;
+				}else {
+					this.channel = channel_p2p;
+				}
+			},
 
             sendResultCallback(msg) {
                 if(!msg || msg.length == 0) {
@@ -153,6 +170,7 @@
                     this.msg = '发送内容不能为空';
                     return;
                 }
+				
                 if(!this.sendTopic || this.sendTopic.length == 0) {
                     this.msg = '主题不能为空';
                     return;
@@ -176,13 +194,22 @@
 				this.$jr.lc.set("psContent",this.content)
 				this.$jr.lc.set("psTo",this.to)
 				
-                ps.publishString(this.sendTopic,this.content,this.to,c,true,false,cb)
-				.then(rst=>{
-					console.log(rst);
-					this.sendResult += JSON.stringify(rst) + "\n";
-				}).catch(err=>{
-				   console.log(err)
-                });
+				this.$jr.lc.set("type",this.type)
+				
+				if(this.channel == channel_ps) {
+					ps.publishString(this.sendTopic,this.content,this.to,c,true,false,cb)
+					.then(rst=>{
+						console.log(rst);
+						this.sendResult += JSON.stringify(rst) + "\n";
+					}).catch(err=>{
+					   console.log(err)
+					});
+				}else {
+					let c = ps.itemString(this.sendTopic,this.content,parseInt(this.to),parseInt(this.type))
+					console.log(c)
+					ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
+				}
+                
 				
             },
 

@@ -385,7 +385,7 @@ public class ApiGatewayClient {
 		return p;
 	}
 	
-	public <T> IPromise<T> sendMessage(byte msgType,Object arg,Class<T> resultType) {
+	public <T> IPromise<T> sendMessage(byte msgType, Object arg, Class<T> resultType) {
 		Message msg = this.createMessage(msgType,arg);
 		final Promise<T> p = new Promise<T>();
 		p.setResultType(resultType);

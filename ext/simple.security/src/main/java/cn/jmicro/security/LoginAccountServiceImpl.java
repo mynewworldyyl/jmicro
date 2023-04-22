@@ -67,6 +67,12 @@ public class LoginAccountServiceImpl implements IAccountServiceJMSrv {
 	}
 
 	@Override
+	public IPromise<Map<String,Object>> loginByDevice(String actName,String pwd) {
+		
+		return null;
+	}
+
+	@Override
 	public IPromise<RespJRso<ActInfoJRso>> login(Integer loginClientId,String actName, String pwd,String code,String codeId) {
 
 		return new Promise<RespJRso<ActInfoJRso>>((suc,fail)->{
