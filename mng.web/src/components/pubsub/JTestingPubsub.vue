@@ -12,7 +12,8 @@
             <Button :disabled="!isLogin" @click="clearSendResult()">{{'ClearResult'|i18n}}</Button>
 			&nbsp;&nbsp;
 			<Button :disabled="!isLogin" @click="changeChannel()">{{channel=='p2p'?"P2P":'PS'}}</Button>
-
+			&nbsp;&nbsp;
+			<Button :disabled="!isLogin" @click="byActOrTopic()">{{byType}}</Button>
             <div>
                 <label for="Topic">{{'SendTopic'|i18n}}</label>
                 <Input id="Topic" v-model="sendTopic" placeholder=""/>
@@ -90,7 +91,7 @@
             return {
                 isLogin:false,
                 //sendTopic:'/jmicro/test/topic01',
-				sendTopic : "/__act/dev/testdevice001",
+				sendTopic : "/__act/dev/25500/testdevice001",
                 subTopic : '/jmicro/test/topic01',
                 content : this.$jr.lc.get('psContent'),
 				cxt : this.$jr.lc.get('psCxt'),
@@ -99,6 +100,7 @@
                 subState : false,
 				to: this.$jr.lc.get('psTo'),
 				channel : 'p2p',
+				byType:'topic',
 				type:this.$jr.lc.get('type'),
                 needSendResult:false,
                 sendResult:'',
@@ -116,6 +118,14 @@
 					this.channel = channel_ps;
 				}else {
 					this.channel = channel_p2p;
+				}
+			},
+			
+			byActOrTopic(){
+				if(this.byType == 'actId') {
+					this.byType = 'topic';
+				}else {
+					this.byType = 'actId';
 				}
 			},
 
@@ -204,13 +214,15 @@
 					}).catch(err=>{
 					   console.log(err)
 					});
-				}else {
+				} else {
 					let c = ps.itemString(this.sendTopic,this.content,parseInt(this.to),parseInt(this.type))
 					console.log(c)
-					ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
-				}
-                
-				
+					if(this.byType=='actId') {
+						ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
+					}else {
+						ps.sendDirectMessageByTopic(c, this.sendTopic, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
+					}
+				}	
             },
 
             msgCallback(msg) {

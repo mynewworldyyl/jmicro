@@ -10,6 +10,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -304,54 +305,58 @@ public class MsgGatewayManager {
 			msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
 			
 			//强制使用JSON下发数据
+			msg.setPayload(ICodecFactory.encode(codecFactory, i, Message.PROTOCOL_JSON));
+			
+			//强制使用JSON下发数据
 			msg.setDownProtocol(Message.PROTOCOL_JSON);
 			
-			Set<Registion> rsList = topic2Sessions.get(i.getTopic());
-			if(rsList == null || rsList.isEmpty()) {
-				logger.warn("No subcriber for topic: " + i.getTopic());
-				return;
-			}
-			
-			Set<Registion> rs = new HashSet<>();
-			rs.addAll(rsList);
-			
-			//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+i.getData());
-			
-			Map<String,Object> context = null;
-			
-			if(i.getContext() != null) {
-				context = new HashMap<>();
-				context.putAll(i.getContext());
-			}
-			
-			for(Registion r : rs) {
-				if(i.getSrcClientId() > 0 && r.clientId != i.getSrcClientId()) {
-					logger.warn("Source clientId:" + i.getSrcClientId()+", target clientId:" + r.clientId+", topic: "+ i.getTopic());
-					continue;
-				}
-				
-				if(context != null && r.ctx != null && !r.ctx.isEmpty()) {
-					i.getContext().clear();
-					i.getContext().putAll(context);
-					i.getContext().putAll(r.ctx);
-				}
-				
-				//强制使用JSON下发数据
-				msg.setPayload(ICodecFactory.encode(codecFactory, i, Message.PROTOCOL_JSON));
-				
-				try {
-					r.sess.write(msg);
-					r.lastActiveTime = TimeUtils.getCurTime();
-				} catch (Throwable e) {
-					logger.error("onMessage write error will unsubscribe the topic: "+r.topic,e);
-					this.unsubscribe(r.id);
-				}
-			}
+			forwardMsgByTopic(msg,i.getTopic(),i.getSrcClientId(),i.getContext());
 			
 		} catch (Throwable e) {
 			logger.error("",e);
 		}	
 	
+	}
+	
+	private void forwardMsgByTopic(Message msg,String topic, Integer srcClientId, Map<String,Object> cxt) {
+		Set<Registion> rsList = topic2Sessions.get(topic);
+		if(rsList == null || rsList.isEmpty()) {
+			logger.warn("No subcriber for topic: " + topic);
+			return;
+		}
+		
+		Set<Registion> rs = new HashSet<>();
+		rs.addAll(rsList);
+		
+		//System.out.println("QPS type: "+MonitorConstant.STATIS_QPS+"="+i.getData());
+		
+		Map<String,Object> context = null;
+		
+		if(cxt != null) {
+			context = new HashMap<>();
+			context.putAll(cxt);
+		}
+		
+		for(Registion r : rs) {
+			/*if(srcClientId > 0 && r.clientId != srcClientId) {
+				logger.warn("Source clientId:" + srcClientId+", target clientId:" + r.clientId+", topic: "+ topic);
+				continue;
+			}*/
+			
+			if(context != null && r.ctx != null && !r.ctx.isEmpty()) {
+				cxt.clear();
+				cxt.putAll(context);
+				cxt.putAll(r.ctx);
+			}
+			
+			try {
+				r.sess.write(msg);
+				r.lastActiveTime = TimeUtils.getCurTime();
+			} catch (Throwable e) {
+				logger.error("onMessage write error will unsubscribe the topic: "+r.topic,e);
+				this.unsubscribe(r.id);
+			}
+		}
 	}
 
 	private ITickerAction<Object> tickerAct = new ITickerAction<Object>() {
@@ -393,7 +398,21 @@ public class MsgGatewayManager {
 		public long lastActiveTime = TimeUtils.getCurTime();
 	}
 
-
-	
+	public Long forward(Message msg, String topic) {
+		ActInfoJRso ai = JMicroContext.get().getAccount();
+		if(ai == null) {
+			logger.error("消息转发失败，账号未登录 topic:" + topic);
+			return 0L;
+		}
+		
+		//改为异步消息返回给目标用户
+		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+		
+		msg.putExtra(Message.EXTRA_KEY_SMSG_ID, msg.getMsgId());
+		msg.setMsgId(idServer.getLongId(Message.class));
+		
+		forwardMsgByTopic(msg,topic,ai.getClientId(),null);
+		return msg.getMsgId();
+	}
 
 }

@@ -38,6 +38,7 @@ public interface IGatewayMessageCallbackJMSrv {
 	public static final Integer MSG_OP_CODE_SUBSCRIBE = 1;//订阅消息
 	public static final Integer MSG_OP_CODE_UNSUBSCRIBE = 2;//取消订阅消息
 	public static final Integer MSG_OP_CODE_FORWARD = 3;//转发消息
+	public static final Integer MSG_OP_CODE_FORWARD_BY_TOPIC = 4;//根据主题做转发
 	
 	//账号消息前缀
 	public static final String USER_TOPIC_PREFIX = "/__act/msg/";

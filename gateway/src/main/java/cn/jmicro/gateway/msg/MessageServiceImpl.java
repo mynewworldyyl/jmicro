@@ -33,6 +33,7 @@ import cn.jmicro.api.net.Message;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.JsonUtils;
+import cn.jmicro.common.util.StringUtils;
 
 /**
  * 用于外部客户端订阅pubsub数据
@@ -91,6 +92,24 @@ public class MessageServiceImpl implements IMessageHandler{
 			int subId = msgGm.subscribe(session, topic, msg);
 			msg.setPayload(subId);
 			msg.putExtra(Message.EXTRA_KEY_EXT0, subId);
+		}else if(opCode == IGatewayMessageCallbackJMSrv.MSG_OP_CODE_FORWARD_BY_TOPIC) {
+			//转发类消息,to actId为转发目标账号ID
+			String topic = msg.getExtra(Message.EXTRA_KEY_PS_ARGS);
+			if (StringUtils.isEmpty(topic)) {
+				responseError(session, msg, RespJRso.SE_INVLID_ARGS, "Invalid forward topic");
+				return true;
+			}
+			
+			//备份客户端的消息ID
+			Long msgId = msg.getMsgId();
+			Long suc = msgGm.forward(msg,topic);
+			
+			//给客户端返回服务器生成的消息全局唯一标识
+			msg.putExtra(Message.EXTRA_KEY_SMSG_ID, msg.getMsgId());
+			//还原客户端的消息ID
+			msg.setMsgId(msgId);
+			
+			msg.setPayload(suc);
 		}
 
 		msg.setError(false);
