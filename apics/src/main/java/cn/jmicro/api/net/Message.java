@@ -348,25 +348,31 @@ public final class Message {
 		return msg;
     }
 	
-	private static Map<Byte,Object> decodeExtra(ByteBuffer extra) {
-		if(extra == null || extra.remaining() == 0) return null;
+	private static Map<Byte,Object> decodeExtra(JDataInput b) {
 		
 		Map<Byte,Object> ed = new HashMap<>();
 		
-		JDataInput b = new JDataInput(extra);
 		try {
-			while(b.remaining() > 0) {
+			
+			int eleNum = b.readByte(); //extra元素个数
+			if(eleNum < 0) {
+				eleNum += 256; //参考encode方法说明
+			}
+			
+			if(eleNum == 0) return null;
+			while(eleNum > 0) {
 				Byte k = b.readByte();
-				Object v = decodeVal(b,k);
+				Object v = decodeVal(b);
 				ed.put(k, v);
+				eleNum--;
 			}
 			return ed;
 		} catch (IOException e) {
-			throw new CommonException("decodeExtra error:" + ed.toString() + ", Extra: " + extra);
+			throw new CommonException("decodeExtra error:" + ed.toString() + " IOException: " + e.getMessage());
 		}
 	}
 	
-	public static Object decodeVal(JDataInput b,Byte k) throws IOException {
+	public static Object decodeVal(JDataInput b) throws IOException {
 		byte type = b.readByte();
 		
 		if(type == DecoderConstant.PREFIX_TYPE_NULL) {
@@ -405,14 +411,50 @@ public final class Message {
 			b.readFully(arr, 0, len);
 			return new String(arr,0,len,Constants.CHARSET);*/
 		} else {
-			throw new CommonException("not support header type: " + type+", key: " + k);
+			throw new CommonException("not support header type: " + type);
 		}
 	}
 
 	private static ByteBuffer encodeExtra(Map<Byte, Object> extras) {
-		if(extras == null || extras.isEmpty()) return null;
 		
 		JDataOutput b = new JDataOutput(64);
+		try {
+			/**
+			 *  255: -1
+				254: -2
+				253: -3
+				252: -4
+				.     .
+				.     .
+				.     .
+				130: -126
+				129: -127
+				128: -128
+				127: 127
+				
+				2:   2
+				1:   1
+			 * 
+			 *  x -1 = 255 =>  256
+			 *  x -2 = 254 =>  256
+			 *  
+			 *       读数据转换公式
+			 *       当  x>=0时， y = x
+			 *       当  x<0 时      y = x + 256   将一个字节的负数转化为对应的两个字节正数公式，x表示一个byte的负数， y表示对应的正数，y至少两或以上个字节
+			 *       
+			 * 写进去的值可能是一个负数， 读数据时需要按上面的方式做转换，此方式可以用一个字节存128~255的值，节省网络带宽
+			 * 对于支持无符号数的语言，如C或C++，可直接从流中读一个字节的无符号数即为要表示的数值
+			 * 
+			 */
+			b.writeByte((byte)extras.size());
+		} catch (IOException e1) {
+			throw new CommonException("encodeExtra zero len error msg: "+e1.getMessage());
+		}
+		
+		if(extras == null || extras.isEmpty()) {
+			return null;
+		}
+		
 		for(Map.Entry<Byte, Object> e : extras.entrySet()) {
 			try {
 				b.writeByte(e.getKey());
@@ -424,7 +466,7 @@ public final class Message {
 		return b.getBuf();
 	}
 	
-	private static void encodeVal(JDataOutput b, Object v) throws IOException {
+	public static void encodeVal(JDataOutput b, Object v) throws IOException {
 		if(v == null) {
 			b.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
 			return;
@@ -512,13 +554,17 @@ public final class Message {
 			msg.setMsgId(b.readLong());
 			
 			if(msg.isReadExtra()) {
-				int elen = b.readUnsignedShort();
-				byte[] edata = new byte[elen];
+				//int elen = b.readUnsignedShort();
+				int remaining = b.remaining();//当前字节数，读完extra后，再次取得此值，两值作差即为extra所占字节数
+				/*
+			    byte[] edata = new byte[elen];
 				b.readFully(edata,0,elen);
 				msg.extra = ByteBuffer.wrap(edata);
-				len = len - Message.EXT_HEADER_LEN - elen;
-				msg.extraMap = decodeExtra(msg.extra);
-				msg.setLen(len + elen);
+				*/
+				msg.extraMap = decodeExtra(b);
+				
+				len = len - (remaining - b.remaining());
+				msg.setLen(len);//payload字节数
 				if(msg.extraMap.containsKey(EXTRA_KEY_FLAG)) {
 					msg.extrFlag = (Integer)msg.extraMap.get(EXTRA_KEY_FLAG);
 				}
@@ -575,11 +621,12 @@ public final class Message {
 		}
 		
 		if(this.isWriteExtra()) {
-			extra = encodeExtra(extraMap);
-			if(extra.remaining() > 4092) {
-				throw new CommonException("Too long extra: " + extraMap.toString());
+			if(extraMap.size() > 255) {//最多元素个数为255个，用一个字节存储
+				throw new CommonException("Too many extra 127 with  " + extraMap.size());
 			}
-			len += extra.remaining()+ Message.EXT_HEADER_LEN;
+			extra = encodeExtra(extraMap);
+			//编码后的字节数
+			len += extra.remaining() /*+ Message.EXT_HEADER_LEN*/;
 			this.setExtra(true);
 		}
 		
@@ -622,8 +669,8 @@ public final class Message {
 			b.writeLong(this.msgId);
 			
 			if(this.isWriteExtra()) {
-				//b.writeInt(this.extrFlag);
-				b.writeUnsignedShort(this.extra.remaining());
+				//b.writeByte((byte)extraMap.size());
+				//b.writeByte(this.extra.remaining());
 				b.write(this.extra);
 			}
 			
@@ -678,7 +725,7 @@ public final class Message {
 			}
 	    } else {
 	    	len = Message.readUnsignedShort(cache);
-	    	//还原读数据公位置
+	    	//还原读数据初始位置
 			cache.position(pos);
 	    	if(totalLen < len + headerLen){
 				//还不能构成一个足够长度的数据包

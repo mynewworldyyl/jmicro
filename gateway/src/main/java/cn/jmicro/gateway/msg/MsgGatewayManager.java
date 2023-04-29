@@ -246,7 +246,6 @@ public class MsgGatewayManager {
 			}
 		}*/
 		
-		
 		this.id2Topic.remove(id);
 		
 		if(rr != null) {
@@ -393,9 +392,43 @@ public class MsgGatewayManager {
 		public int actId;
 		
 		public ISession sess;
+		
 		public String topic;
+		
 		public Map<String,Object> ctx;
+		
 		public long lastActiveTime = TimeUtils.getCurTime();
+		
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getOuterType().hashCode();
+			result = prime * result + id;
+			return result;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Registion other = (Registion) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
+			if (id != other.id)
+				return false;
+			return true;
+		}
+		
+		private MsgGatewayManager getOuterType() {
+			return MsgGatewayManager.this;
+		}
+		
+		
 	}
 
 	public Long forward(Message msg, String topic) {
