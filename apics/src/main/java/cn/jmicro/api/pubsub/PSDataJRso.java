@@ -131,18 +131,18 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 	//消息发送给谁
 	private Integer to; //标志位 4
 	
-	//延迟多久发送,单位是秒
-	private byte delay=0; //标志位 5
-		
-	//消息数据
-	private Object data; //标志位 6
+	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
+	private String callback = null; //标志位 5
 	
+	//延迟多久发送,单位是秒
+	private byte delay=0; //标志位 6
+		
 	//消息上下文
 	private Map<String,Object> cxt = null; //标志位 7
-		
-	//消息发送结果回调的RPC方法，用于消息服务器给发送者回调
-	private String callback = null; //标志位 8
 
+	//消息数据
+	private Object data; //标志位 8
+		
 	//本地回调
 	private transient ILocalCallback localCallback;
 	
@@ -160,9 +160,9 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 		if(srcClientId != 0) setDataFlag(3);
 		if(to != 0) setDataFlag(4);
 		if(Utils.isNotEmpty(this.callback)) setDataFlag(5);
-		if(data != null) setDataFlag(6);
+		if(delay != 0) setDataFlag(6);
 		if(this.cxt != null) setDataFlag(7);
-		if(delay != 0) this.dataFlag = (byte)(-this.dataFlag);
+		if(data != null) this.dataFlag = (byte)(-this.dataFlag);
 		
 		out.writeByte(this.dataFlag);
 		out.writeByte(this.flag);
@@ -170,32 +170,34 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 		
 		if(id != 0) {
 			out.writeLong(this.id);
-			setDataFlag(0);
 		}
 		
 		if(type != 0) {
 			out.writeByte(this.type);
-			setDataFlag(1);
 		}
 		
 		if(Utils.isNotEmpty(this.topic)) {
 			out.writeUTF(this.topic);
-			setDataFlag(2);
 		}
 		
 		if(srcClientId != 0) {
 			out.writeInt(this.srcClientId);
-			setDataFlag(3);
 		}
 		
 		if(to != 0) {
 			out.writeInt(this.to);
-			setDataFlag(4);
 		}
 		
 		if(Utils.isNotEmpty(this.callback)) {
 			out.writeUTF(this.callback);
-			setDataFlag(5);
+		}
+		
+		if(delay != 0) {
+			out.writeByte(this.delay);
+		}
+		
+		if(this.cxt != null) {
+			encodeExtra(out,this.cxt);
 		}
 		
 		if(data != null) {
@@ -214,17 +216,6 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 				//对几种基本数据类型做编码
 				Message.encodeVal(out, this.data);
 			}
-			setDataFlag(6);
-		}
-		
-		if(this.cxt != null) {
-			encodeExtra(out,this.cxt);
-			setDataFlag(7);
-		}
-		
-		if(delay != 0) {
-			out.writeByte(this.delay);
-			this.dataFlag = (byte)(-this.dataFlag);
 		}
 		
 	}
@@ -232,6 +223,11 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 	private void encodeExtra(JDataOutput b, Map<String, Object> extras) {
 		try {
 			b.writeByte((byte)extras.size());//如果大于127，写入在小是负数，解码端需要做转换，参数Message.decodeExtra
+		
+			if(extras.size() == 0) return;
+			
+			b.writeByte(Message.EXTRA_KEY_TYPE_STRING);
+			
 		} catch (IOException e2) {
 			throw new CommonException("encodeExtra extra size error");
 		}
@@ -263,7 +259,7 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 	}
 
 	public void setDataType(int v) {
-		if(v < 0 || v > 6) {
+		if(v < 0 || v > 3) {
 			 new CommonException("Invalid data type: "+v);
 		}
 		this.flag = (byte)((v << FLAG_DATA_TYPE) | this.flag);
@@ -302,7 +298,15 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 			this.callback  = in.readUTF();
 		}
 		
-		if(isDataFlag(6)) {
+		if(isDataFlag(6) ) {
+			this.delay  = in.readByte();
+		}
+		
+		if(isDataFlag(7)) {
+			this.cxt  = decodeExtra(in);
+		}
+		
+		if(this.dataFlag < 0) {
 			if(FLAG_DATA_BIN == this.getDataType()) {
 				//依赖于接口实现数据编码，服务提供方和使用方需要协商好数据编码和解码方式
 				if(data instanceof ISerializeObject) {
@@ -322,13 +326,6 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 			}
 		}
 		
-		if(isDataFlag(7)) {
-			this.cxt  = decodeExtra(in);
-		}
-		
-		if(this.dataFlag < 0) {
-			this.delay  = in.readByte();
-		}
 	}
 	
 	private Map<String,Object> decodeExtra(JDataInput b) {

@@ -85,6 +85,9 @@ public final class Message {
 	
 	public static final long MAX_INT_VALUE = 1024*1024*10;//10M
 	
+	public static final byte EXTRA_KEY_TYPE_BYTE = 0;
+	public static final byte  EXTRA_KEY_TYPE_STRING = 1;
+	
 	//public static final long MAX_LONG_VALUE = Long.MAX_VALUE*2;
 	
 	//public static final byte MSG_VERSION = (byte)1;
@@ -360,6 +363,9 @@ public final class Message {
 			}
 			
 			if(eleNum == 0) return null;
+			
+			//key type,Message的Extra Key都是Byte
+			b.readByte();
 			while(eleNum > 0) {
 				Byte k = b.readByte();
 				Object v = decodeVal(b);
@@ -447,12 +453,19 @@ public final class Message {
 			 * 
 			 */
 			b.writeByte((byte)extras.size());
+			
 		} catch (IOException e1) {
 			throw new CommonException("encodeExtra zero len error msg: "+e1.getMessage());
 		}
 		
 		if(extras == null || extras.isEmpty()) {
 			return null;
+		}
+		
+		try {
+			b.writeByte(EXTRA_KEY_TYPE_BYTE);
+		} catch (IOException e2) {
+			throw new CommonException("encodeExtra extra key type error: "+e2.getMessage());
 		}
 		
 		for(Map.Entry<Byte, Object> e : extras.entrySet()) {
