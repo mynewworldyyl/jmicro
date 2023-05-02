@@ -77,6 +77,7 @@
     import ps from "@/rpc/pubsub"
     import i18n from "@/rpc/i18n"
 	import{Constants} from "@/rpc/message"
+	import PSData from "@/rpc/psdata"
 
     const cid="testingPubsub";
 	
@@ -92,7 +93,7 @@
                 isLogin:false,
                 //sendTopic:'/jmicro/test/topic01',
 				sendTopic : "/__act/dev/25500/testdevice001",
-                subTopic : '/jmicro/test/topic01',
+                subTopic : '/__act/dev/25500/testDeivceMsg',
                 content : this.$jr.lc.get('psContent'),
 				cxt : this.$jr.lc.get('psCxt'),
                 result : '',
@@ -216,12 +217,23 @@
 					});
 				} else {
 					let c = ps.itemString(this.sendTopic,this.content,parseInt(this.to),parseInt(this.type))
+					c.setDataType(PSData.Constants.FLAG_DATA_STRING);//item的data字段是一个字符串
 					console.log(c)
+					/*
 					if(this.byType=='actId') {
 						ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
 					}else {
 						ps.sendDirectMessageByTopic(c, this.sendTopic, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
 					}
+					*/
+				   
+				   //测试二进制流编码item
+				   c = c.encode();
+				   if(this.byType=='actId') {
+				   	ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
+				   }else {
+				   	ps.sendDirectMessageByTopic(c, this.sendTopic, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
+				   }
 				}	
             },
 
@@ -230,7 +242,24 @@
                     this.$Message.info("Pubsub topic is disconnected by server")
                     this.doSubscribe();
                 } else {
-                    this.result += msg.id + ": "+ msg.data+"\n";
+                    //this.result += msg.id + ": "+ msg.data+"\n";
+					if(PSData.Constants.FLAG_DATA_BIN == msg.getDataType()) {
+						//依赖于接口实现数据编码，服务提供方和使用方需要协商好数据编码和解码方式
+						//this.data = r;//由消息接收者读剩余数据
+						if(msg.data) {
+							//仅用于测试bin数据传输
+							let v = msg.data[0]<<24 | msg.data[1]<<16 | msg.data[2]<<8 | msg.data[3]
+							this.result += msg.id + ": "+ v +"\n";
+						}
+					}else if(PSData.Constants.FLAG_DATA_STRING == msg.getDataType()){
+						this.result += msg.id + ": "+ msg.data+"\n";
+					}else if(PSData.Constants.FLAG_DATA_JSON== msg.getDataType()){
+						this.result += msg.id + ": "+ JSON.stringify(msg.data)+"\n";
+					} else {
+						//extra data
+						this.result += msg.id + ": "+ JSON.stringify(msg.data)+"\n";
+					}
+					
                 }
             },
 

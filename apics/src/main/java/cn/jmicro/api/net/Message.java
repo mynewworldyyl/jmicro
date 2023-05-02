@@ -407,7 +407,7 @@ public final class Message {
 			return b.readBoolean();
 		}else if(DecoderConstant.PREFIX_TYPE_CHAR == type){
 			return b.readChar();
-		}else if(DecoderConstant.PREFIX_TYPE_STRING == type){
+		}else if(DecoderConstant.PREFIX_TYPE_STRINGG == type){
 			return JDataInput.readString(b);
 			/*int len = b.readUnsignedShort();
 			if(len == 0) {
@@ -495,7 +495,7 @@ public final class Message {
 			b.writeUnsignedShort(arr.length);
 			b.write(arr);
 		}else if(cls == String.class) {
-			b.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
+			b.writeByte(DecoderConstant.PREFIX_TYPE_STRINGG);
 			String str = v.toString();
 			JDataOutput.writeString(b, str);
 			/*b.writeByte(DecoderConstant.PREFIX_TYPE_STRING);

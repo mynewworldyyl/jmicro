@@ -160,8 +160,8 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 		if(srcClientId != 0) setDataFlag(3);
 		if(to != 0) setDataFlag(4);
 		if(Utils.isNotEmpty(this.callback)) setDataFlag(5);
-		if(delay != 0) setDataFlag(6);
-		if(this.cxt != null) setDataFlag(7);
+		//if(delay != 0) setDataFlag(6);
+		if(this.cxt != null) setDataFlag(6);
 		if(data != null) this.dataFlag = (byte)(-this.dataFlag);
 		
 		out.writeByte(this.dataFlag);
@@ -192,9 +192,9 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 			out.writeUTF(this.callback);
 		}
 		
-		if(delay != 0) {
+		/*if(delay != 0) {
 			out.writeByte(this.delay);
-		}
+		}*/
 		
 		if(this.cxt != null) {
 			encodeExtra(out,this.cxt);
@@ -298,11 +298,11 @@ public class PSDataJRso implements Serializable, ISerializeObject{
 			this.callback  = in.readUTF();
 		}
 		
-		if(isDataFlag(6) ) {
+		/*if(isDataFlag(6) ) {
 			this.delay  = in.readByte();
-		}
+		}*/
 		
-		if(isDataFlag(7)) {
+		if(isDataFlag(6)) {
 			this.cxt  = decodeExtra(in);
 		}
 		
