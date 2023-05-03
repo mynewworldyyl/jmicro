@@ -158,13 +158,13 @@
                         });
                 } else {
                     ps.subscribe(this.sendResultTopic,{},this.sendResultCallback)
-                        .then((rst)=>{
-                            if(rst >= 0) {
-                                self.needSendResult=true;
-                            }else {
-                                console.log(rst);
-                            }
-                        });
+					.then((rst)=>{
+						if(rst >= 0) {
+							self.needSendResult=true;
+						}else {
+							console.log(rst);
+						}
+					});
                 }
             },
 
@@ -216,7 +216,7 @@
 					   console.log(err)
 					});
 				} else {
-					let c = ps.itemString(this.sendTopic,this.content,parseInt(this.to),parseInt(this.type))
+					let c = ps.itemString(this.sendTopic, this.content, parseInt(this.to), parseInt(this.type))
 					c.setDataType(PSData.Constants.FLAG_DATA_STRING);//item的data字段是一个字符串
 					console.log(c)
 					/*
@@ -230,9 +230,9 @@
 				   //测试二进制流编码item
 				   c = c.encode();
 				   if(this.byType=='actId') {
-				   	ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
+						ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
 				   }else {
-				   	ps.sendDirectMessageByTopic(c, this.sendTopic, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
+						ps.sendDirectMessageByTopic(c, this.sendTopic, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
 				   }
 				}	
             },
