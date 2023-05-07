@@ -263,8 +263,8 @@ public class Utils {
 	public void getFields(List<Field> fields, Class<?> clazz) {
 		Field[] fs = clazz.getDeclaredFields();
 		for (Field f : fs) {
-			if (Modifier.isFinal(f.getModifiers()) || Modifier.isStatic(f.getModifiers())
-					|| f.getDeclaringClass() == Object.class) {
+			if (Modifier.isTransient(f.getModifiers()) || Modifier.isFinal(f.getModifiers()) 
+					|| Modifier.isStatic(f.getModifiers()) || f.getDeclaringClass() == Object.class) {
 				continue;
 			}
 			fields.add(f);

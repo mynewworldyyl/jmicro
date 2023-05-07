@@ -16,9 +16,16 @@
  */
 package cn.jmicro.api.codec;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -29,6 +36,8 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.classloader.RpcClassLoader;
+import cn.jmicro.api.codec.typecoder.ITypeCoder;
+import cn.jmicro.api.codec.typecoder.TypeCoderUtils;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.IRegistry;
 import cn.jmicro.common.CommonException;
@@ -79,6 +88,9 @@ public class SimpleCodecFactory implements ICodecFactory{
 		
 		this.registDecoder(Message.PROTOCOL_JSON, jsonDecoder);
 		this.registEncoder(Message.PROTOCOL_JSON, jsonEncoder);
+		
+		this.registDecoder(Message.PROTOCOL_EXTRA, extraBufferDecoder);
+		this.registEncoder(Message.PROTOCOL_EXTRA, extraBufferEncoder);
 	}
 	
 	private IDecoder<ByteBuffer> byteBufferDecoder = new IDecoder<ByteBuffer>(){
@@ -164,6 +176,115 @@ public class SimpleCodecFactory implements ICodecFactory{
 			return null;
 		}
 	};
+	
+	
+	private Map<String,Object> decodeExtra(JDataInput b) {
+		Map<String,Object> ed = new HashMap<>();
+		try {
+			int eleNum = b.readByte(); //extra元素个数
+			if(eleNum < 0) {
+				eleNum += 256; //参考encode方法说明
+			}
+			
+			if(eleNum == 0) return null;
+			while(eleNum > 0) {
+				String k = b.readUTF();
+				Object v = Message.decodeVal(b);
+				ed.put(k, v);
+				eleNum--;
+			}
+			return ed;
+		} catch (IOException e) {
+			throw new CommonException("decodeExtra error:" + ed.toString() + " IOException: " + e.getMessage());
+		}
+	}
+
+	private IDecoder<ByteBuffer> extraBufferDecoder = new IDecoder<ByteBuffer>(){
+		@SuppressWarnings("unchecked")
+		@Override
+		public <R> R decode(ByteBuffer data, Class<R> clazz) {
+			JDataInput in = new JDataInput(data);
+			Map<String,Object> ps = decodeExtra(in);
+			if(Map.class.isAssignableFrom(clazz)) {
+				return (R)ps;
+			}else {
+				ClassLoader c = Thread.currentThread().getContextClassLoader();
+				try {
+					String json = JsonUtils.getIns().toJson(ps);
+					Thread.currentThread().setContextClassLoader(cl);
+					return JsonUtils.getIns().fromJson(json, clazz);
+				}finally {
+					Thread.currentThread().setContextClassLoader(c);
+				}
+			}
+		}
+	};
+	
+	private IEncoder<ByteBuffer> extraBufferEncoder = new IEncoder<ByteBuffer>(){
+		@Override
+		public ByteBuffer encode(Object obj) {
+			try {
+				JDataOutput dos = new JDataOutput(1);
+				if(obj instanceof Map) {
+					encodeExtraMap(dos,(Map<String, Object>)obj);
+				} else {
+					encodeByReflect(dos,obj);
+				}
+				dos.getBuf();
+			} catch (Throwable e) {
+				logger.error(e.getMessage() + ": " +JsonUtils.getIns().toJson(obj));
+			}
+			//bb.flip();
+			return null;
+		}
+	};
+	
+	private void encodeExtraMap(JDataOutput b, Map<String, Object> extras) {
+		try {
+			b.writeByte((byte)extras.size());//如果大于127，写入在小是负数，解码端需要做转换，参数Message.decodeExtra
+		
+			if(extras.size() == 0) return;
+			
+			b.writeByte(Message.EXTRA_KEY_TYPE_STRING);
+			
+		} catch (IOException e2) {
+			throw new CommonException("encodeExtra extra size error");
+		}
+		
+		for(Map.Entry<String, Object> e : extras.entrySet()) {
+			try {
+				b.writeUTF(e.getKey());
+				Message.encodeVal(b,e.getValue());
+			} catch (IOException e1) {
+				throw new CommonException("encodeExtra key: " + e.getKey() +",val"+  e.getValue(),e1);
+			}
+		}
+	}
+	
+	public static void encodeByReflect(JDataOutput b, Object obj) throws IOException {
+
+		// 进入此方法，obj必须不能为NULL
+		Class<?> cls = obj.getClass();
+		List<Field> fields = TypeCoderUtils.loadClassFieldsFromCache(cls);
+		try {
+			b.writeByte(fields.size());//如果大于127，写入的是负数，解码端需要做转换，参数Message.decodeExtra
+			if(fields.size() == 0) return;
+			b.writeByte(Message.EXTRA_KEY_TYPE_STRING);
+		} catch (IOException e2) {
+			throw new CommonException("encodeExtra extra size error");
+		}
+		
+		Object v = null;
+		for(Field f : fields) {
+			try {
+				b.writeUTF(f.getName());
+				v = TypeUtils.getFieldValue(obj, f);
+				Message.encodeVal(b,v);
+			} catch (IOException e) {
+				throw new CommonException("encodeExtra key: " + f.getName() +",val"+  (v == null?"":v.toString()),e);
+			}
+		}
+	}
 	
 	@Override
 	public IDecoder getDecoder(Byte protocol) {

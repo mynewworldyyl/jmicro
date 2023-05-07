@@ -132,11 +132,11 @@ public interface IServer{
 
 			// si = getServiceItem(req);
 			// sm = getServiceMethod(si,req);
-			Class<?>[] paramsCls = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
+			Class<?>[] paramsClses = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 
 			int argLen = (int) ji.readInt();
 			if (argLen > 0) {
-				req.setArgs(getArgs(paramsCls, ji));
+				req.setArgs(getArgs(paramsClses, ji));
 			}
 			return req;
 		} catch (ClassNotFoundException | IOException e) {
@@ -157,11 +157,9 @@ public interface IServer{
 
 		int i = 0;
 		try {
-			// 读掉数组前缀长度
 
 			for (; i < clses.length; i++) {
 				Class<?> pt = clses[i];
-
 				Object a = null;
 				if (pt == Integer.class || Integer.TYPE == pt) {
 					Long v = ji.readLong();
@@ -206,9 +204,7 @@ public interface IServer{
 						a = data;
 					}
 				}
-
 				args[i] = a;
-
 			}
 		} catch (Exception e) {
 			throw new CommonException("",e);
@@ -216,28 +212,4 @@ public interface IServer{
 		return args;
 	}
 
-	public static Object[] getArgs(Class<?>[] clses, Object[] jsonArgs, ISession sess) {
-
-		if (clses == null || clses.length == 0) {
-			return new Object[0];
-		} else {
-			Object[] args = new Object[clses.length];
-			int i = 0;
-			int j = 0;
-			Object arg = null;
-
-			for (; i < clses.length; i++) {
-				Class<?> pt = clses[i];
-				if (ISession.class.isAssignableFrom(pt)) {
-					args[i] = sess;
-				} else {
-					arg = jsonArgs[j++];
-					Object a = JsonUtils.getIns().fromJson(JsonUtils.getIns().toJson(arg), pt);
-					args[i] = a;
-				}
-			}
-
-			return args;
-		}
-	}
 }

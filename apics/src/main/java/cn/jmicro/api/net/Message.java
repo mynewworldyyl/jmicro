@@ -65,6 +65,7 @@ public final class Message {
 	
 	public static final byte PROTOCOL_BIN = 0;
 	public static final byte PROTOCOL_JSON = 1;
+	public static final byte PROTOCOL_EXTRA = 2;
 	
 	public static final byte PRIORITY_0 = 0;
 	public static final byte PRIORITY_1 = 1;
@@ -95,8 +96,9 @@ public final class Message {
 	//长度字段类型，1表示整数，0表示短整数
     public static final short FLAG_LENGTH_INT = 1 << 0;
     
-	public static final short FLAG_UP_PROTOCOL = 1<<1;
-	public static final short FLAG_DOWN_PROTOCOL = 1 << 2;
+	public static final short FLAG_UP_PROTOCOL = 1; //1,2位一起表示上行数据打包协议
+	
+	public static final short FLAG_DOWN_PROTOCOL = 8; //8，9位一起表示下行数据打包协议
 	
 	//可监控消息
 	public static final short FLAG_MONITORABLE = 1 << 3;
@@ -213,16 +215,16 @@ public final class Message {
 	
 	/**
 	 * 0        S:       data length type 0:short 1:int
-	 * 1        UPR:     up protocol  0: bin,  1: json 
-	 * 2        DPR:     down protocol 0: bin, 1: json 
+	 * 1        UPR
+	 * 2        UPR:     1，2位一起表示 up protocol  0: bin,  1: json, 2: extra key value
 	 * 3        M:       Monitorable
 	 * 4        Extra    Contain extradata
 	 * 5        Innet    message from outer network
-	 * 6        
-	 * 7       
-	 * 8       
-	 * 9        
-	 * 10
+	 * 6        Error    是否出错
+	 * 7        force response JSON 强制响应JSON
+	 * 8        DPR
+	 * 9        DPR:  8，9位一起表示 down protocol 0: bin,  1: json, 2: extra key value
+	 * 10                   保留
 	 * 11，12   Resp type  MSG_TYPE_PINGPONG，MSG_TYPE_NO_RESP，MSG_TYPE_MANY_RESP
 	 * 13 14 15 LLL      Log level
 	 * @return
@@ -996,21 +998,25 @@ public final class Message {
 	}
 	
 	public byte getUpProtocol() {
-		return is(this.flag,FLAG_UP_PROTOCOL)?(byte)1:0;
+		//return is(this.flag,FLAG_UP_PROTOCOL)?(byte)1:0;
+		return (byte)((this.flag >> FLAG_UP_PROTOCOL) & 0x03);
 	}
 
 	public void setUpProtocol(byte protocol) {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_UP_PROTOCOL : 0 ; 
-		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_UP_PROTOCOL);
+		//flag = set(protocol == PROTOCOL_JSON,flag,FLAG_UP_PROTOCOL);
+		flag = flag | (protocol << FLAG_UP_PROTOCOL);
 	}
 	
 	public byte getDownProtocol() {
-		return is(this.flag,FLAG_DOWN_PROTOCOL)?(byte)1:0;
+		//return is(this.flag,FLAG_DOWN_PROTOCOL)?(byte)1:0;
+		return (byte)((this.flag >> FLAG_DOWN_PROTOCOL) & 0x03);
 	}
 
 	public void setDownProtocol(byte protocol) {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
-		flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
+		//flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
+		flag = flag | (protocol << FLAG_DOWN_PROTOCOL);
 	}
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
