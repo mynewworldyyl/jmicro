@@ -9,9 +9,19 @@ import lombok.Serial;
 @Serial
 public class IotDeviceJRso {
 
-	private Long  id;
+	public static final Byte TYPE_LIGHT = 1;//灯
+	public static final Byte TYPE_TV = 2;//电视机
+	public static final Byte TYPE_FRIG = 3;//冰箱
+	public static final Byte TYPE_AP = 4;//路由器
+	
+	public static final Byte TYPE_OTHER = 127;//其他
+	
+	private Integer  id;
 	
 	private String deviceId;
+	
+	//设备物理地址或设备硬件ID
+	private String macAddr;
 	
 	//设置关联账号租户ID，一个租户可以关联N个设备
 	private Integer srcClientId;
@@ -19,9 +29,14 @@ public class IotDeviceJRso {
 	//设备所属账号ID
 	private Integer srcActId;
 	
+	private String grpName = "Default";
+	
 	private String name;
 	
 	private String desc;
+	
+	//设备类型
+	private Byte type;
 	
 	private int status;
 	

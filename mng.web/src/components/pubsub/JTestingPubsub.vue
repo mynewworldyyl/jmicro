@@ -216,9 +216,10 @@
 					   console.log(err)
 					});
 				} else {
-					let c = ps.itemString(this.sendTopic, this.content, parseInt(this.to), parseInt(this.type))
-					c.setDataType(PSData.Constants.FLAG_DATA_STRING);//item的data字段是一个字符串
-					console.log(c)
+					let it = ps.itemString(this.sendTopic, this.content, parseInt(this.to), parseInt(this.type))
+					it.setDataType(PSData.Constants.FLAG_DATA_STRING);//item的data字段是一个字符串
+					console.log(it)
+					
 					/*
 					if(this.byType=='actId') {
 						ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_JSON, Constants.PROTOCOL_JSON)
@@ -228,11 +229,11 @@
 					*/
 				   
 				   //测试二进制流编码item
-				   c = c.encode();
+				   let content = it.encode();
 				   if(this.byType=='actId') {
-						ps.sendDirectMessage(c, this.to, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
+						ps.sendDirectMessage(content, this.to, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
 				   }else {
-						ps.sendDirectMessageByTopic(c, this.sendTopic, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
+						ps.sendDirectMessageByTopic(content, this.sendTopic, Constants.PROTOCOL_BIN, Constants.PROTOCOL_BIN)
 				   }
 				}	
             },

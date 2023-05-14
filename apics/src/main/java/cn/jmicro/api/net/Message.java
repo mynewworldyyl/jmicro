@@ -27,10 +27,8 @@ import cn.jmicro.api.codec.DecoderConstant;
 import cn.jmicro.api.codec.JDataInput;
 import cn.jmicro.api.codec.JDataOutput;
 import cn.jmicro.api.gateway.ApiRequestJRso;
-import cn.jmicro.codegenerator.AsyncClientUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 import lombok.Getter;
 import lombok.Setter;
@@ -154,6 +152,8 @@ public final class Message {
 	
 	public static final int EXTRA_FLAG_FROM_APIGATEWAY = 1 << 14;
 	
+	public static final int EXTRA_FLAG_UDP = 1 << 15;
+	
 	public static final Byte EXTRA_KEY_LINKID = -127;
 	public static final Byte EXTRA_KEY_INSID = -126;
 	public static final Byte EXTRA_KEY_TIME = -125;
@@ -174,6 +174,10 @@ public final class Message {
 	
 	public static final Byte EXTRA_KEY_PS_OP_CODE= -114;//消息订阅操作码
 	public static final Byte EXTRA_KEY_PS_ARGS= -113;//消息订阅操作码下所需要参数
+	
+	public static final Byte  EXTRA_KEY_UPD_PORT = -111;//UDP远程端口
+	public static final Byte  EXTRA_KEY_UPD_HOST = -110;//UDP远程主机地址
+	public static final Byte  EXTRA_KEY_UDP_ACK = -109;//UDP是否需要应答，true需要应答，false不需要应答
 	
 	//服务器返回全局唯一标识ID
 	public static final Byte EXTRA_KEY_SMSG_ID= -112;
@@ -258,7 +262,9 @@ public final class Message {
 	 * 11       SI        是否有签名值 0：无，1：有
 	 * 12       ENT       encrypt type 0:对称加密，1：RSA 非对称加密
 	 * 13       ERROR     0:正常包， 1：错误响应包
-	          E  ENT SI  SE  WE MK SV  DS   US   DO   UP  P    P   dm   
+	 * 14       GW        API gateway forward message   EXTRA_FLAG_FROM_APIGATEWAY
+	 * 15       UDP       通过UDP传输报文，1: UDP, 0:TCP
+	 UDP  GW  E  ENT SI  SE  WE MK SV  DS   US   DO   UP  P    P   dm
 	 |    |   |   |  |   |   |  |  |   |    |    |    |   |    |   |
      15  14  13  12  11  10  9  8  7   6    5    4    3   2    1   0
      
@@ -411,13 +417,8 @@ public final class Message {
 			return b.readChar();
 		}else if(DecoderConstant.PREFIX_TYPE_STRINGG == type){
 			return JDataInput.readString(b);
-			/*int len = b.readUnsignedShort();
-			if(len == 0) {
-				return "";
-			}
-			byte[] arr = new byte[len];
-			b.readFully(arr, 0, len);
-			return new String(arr,0,len,Constants.CHARSET);*/
+		}else if(DecoderConstant.PREFIX_TYPE_MAP == type){
+			return decodeExtraMap(b);
 		} else {
 			throw new CommonException("not support header type: " + type);
 		}
@@ -481,6 +482,64 @@ public final class Message {
 		return b.getBuf();
 	}
 	
+	public static void encodeExtraMap(JDataOutput b, Map<String, Object> extras) {
+		
+		try {
+			
+			b.writeByte((byte)extras.size());//如果大于127，写入在小是负数，解码端需要做转换，参数Message.decodeExtra
+		
+			if(extras.size() == 0) return;
+			
+			b.writeByte(Message.EXTRA_KEY_TYPE_STRING);//Map的Key的类型，此方法只支持字符串Key
+			
+		} catch (IOException e2) {
+			throw new CommonException("encodeExtra extra size error");
+		}
+		
+		for(Map.Entry<String, Object> e : extras.entrySet()) {
+			try {
+				b.writeUTF(e.getKey());
+				encodeVal(b,e.getValue());
+			} catch (IOException e1) {
+				throw new CommonException("encodeExtra key: " + e.getKey() +",val"+  e.getValue(),e1);
+			}
+		}
+	}
+	
+	public static  Map<String, Object> decodeExtraMap(JDataInput b) {
+		int size = 0;
+		try {
+			size = b.readByte();
+			if(size < 0) {
+				size = 256 + size;//如果大于127，写入是负数，解码端需要做转换，参数Message.decodeExtra
+			}
+		
+			if(size == 0) return null;
+			
+			//b.writeByte(Message.EXTRA_KEY_TYPE_STRING);
+			b.readByte();//键类型，在此全是String作为键
+			
+		} catch (IOException e2) {
+			throw new CommonException("encodeExtra extra size error");
+		}
+		
+		Map<String,Object> ps = new HashMap<>();
+		String k = null;
+		Object v = null;
+		
+		for(; size>0; size--) {
+			try {
+				k = b.readUTF();
+				v = decodeVal(b);
+				ps.put(k, v);
+			} catch (IOException e1) {
+				throw new CommonException("encodeExtra key: " + (k == null?"":k) +",val"+  (v==null?"":v.toString()),e1);
+			}
+		}
+		
+		return ps;
+	}
+	
 	public static void encodeVal(JDataOutput b, Object v) throws IOException {
 		if(v == null) {
 			b.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
@@ -537,6 +596,9 @@ public final class Message {
 		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
 			b.writeByte(DecoderConstant.PREFIX_TYPE_CHAR);
 			b.writeChar((Character)v);
+		}else if(Map.class.isAssignableFrom(cls)){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_MAP);
+			encodeExtraMap(b,(Map<String,Object>)v);
 		} else {
 			throw new CommonException("not support header type for val: " + v);
 		}
@@ -801,6 +863,14 @@ public final class Message {
 	
 	public void setUpSsl(boolean f) {
 		extrFlag = set(f,extrFlag,EXTRA_FLAG_UP_SSL);
+	}
+	
+	public boolean isUdp() {
+		return is(this.extrFlag,EXTRA_FLAG_UDP);
+	}
+	
+	public void setUdp(boolean f) {
+		extrFlag = set(f, extrFlag, EXTRA_FLAG_UDP);
 	}
 	
 	public boolean isDownSsl() {

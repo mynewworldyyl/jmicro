@@ -28,6 +28,11 @@
 			<artifactId>jmicro.dataservice</artifactId>
 		</dependency>
 		
+		<dependency>
+			<groupId>cn.jmicro</groupId>
+			<artifactId>jmicro.iotservice</artifactId>
+		</dependency>
+		
 		 <dependency>
 			<groupId>cn.jmicro</groupId>
 			<version>0.0.5-SNAPSHOT</version>

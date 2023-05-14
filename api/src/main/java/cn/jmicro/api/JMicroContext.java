@@ -85,6 +85,9 @@ public class JMicroContext  {
 	
 	public static final String CACHE_LOGIN_KEY = "__ActLoginKey_";
 	
+	//设备登录KEY
+	public static final String CACHE_DEVICE_LOGIN_KEY = "__DevLoginKey_";
+	
 	public static final String LINKER_ID = "_linkerId";
 	public static final String REQ_PARENT_ID = "_reqParentId";
 	//控制RPC方法在每个服务中输出日志，区加于往监控服务器上传日志

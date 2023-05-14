@@ -177,7 +177,6 @@ public class SimpleCodecFactory implements ICodecFactory{
 		}
 	};
 	
-	
 	private Map<String,Object> decodeExtra(JDataInput b) {
 		Map<String,Object> ed = new HashMap<>();
 		try {
@@ -226,11 +225,11 @@ public class SimpleCodecFactory implements ICodecFactory{
 			try {
 				JDataOutput dos = new JDataOutput(1);
 				if(obj instanceof Map) {
-					encodeExtraMap(dos,(Map<String, Object>)obj);
+					Message.encodeExtraMap(dos,(Map<String, Object>)obj);
 				} else {
 					encodeByReflect(dos,obj);
 				}
-				dos.getBuf();
+				return dos.getBuf();
 			} catch (Throwable e) {
 				logger.error(e.getMessage() + ": " +JsonUtils.getIns().toJson(obj));
 			}
@@ -239,27 +238,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 		}
 	};
 	
-	private void encodeExtraMap(JDataOutput b, Map<String, Object> extras) {
-		try {
-			b.writeByte((byte)extras.size());//如果大于127，写入在小是负数，解码端需要做转换，参数Message.decodeExtra
-		
-			if(extras.size() == 0) return;
-			
-			b.writeByte(Message.EXTRA_KEY_TYPE_STRING);
-			
-		} catch (IOException e2) {
-			throw new CommonException("encodeExtra extra size error");
-		}
-		
-		for(Map.Entry<String, Object> e : extras.entrySet()) {
-			try {
-				b.writeUTF(e.getKey());
-				Message.encodeVal(b,e.getValue());
-			} catch (IOException e1) {
-				throw new CommonException("encodeExtra key: " + e.getKey() +",val"+  e.getValue(),e1);
-			}
-		}
-	}
+	
 	
 	public static void encodeByReflect(JDataOutput b, Object obj) throws IOException {
 

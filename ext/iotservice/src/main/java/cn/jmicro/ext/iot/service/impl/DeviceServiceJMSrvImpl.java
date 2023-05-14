@@ -12,6 +12,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.SMethod;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.async.IPromise;
+import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.persist.IObjectStorage;
@@ -19,6 +20,7 @@ import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
+import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.ext.iot.Namespace;
 import cn.jmicro.ext.iot.service.IDeviceServiceJMSrv;
 import cn.jmicro.ext.iot.service.IotDeviceJRso;
@@ -35,14 +37,63 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 	@Inject
 	private IObjectStorage os;
 	
-	/*
 	@Inject
-	private AccountServiceImpl as;
-	*/
+	private ICache cache;
+	
+	private static final long expired = 1*24*60*60*1000;//1天过期
+	
+	@Override
+	@SMethod(maxSpeed=1, upSsl=false, encType=0, downSsl=false, needLogin=false, perType=false)
+	public IPromise<RespJRso<String>> deviceLogin(Integer actId, String deviceId) {
+
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		return new Promise<RespJRso<String>>((suc,fail)->{
+			RespJRso<String> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			
+			if(Utils.isEmpty(deviceId)) {
+				r.setMsg("Invalid deviceId");
+				suc.success(r);
+				return;
+			}
+			
+			IotDeviceJRso dev = this.getDeviceByDeviceId(actId, deviceId);
+			if(dev == null) {
+				r.setMsg("Invalid device");
+				suc.success(r);
+				return;
+			}
+			
+			String akey = key(actId, deviceId);
+			String logink = null;
+			if(cache.exist(akey)) {
+				//账号已经登录，用已经登录的KEY
+				logink = cache.get(akey, String.class);
+			}
+			
+			if(Utils.isEmpty(logink)) {
+				int seed = HashUtils.FNVHash1(TimeUtils.getCurTime() + "_" + this.idGenerator.getStringId(ActInfoJRso.class));
+				if(seed < 0) {
+					seed = -seed;
+				}
+				logink = key(seed,deviceId);
+				cache.put(logink, "", expired);
+			}
+			
+			r.setCode(RespJRso.CODE_SUCCESS);
+			r.setData(null);
+			//使用这些可用字段存储信息，减小数据传输大小
+			r.setMsg(logink);
+			r.setCurPage(dev.getSrcClientId());
+			r.setPageSize(dev.getSrcActId());
+			suc.success(r);
+			return;
+		});
+
+	}
 	
 	@Override
 	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
-	public IPromise<RespJRso<IotDeviceJRso>> registDevice(IotDeviceJRso dev) {
+	public IPromise<RespJRso<IotDeviceJRso>> bindDevice(IotDeviceJRso dev) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<IotDeviceJRso>>((suc,fail)->{
 			RespJRso<IotDeviceJRso> r = RespJRso.r(RespJRso.CODE_FAIL,"");
@@ -53,23 +104,14 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				return;
 			}
 			
-			if(count(act.getId(),dev.getName()) > 0) {
+			if(count(act.getId(), dev.getName()) > 0) {
 				r.setMsg("设备名称重复");
 				suc.success(r);
 				return;
 			}
 			
-			dev.setId(idGenerator.getLongId(IotDeviceJRso.class));
-			dev.setDeviceId(toDeviceId(dev.getId()+TimeUtils.getCurTime()));
-			
-			/*RespJRso<ActInfoJRso>  arr = as.registDevice(dev.getDeviceId(), act.getClientId());
-			if(arr.getCode() != 0) {
-				//注册关联设备账号失败
-				r.setCode(arr.getCode());
-				r.setMsg(arr.getMsg());
-				suc.success(r);
-				return;
-			}*/
+			//dev.setId(idGenerator.getLongId(IotDeviceJRso.class));
+			//dev.setDeviceId(toDeviceId(dev.getId()+TimeUtils.getCurTime()));
 			
 			dev.setSrcActId(act.getId());
 			dev.setSrcClientId(act.getClientId());
@@ -78,6 +120,49 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			dev.setCreatedBy(act.getId());
 			dev.setUpdatedBy(act.getId());
 			dev.setStatus(STATUS_ENABLE);
+			
+			r.setCode(RespJRso.CODE_SUCCESS);
+			r.setData(dev);
+			
+			suc.success(r);
+			return;
+		});
+		
+	}
+	
+	@Override
+	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
+	public IPromise<RespJRso<IotDeviceJRso>> addDevice(IotDeviceJRso dev) {
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		return new Promise<RespJRso<IotDeviceJRso>>((suc,fail)->{
+			RespJRso<IotDeviceJRso> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			
+			if(Utils.isEmpty(dev.getName())) {
+				r.setMsg("名称不能为空");
+				suc.success(r);
+				return;
+			}
+			
+			if(count(act.getId(), dev.getName()) > 0) {
+				r.setMsg("设备名称重复");
+				suc.success(r);
+				return;
+			}
+			
+			dev.setId(idGenerator.getIntId(IotDeviceJRso.class));
+			dev.setDeviceId(toDeviceId(dev.getId()));
+			
+			dev.setSrcActId(act.getId());
+			dev.setSrcClientId(act.getClientId());
+			dev.setUpdatedTime(TimeUtils.getCurTime());
+			dev.setCreatedTime(TimeUtils.getCurTime());
+			dev.setCreatedBy(act.getId());
+			dev.setUpdatedBy(act.getId());
+			dev.setStatus(STATUS_ENABLE);
+			
+			if(Utils.isEmpty(dev.getGrpName())) {
+				dev.setGrpName("Default");
+			}
 			
 			if(!os.save(TABLE, dev, IotDeviceJRso.class, false)) {
 				r.setMsg("租户创建失败");
@@ -123,12 +208,11 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			log.error("toDeviceId:"+sid,e);
 			return null;
 		}
-		
 	}
-
+	
 	@Override
 	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
-	public IPromise<RespJRso<Boolean>> delDevice(String deviceId) {
+	public IPromise<RespJRso<Boolean>> unbindDevice(String deviceId) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_FAIL,"");
@@ -188,6 +272,8 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			ed.setUpdatedBy(act.getId());
 			ed.setName(dev.getName());
 			ed.setDesc(dev.getDesc());
+			ed.setType(dev.getType());
+			ed.setGrpName(dev.getGrpName());
 			
 			if(!os.updateById(TABLE, ed, IotDeviceJRso.class, "id", false)) {
 				r.setMsg("设置更新失败");
@@ -266,4 +352,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		return os.getOne(TABLE, qry, IotDeviceJRso.class);
 	}
 
+	private String key(Integer actId,String deviceId) {
+		return JMicroContext.CACHE_DEVICE_LOGIN_KEY + "/" + actId+"/" + deviceId;
+	}
 }

@@ -110,7 +110,7 @@ public interface IServer{
 
 		return ah;
 	}
-
+	
 	public static RpcRequestJRso parseApiGatewayRequest(RpcClassLoader rpcClassloader,Message msg, ServiceMethodJRso sm) {
 		try {
 			RpcRequestJRso req = new RpcRequestJRso();
@@ -120,10 +120,14 @@ public interface IServer{
 			// req.setNamespace(ji.readUTF());
 			// req.setVersion(ji.readUTF());
 			// req.setMethod(ji.readUTF());
-
-			int len = (int) ji.readInt();
-			if (len > 0) {
-				for (int i = 0; i < len; i++) {
+			
+			int eleNum = ji.readByte(); //extra元素个数
+			if(eleNum < 0) {
+				eleNum += 256; //参考encode方法说明
+			}
+	
+			if (eleNum > 0) {
+				for (int i = 0; i < eleNum; i++) {
 					String k = ji.readUTF();
 					String v = ji.readUTF();
 					req.getParams().put(k, v);
@@ -134,9 +138,13 @@ public interface IServer{
 			// sm = getServiceMethod(si,req);
 			Class<?>[] paramsClses = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 
-			int argLen = (int) ji.readInt();
-			if (argLen > 0) {
-				req.setArgs(getArgs(paramsClses, ji));
+			int argLen = ji.readByte(); //extra元素个数
+			if(argLen < 0) {
+				argLen += 256; //参考encode方法说明
+			}
+			
+			if(argLen > 0) {
+				req.setArgs(getArgs(paramsClses, ji,argLen));
 			}
 			return req;
 		} catch (ClassNotFoundException | IOException e) {
@@ -144,8 +152,34 @@ public interface IServer{
 		}
 		return null;
 	}
+	
+	public static Object[] getArgs(Class<?>[] clses, JDataInput ji, int argLen) {
 
-	public static Object[] getArgs(Class<?>[] clses, JDataInput ji) {
+		// ServiceItem item = registry.getServiceByImpl(r.getImpl());
+
+		if (clses == null || clses.length == 0) {
+			return new Object[0];
+		}
+		
+		if(argLen != clses.length) {
+			return null;
+		}
+
+		Object[] args = new Object[argLen];
+		
+		for(int i = 0; i < argLen; i++) {
+			try {
+				Object v = Message.decodeVal(ji);
+				args[i] = v;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return args;
+	}
+
+	public static Object[] getArgs0(Class<?>[] clses, JDataInput ji) {
 
 		// ServiceItem item = registry.getServiceByImpl(r.getImpl());
 
