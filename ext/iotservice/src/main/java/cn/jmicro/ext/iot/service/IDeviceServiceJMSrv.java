@@ -39,5 +39,5 @@ public interface IDeviceServiceJMSrv {
 	 * @param deviceId
 	 * @return
 	 */
-	IPromise<RespJRso<String>>  deviceLogin(Integer actId, String deviceId);
+	IPromise<RespJRso<Map<String,Object>>>  deviceLogin(Integer actId, String deviceId);
 }

@@ -96,8 +96,6 @@ public final class Message {
     
 	public static final short FLAG_UP_PROTOCOL = 1; //1,2位一起表示上行数据打包协议
 	
-	public static final short FLAG_DOWN_PROTOCOL = 8; //8，9位一起表示下行数据打包协议
-	
 	//可监控消息
 	public static final short FLAG_MONITORABLE = 1 << 3;
 	
@@ -111,6 +109,10 @@ public final class Message {
 	
 	//需要响应的请求  or down message is error
 	public static final short FLAG_FORCE_RESP_JSON = 1 << 7;
+	
+	public static final short FLAG_DOWN_PROTOCOL = 8; //8，9位一起表示下行数据打包协议
+	
+	public static final short  FLAG_DEV = 1 << 10;
 	
 	public static final short FLAG_RESP_TYPE = 11;
 	
@@ -228,7 +230,7 @@ public final class Message {
 	 * 7        force response JSON 强制响应JSON
 	 * 8        DPR
 	 * 9        DPR:  8，9位一起表示 down protocol 0: bin,  1: json, 2: extra key value
-	 * 10                   保留
+	 * 10       DEV   物联网终端消息
 	 * 11，12   Resp type  MSG_TYPE_PINGPONG，MSG_TYPE_NO_RESP，MSG_TYPE_MANY_RESP
 	 * 13 14 15 LLL      Log level
 	 * @return
@@ -977,6 +979,14 @@ public final class Message {
 	
 	public boolean isMonitorable() {
 		return is(this.flag,FLAG_MONITORABLE);
+	}
+	
+	public void setDev(boolean f) {
+		flag = set(f,flag,FLAG_DEV);
+	}
+	
+	public boolean isDev() {
+		return is(this.flag,FLAG_DEV);
 	}
 	
 	public void setMonitorable(boolean f) {

@@ -15,9 +15,12 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
+import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.persist.IObjectStorage;
+import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
 import cn.jmicro.common.util.HashUtils;
@@ -43,13 +46,13 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 	private static final long expired = 1*24*60*60*1000;//1天过期
 	
 	@Override
-	@SMethod(maxSpeed=1, upSsl=false, encType=0, downSsl=false, needLogin=false, perType=false)
-	public IPromise<RespJRso<String>> deviceLogin(Integer actId, String deviceId) {
+	@SMethod(maxSpeed=1, upSsl=false, encType=0, downSsl=false, needLogin=false, perType=false, forType=Constants.FOR_TYPE_DEV)
+	public IPromise<RespJRso<Map<String,Object>>> deviceLogin(Integer actId, String deviceId) {
 
 		ActInfoJRso act = JMicroContext.get().getAccount();
-		return new Promise<RespJRso<String>>((suc,fail)->{
-			RespJRso<String> r = RespJRso.r(RespJRso.CODE_FAIL,"");
-			
+		return new Promise<RespJRso<Map<String,Object>>>((suc,fail)->{
+			RespJRso<Map<String,Object>> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			Map<String,Object> ps = new HashMap<>();
 			if(Utils.isEmpty(deviceId)) {
 				r.setMsg("Invalid deviceId");
 				suc.success(r);
@@ -63,7 +66,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				return;
 			}
 			
-			String akey = key(actId, deviceId);
+			String akey = AccountManager.deviceKey(actId, deviceId);
 			String logink = null;
 			if(cache.exist(akey)) {
 				//账号已经登录，用已经登录的KEY
@@ -75,16 +78,28 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				if(seed < 0) {
 					seed = -seed;
 				}
-				logink = key(seed,deviceId);
-				cache.put(logink, "", expired);
+				
+				IotDeviceVoJRso vo = new IotDeviceVoJRso();
+				vo.setDeviceId(dev.getDeviceId());
+				vo.setId(dev.getId());
+				vo.setSrcActId(dev.getSrcActId());
+				vo.setSrcClientId(dev.getSrcClientId());
+				
+				logink = AccountManager.deviceKey(seed,deviceId);
+				cache.put(logink,vo, expired);
+				cache.expire(akey, expired);
 			}
 			
+			ps.put("loginKey", logink);
+			ps.put("clientId", dev.getSrcClientId());
+			
 			r.setCode(RespJRso.CODE_SUCCESS);
-			r.setData(null);
+			r.setData(ps);
+			
 			//使用这些可用字段存储信息，减小数据传输大小
-			r.setMsg(logink);
-			r.setCurPage(dev.getSrcClientId());
-			r.setPageSize(dev.getSrcActId());
+			//r.setMsg(logink);
+			//r.setCurPage(dev.getSrcClientId());
+			//r.setPageSize(dev.getSrcActId());
 			suc.success(r);
 			return;
 		});
@@ -352,7 +367,5 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		return os.getOne(TABLE, qry, IotDeviceJRso.class);
 	}
 
-	private String key(Integer actId,String deviceId) {
-		return JMicroContext.CACHE_DEVICE_LOGIN_KEY + "/" + actId+"/" + deviceId;
-	}
+	
 }

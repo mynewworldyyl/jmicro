@@ -12,6 +12,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.raft.IDataOperator;
@@ -146,6 +147,31 @@ public class AccountManager {
 		return null;
 	}
 	
+	public IotDeviceVoJRso getDeviceVo(String loginKey) {
+		if(cache.exist(loginKey)) {
+			IotDeviceVoJRso ai = cache.get(loginKey,IotDeviceVoJRso.class);
+			long curTime = TimeUtils.getCurTime();
+			if(curTime - ai.getLastActiveTime() > updateExpired) {
+				if(LG.isLoggable(MC.LOG_DEBUG)) {
+					LG.log(MC.LOG_DEBUG, AccountManager.class, "Refresh: " + ai.getDeviceId()+",Key: " +loginKey);
+				}
+				setDeviceCache(ai,loginKey,curTime);
+			}
+			return ai;
+		}
+		return null;
+	}
+	
+	/*public boolean isDeviceLogin(String loginKey) {
+		if(cache.exist(loginKey)) {
+			String akey = cache.get(loginKey,String.class);
+			cache.expire(loginKey, expired);
+			cache.expire(akey,expired);
+			return true;
+		}
+		return false;
+	}*/
+	
 	public Map<String,Object> getSessionData(String loginKey) {
 		if(Utils.isEmpty(loginKey)) {
 			return null;
@@ -180,7 +206,18 @@ public class AccountManager {
 		cache.expire(key(ai.getActName()),expired);
 		cache.expire(key(ai.getId()+""),expired);
 	}
+	
+	private void setDeviceCache(IotDeviceVoJRso ai,String lk,long curTime) {
+		ai.setLastActiveTime(curTime);
+		cache.put(lk, ai,expired);
+		//cache.expire(key(ai.getActName()),expired);
+		cache.expire(deviceKey(ai.getSrcActId(),ai.getDeviceId()),expired);
+	}
 
+	public static String deviceKey(Integer actId, String deviceId) {
+		return JMicroContext.CACHE_DEVICE_LOGIN_KEY + "/" + actId+"/" + deviceId;
+	}
+	
 	public boolean logout(String loginKey) {
 		ActInfoJRso ai = this.getAccount(loginKey);
 		if(ai != null) {

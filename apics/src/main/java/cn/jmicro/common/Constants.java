@@ -96,6 +96,9 @@ public final class Constants {
 	//全部可以调用
 	public static final byte FOR_TYPE_ALL = 3;
 	
+	//物联网设备
+	public static final byte FOR_TYPE_DEV = 3;
+	
 	//自由调用
 	public static final byte LICENSE_TYPE_FREE = 0;
 	

@@ -17,6 +17,7 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
@@ -57,6 +58,8 @@ public class MsgGatewayManager {
 	private Map<Integer,String> id2Topic = new HashMap<>();
 	
 	private Map<Integer,Registion> actId2Sessions = new HashMap<>();
+	
+	private Map<String,Registion> deviceId2Sessions = new HashMap<>();
 	
 	@Cfg(value="/IGatewayMessageCallback/registSessionTimeout",defGlobal=true)
 	private long registSessionTimeout = 1000*60*10;
@@ -189,19 +192,29 @@ public class MsgGatewayManager {
 				return -1;
 			}
 			
-			ActInfoJRso ai = this.accountManager.getAccount(lk.toString());
-			if(ai == null) {
-				logger.error("Act not found by: " + lk);
-				 return -1;
+			Registion r = new Registion();
+			
+			if(msg.isDev()) {
+				IotDeviceVoJRso dvo = JMicroContext.get().getDevAccount();
+				r.actId = dvo.getSrcActId();
+				r.clientId = dvo.getSrcClientId();
+				r.isDev = true;
+				r.deviceId = dvo.getDeviceId();
+			} else {
+				ActInfoJRso ai = this.accountManager.getAccount(lk.toString());
+				if(ai == null) {
+					logger.error("Act not found by: " + lk);
+					 return -1;
+				}
+				r.actId = ai.getId();
+				r.clientId = ai.getClientId();
 			}
 			
-			Registion r = new Registion();
 			//r.ctx = ctx;
 			r.id = this.idServer.getIntId(MessageServiceImpl.class);
 			r.sess = session;
 			r.topic = topic;
-			r.actId = ai.getId();
-			r.clientId = ai.getClientId();
+			
 			r.lastActiveTime = TimeUtils.getCurTime();
 			
 			sess.add(r);
@@ -210,9 +223,16 @@ public class MsgGatewayManager {
 				ids = new HashSet<Integer>();
 				session.putParam(MESSAGE_SERVICE_REG_ID, ids);
 			}
+			
 			ids.add(r.id);
 			this.id2Topic.put(r.id, r.topic);
-			actId2Sessions.put(ai.getId(), r);
+			
+			if(msg.isDev()) {
+				deviceId2Sessions.put(r.deviceId, r);
+			} else {
+				actId2Sessions.put(r.actId, r);
+			}
+			
 			session.addSessionListener(seeesionListener);
 			return r.id;
 		}
@@ -239,13 +259,6 @@ public class MsgGatewayManager {
 			}
 		}
 		
-		/*if(rr != null) {
-			ActInfo ai = JMicroContext.get().getAccount();
-			if(ai == null || ai.getClientId() != rr.clientId) {
-				return false;
-			}
-		}*/
-		
 		this.id2Topic.remove(id);
 		
 		if(rr != null) {
@@ -254,7 +267,12 @@ public class MsgGatewayManager {
 				ids.remove(id);
 			}
 			sess.remove(rr);
-			this.actId2Sessions.remove(rr.actId);
+			if(rr.isDev) {
+				deviceId2Sessions.remove(rr.deviceId);
+			}else {
+				actId2Sessions.remove(rr.actId);
+			}
+			
 		}
 		
 		logger.debug("unregist topic:{} id:{} ",rr.topic,rr.id);
@@ -390,6 +408,9 @@ public class MsgGatewayManager {
 		public int id;
 		public int clientId;
 		public int actId;
+		
+		public String deviceId;
+		public boolean isDev;
 		
 		public ISession sess;
 		

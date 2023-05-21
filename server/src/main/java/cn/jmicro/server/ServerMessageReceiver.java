@@ -40,6 +40,7 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.IdRequest;
+import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -361,6 +362,10 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			}
 		}
 		
+		if(msg.isDev()) {
+			return devCheck(s,msg,sm);
+		}
+		
 		String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
 		ActInfoJRso ai = null;
 		
@@ -425,6 +430,35 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		return true;
 	}
 	
+	private boolean devCheck(IServerSession s, Message msg, ServiceMethodJRso sm) {
+		
+		if(sm == null) return true; //非RPC消息都可以过，由具体消息处理者做权限验证
+		
+		if(sm.getForType() != Constants.FOR_TYPE_DEV) {
+			//设备RPC必须只能设备声明的接口
+			return false;
+		}
+		
+		if(!sm.isNeedLogin()) {
+			//无需登录的设备接口
+			return true;
+		}
+		
+		String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
+		if(StringUtils.isEmpty(lk)) {
+			return false;
+		}
+		
+		IotDeviceVoJRso dvo = accountManager.getDeviceVo(lk);
+		if(dvo == null) return false;
+		
+		JMicroContext.get().setBoolean(JMicroContext.LOGIN_ACT_DEV, true);
+		JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);
+		JMicroContext.get().setAccount(dvo);
+		
+		return true;//设备只做登录与否的验证
+	}
+
 	private void resp2Client(RespJRso<Object> rr, ISession s,Message msg,ServiceMethodJRso sm) {
 		if(!msg.isNeedResponse()){
 			submitItem();
