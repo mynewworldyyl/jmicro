@@ -11,6 +11,8 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IBaseGatewayServiceJMSrv {
 
+	 IPromise<RespJRso<Boolean>> hearbeat();
+	
 	List<String> getHosts(String protocal);
 	
 	String bestHost(String protocal);

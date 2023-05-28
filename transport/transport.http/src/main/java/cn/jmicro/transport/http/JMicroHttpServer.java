@@ -192,4 +192,8 @@ public class JMicroHttpServer implements IServer{
 		this.port = port;
 	}
 
+	public boolean isEnable() {
+		return enable;
+	}
+
 }

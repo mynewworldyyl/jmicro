@@ -195,7 +195,11 @@ public class MsgGatewayManager {
 			Registion r = new Registion();
 			
 			if(msg.isDev()) {
-				IotDeviceVoJRso dvo = JMicroContext.get().getDevAccount();
+				IotDeviceVoJRso dvo = this.accountManager.getDeviceVo(lk.toString());
+				if(dvo == null) {
+					logger.error("Device not found by: " + lk);
+					return -2;
+				}
 				r.actId = dvo.getSrcActId();
 				r.clientId = dvo.getSrcClientId();
 				r.isDev = true;
@@ -204,7 +208,7 @@ public class MsgGatewayManager {
 				ActInfoJRso ai = this.accountManager.getAccount(lk.toString());
 				if(ai == null) {
 					logger.error("Act not found by: " + lk);
-					 return -1;
+					return -1;
 				}
 				r.actId = ai.getId();
 				r.clientId = ai.getClientId();
@@ -335,7 +339,7 @@ public class MsgGatewayManager {
 	
 	}
 	
-	private void forwardMsgByTopic(Message msg,String topic, Integer srcClientId, Map<String,Object> cxt) {
+	private void forwardMsgByTopic(Message msg, String topic, Integer srcClientId, Map<String,Object> cxt) {
 		Set<Registion> rsList = topic2Sessions.get(topic);
 		if(rsList == null || rsList.isEmpty()) {
 			logger.warn("No subcriber for topic: " + topic);
@@ -467,6 +471,34 @@ public class MsgGatewayManager {
 		
 		forwardMsgByTopic(msg,topic,ai.getClientId(),null);
 		return msg.getMsgId();
+	}
+
+	public Long forward2Device(Message msg, String deviceId) {
+
+		//备份消息类型，返回给发消息发送者
+		byte t = msg.getType();
+		
+		//改为异步消息返回给目标用户
+		msg.setType(Constants.MSG_TYPE_ASYNC_RESP);
+		
+		msg.setMsgId(idServer.getLongId(Message.class));
+		msg.putExtra(Message.EXTRA_KEY_SMSG_ID, msg.getMsgId());
+		
+		Registion r = this.deviceId2Sessions.get(deviceId);
+		if(r == null) {
+			logger.warn("Device not online: " + deviceId);
+			return -1L;
+		}
+		
+		ByteBuffer bb = (ByteBuffer)msg.getPayload();
+		logger.info(new String(bb.array()));
+		
+		r.sess.write(msg);//直接转发消息
+		
+		//还原消息类型
+		msg.setType(t);
+		return msg.getMsgId();
+	
 	}
 
 }

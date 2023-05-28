@@ -773,7 +773,7 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 	}
 	
 	@Override
-	public Map<String, Object> getFields(String table, Map<String, Object> filter, String[] fields) {
+	public List<Map<String, Object>> getFields(String table, Map<String, Object> filter, String[] fields) {
 		 if(fields == null) {
 			 throw new NullPointerException("get fields is NULL");
 		 }
@@ -786,7 +786,15 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 			 prj.put(f, 1);
 		 }
 		 FindIterable<Document> rst = mdb.getCollection(table,Document.class).find(fs).projection(prj);
-		 return rst.first();
+		 
+		 List<Map<String, Object>> l = new ArrayList<>();
+		 MongoCursor<Document>  ite = rst.iterator();
+		 
+		 while(ite.hasNext()) {
+			 l.add(ite.next());
+		 }
+		 
+		 return l;
 	}
 	
 	/**

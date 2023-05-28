@@ -76,7 +76,7 @@ public class ConfigPostInitListener extends PostInitAdapter {
 		 List<Field> fields = new ArrayList<>();
 		 Utils.getIns().getFields(fields, cls);
 		 
-		 if(cls.getName().equals("cn.jmicro.shop.api.srv.impl.ShareJMSrvImpl")) {
+		 if(cls.getName().equals("cn.jmicro.transport.netty.server.udp.NettyUDPSocketServer")) {
 			 logger.debug("Config preInit");
 		 }
 		 

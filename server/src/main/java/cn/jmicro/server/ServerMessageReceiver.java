@@ -61,6 +61,7 @@ import cn.jmicro.api.service.ServiceManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.CommonException;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.StringUtils;
 
 /**
@@ -182,7 +183,9 @@ public class ServerMessageReceiver implements IMessageReceiver{
 	
 	@Override
 	public void receive(ISession s, Message msg) {
-		
+		if(msg.getSmKeyCode() == -970493731)
+			logger.info("ServerMessageReceiver mcode: {}, dp:{}, flag:{}", msg.getSmKeyCode(), msg.getDownProtocol(), msg.getFlag());
+
 		/*
 		 new Fiber<Void>(() -> {
 			JMicroContext.get().mergeParams(jc);
@@ -436,6 +439,18 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		if(sm.getForType() != Constants.FOR_TYPE_DEV) {
 			//设备RPC必须只能设备声明的接口
+			String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
+			
+			String errMsg = "Not device method: " + sm.getKey().methodID();
+			if(!Utils.isEmpty(lk)) {
+				errMsg +=",loginKey: "+ lk;
+			}
+			
+    		LG.log(MC.LOG_ERROR, TAG,errMsg);
+			MT.rpcEvent(MC.MT_PACKET_TOO_MAX,1);
+			RespJRso<Object> se = new RespJRso<>(MC.MT_ACT_PERMISSION_REJECT,errMsg);
+			resp2Client(se,s,msg,sm);
+			
 			return false;
 		}
 		
@@ -446,11 +461,23 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
 		if(StringUtils.isEmpty(lk)) {
+			RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,"JRPC check invalid device login key!"+",insId: " + msg.getInsId());
+			String errMsg = "JRPC check invalid device login key!"+",insId: " + msg.getInsId();
+			LG.log(MC.LOG_ERROR, TAG, errMsg);
+			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+			resp2Client(se,s,msg,sm);
 			return false;
 		}
 		
 		IotDeviceVoJRso dvo = accountManager.getDeviceVo(lk);
-		if(dvo == null) return false;
+		if(dvo == null) {
+			String errMsg = "Invalid device login key: " + lk;
+			RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,errMsg);
+			LG.log(MC.LOG_ERROR, TAG,errMsg);
+			MT.rpcEvent(MC.MT_INVALID_LOGIN_INFO);
+			resp2Client(se,s,msg,sm);
+			return false;
+		}
 		
 		JMicroContext.get().setBoolean(JMicroContext.LOGIN_ACT_DEV, true);
 		JMicroContext.get().setString(JMicroContext.LOGIN_KEY, lk);

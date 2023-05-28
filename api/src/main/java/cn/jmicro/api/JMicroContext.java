@@ -168,6 +168,7 @@ public class JMicroContext  {
 		JMLogItemJRso item = getMRpcLogItem();
 		if(item != null ) {
 			JMicroContext.get().removeParam(MRPC_LOG_ITEM);
+			item.setDev(JMicroContext.get().isDevAccount());
 			
 			/*if(item.getItems().size() == 0 && this.getBoolean(Constants.NEW_LINKID,false)) {
 				OneLog lo = item.addOneItem(deftLogLevel, JMicroContext.class.getName(),"nl",TimeUtils.getCurTime());
@@ -175,18 +176,26 @@ public class JMicroContext  {
 			}*/
 			
 			if(StringUtils.isEmpty(item.getActName())) {
-				ActInfoJRso ai = this.getAccount();
-				if(ai != null) {
-					item.setActClientId(ai.getClientId());
-					item.setSysClientId(Config.getClientId());
-					ai.setActName(ai.getActName());
+				if(item.isDev()) {
+					IotDeviceVoJRso ai = this.getDevAccount();
+					if(ai != null) {
+						item.setActClientId(ai.getSrcClientId());
+						item.setSysClientId(Config.getClientId());
+						item.setActName(ai.getDeviceId());
+					}
+				} else {
+					ActInfoJRso ai = this.getAccount();
+					if(ai != null) {
+						item.setActClientId(ai.getClientId());
+						item.setSysClientId(Config.getClientId());
+						item.setActName(ai.getActName());
+					}
 				}
 			}
 			LG.setCommon(item);
 			item.setCostTime(System.currentTimeMillis() - item.getCreateTime());
 			lo.readySubmit(item);
 		}
-	
 		
 		if(this.isMonitorable()) {
 			JMStatisItemJRso sItem = getMRpcStatisItem();
@@ -608,6 +617,10 @@ public class JMicroContext  {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前账号");
 		 }
 		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, deviceVo);
+	}
+	
+	public boolean isDevAccount() {
+		return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT_DEV, false);
 	}
 	
 	public IotDeviceVoJRso getDevAccount() {

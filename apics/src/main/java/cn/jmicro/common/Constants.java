@@ -253,6 +253,7 @@ public final class Constants {
 	public static final String TRANSPORT_MINA = "mina";
 	public static final String TRANSPORT_NETTY = "netty";
 	public static final String TRANSPORT_NETTY_HTTP = "nettyhttp";
+	public static final String TRANSPORT_NETTY_UDP = "nettyUdp";
 	
 	//熔断器自动检测目标服务是否可用尝试上下文，服务管理器根据此值判断是否可以返回被熔断服务信息
 	//此值应该在整个RPC链路中透明传递
@@ -274,6 +275,7 @@ public final class Constants {
     public static final int TYPE_HTTP = 1;
 	public static final int TYPE_SOCKET = 2;
 	public static final int TYPE_WEBSOCKET = 3;
+	public static final int TYPE_UDP = 4;
 	
 	public static final String HTTP_HEADER_ENCODER = "DataEncoderType";
 	public static final String START_HTTP = "startHttp";

@@ -16,17 +16,18 @@
  */
 package cn.jmicro.api.codec;
 
-import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,6 @@ import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.JMethod;
 import cn.jmicro.api.classloader.RpcClassLoader;
-import cn.jmicro.api.codec.typecoder.ITypeCoder;
 import cn.jmicro.api.codec.typecoder.TypeCoderUtils;
 import cn.jmicro.api.net.Message;
 import cn.jmicro.api.registry.IRegistry;
@@ -177,24 +177,84 @@ public class SimpleCodecFactory implements ICodecFactory{
 		}
 	};
 	
-	private Map<String,Object> decodeExtra(JDataInput b) {
+	private static Object decodeMap(JDataInput b) throws IOException {
+		
 		Map<String,Object> ed = new HashMap<>();
-		try {
-			int eleNum = b.readByte(); //extra元素个数
-			if(eleNum < 0) {
-				eleNum += 256; //参考encode方法说明
+
+		int eleNum = b.readShort(); //extra元素个数
+		if(eleNum < 0) {
+			eleNum += 65537; //参考encode方法说明
+		}
+		
+		if(eleNum == 0) return null;
+		while(eleNum > 0) {
+			String k = b.readUTF();
+			Object v = doExtraDecode(b);
+			ed.put(k, v);
+			eleNum--;
+		}
+		return ed;
+	}
+
+	public static Object doExtraDecode(JDataInput b) throws IOException {
+		
+		byte type = b.readByte();
+		
+		if(type == DecoderConstant.PREFIX_TYPE_NULL) {
+			return null;
+		}else if(DecoderConstant.PREFIX_TYPE_BYTEBUFFER == type){
+			int len = b.readUnsignedShort();
+			if(len == 0) {
+				return new byte[0];
 			}
-			
-			if(eleNum == 0) return null;
-			while(eleNum > 0) {
-				String k = b.readUTF();
-				Object v = Message.decodeVal(b);
-				ed.put(k, v);
-				eleNum--;
+			byte[] arr = new byte[len];
+			b.readFully(arr, 0, len);
+			return arr;
+		}else if(type == DecoderConstant.PREFIX_TYPE_INT){
+			return b.readInt();
+		}else if(DecoderConstant.PREFIX_TYPE_BYTE == type){
+			return b.readByte();
+		}else if(DecoderConstant.PREFIX_TYPE_SHORTT == type){
+			return b.readUnsignedShort();
+		}else if(DecoderConstant.PREFIX_TYPE_LONG == type){
+			return b.readLong();
+		}else if(DecoderConstant.PREFIX_TYPE_FLOAT == type){
+			return b.readFloat();
+		}else if(DecoderConstant.PREFIX_TYPE_DOUBLE == type){
+			return b.readDouble();
+		}else if(DecoderConstant.PREFIX_TYPE_BOOLEAN == type){
+			return b.readBoolean();
+		}else if(DecoderConstant.PREFIX_TYPE_CHAR == type){
+			return b.readChar();
+		}else if(DecoderConstant.PREFIX_TYPE_STRINGG == type){
+			return JDataInput.readString(b);
+		}else if(DecoderConstant.PREFIX_TYPE_MAP == type){
+			return decodeMap(b);
+		}else if(DecoderConstant.PREFIX_TYPE_SET == type){
+			Set<Object> s = new HashSet<>();
+			decodeColl(b,s);
+			return s;
+		}else if(DecoderConstant.PREFIX_TYPE_LIST == type){
+			List<Object> l = new ArrayList<>();
+			decodeColl(b,l);
+			return l;
+		}else if(DecoderConstant.PREFIX_TYPE_PROXY == type){
+			return decodeMap(b);
+		} else {
+			throw new CommonException("not support header type: " + type);
+		}
+	}
+	
+	private static void decodeColl(JDataInput b, Collection<Object> s) throws IOException {
+		int size = b.readShort();
+		if(size < 0) {
+			size += 66637;
+		}
+		while(size-- > 0) {
+			Object v = doExtraDecode(b);
+			if(v != null) {
+				s.add(v);
 			}
-			return ed;
-		} catch (IOException e) {
-			throw new CommonException("decodeExtra error:" + ed.toString() + " IOException: " + e.getMessage());
 		}
 	}
 
@@ -202,19 +262,26 @@ public class SimpleCodecFactory implements ICodecFactory{
 		@SuppressWarnings("unchecked")
 		@Override
 		public <R> R decode(ByteBuffer data, Class<R> clazz) {
+			if(data == null || data.remaining() == 0) return null;
 			JDataInput in = new JDataInput(data);
-			Map<String,Object> ps = decodeExtra(in);
-			if(Map.class.isAssignableFrom(clazz)) {
-				return (R)ps;
-			}else {
-				ClassLoader c = Thread.currentThread().getContextClassLoader();
-				try {
-					String json = JsonUtils.getIns().toJson(ps);
-					Thread.currentThread().setContextClassLoader(cl);
-					return JsonUtils.getIns().fromJson(json, clazz);
-				}finally {
-					Thread.currentThread().setContextClassLoader(c);
+			//Map<String,Object> ps = decodeExtra(in);
+			try {
+				Object ps = doExtraDecode(in);
+				if(Map.class.isAssignableFrom(clazz) 
+					||Collection.class.isAssignableFrom(clazz)){
+					return (R)ps;
+				} else {
+					ClassLoader c = Thread.currentThread().getContextClassLoader();
+					try {
+						String json = JsonUtils.getIns().toJson(ps);
+						Thread.currentThread().setContextClassLoader(cl);
+						return JsonUtils.getIns().fromJson(json, clazz);
+					}finally {
+						Thread.currentThread().setContextClassLoader(c);
+					}
 				}
+			} catch (IOException e) {
+				throw new CommonException("extraBufferDecoder", e);
 			}
 		}
 	};
@@ -224,11 +291,7 @@ public class SimpleCodecFactory implements ICodecFactory{
 		public ByteBuffer encode(Object obj) {
 			try {
 				JDataOutput dos = new JDataOutput(1);
-				if(obj instanceof Map) {
-					Message.encodeExtraMap(dos,(Map<String, Object>)obj);
-				} else {
-					encodeByReflect(dos,obj);
-				}
+				doExtraEncode(dos,obj);
 				return dos.getBuf();
 			} catch (Throwable e) {
 				logger.error(e.getMessage() + ": " +JsonUtils.getIns().toJson(obj));
@@ -238,30 +301,104 @@ public class SimpleCodecFactory implements ICodecFactory{
 		}
 	};
 	
+	@SuppressWarnings("unchecked")
+	public static void doExtraEncode(JDataOutput b, Object v) throws IOException {
+		
+		if(v == null) {
+			b.writeByte(DecoderConstant.PREFIX_TYPE_NULL);
+			return;
+		}
+		
+		Class<?> cls = v.getClass();
+		
+		if(v instanceof Map) {
+			b.write(DecoderConstant.PREFIX_TYPE_MAP);
+			encodeExtraMap(b,(Map<String, Object>)v);
+		} else if(v instanceof List) {
+			b.write(DecoderConstant.PREFIX_TYPE_LIST);
+			encodeColl(b, (List<Object>)v);
+		}else if(v instanceof Set) {
+			b.write(DecoderConstant.PREFIX_TYPE_SET);
+			encodeColl(b, (Set<Object>)v);
+		} else if(cls.isArray()){
+			//数组只持byte[]
+			if(!(cls.getComponentType() == Byte.class || cls.getComponentType() == Byte.TYPE)) {
+				throw new CommonException("Only support byte array not: " + cls.getName());
+			}
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTEBUFFER);
+			byte[] arr = (byte[])v;
+			b.writeUnsignedShort(arr.length);
+			b.write(arr);
+		}else if(cls == String.class) {
+			b.writeByte(DecoderConstant.PREFIX_TYPE_STRINGG);
+			String str = v.toString();
+			JDataOutput.writeString(b, str);
+		}else if(cls == int.class || cls == Integer.class || cls == Integer.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_INT);
+			b.writeInt((Integer)v);
+		}else if(cls == byte.class || cls == Byte.class || cls == Byte.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTE);
+			b.writeByte((Byte)v);
+		}else if(cls == short.class || cls == Short.class || cls == Short.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_SHORTT);
+			b.writeUnsignedShort((Short)v);
+		}else if(cls == long.class || cls == Long.class || cls == Long.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_LONG);
+			b.writeLong((Long)v);
+		}else if(cls == float.class || cls == Float.class || cls == Float.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTE);
+			b.writeFloat((Byte)v);
+		}else if(cls == double.class || cls == Double.class || cls == Double.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_DOUBLE);
+			b.writeDouble((Double)v);
+		}else if(cls == boolean.class || cls == Boolean.class || cls == Boolean.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BOOLEAN);
+			b.writeByte((Boolean)v?(byte)1:(byte)0);
+		}else if(cls == char.class || cls == Character.class || cls == Character.TYPE){
+			b.writeByte(DecoderConstant.PREFIX_TYPE_CHAR);
+			b.writeChar((Character)v);
+		} else  {
+			b.writeByte(DecoderConstant.PREFIX_TYPE_PROXY);
+			encodeByReflect(b,v);
+		}
+	}
 	
-	
-	public static void encodeByReflect(JDataOutput b, Object obj) throws IOException {
+	private static void encodeExtraMap(JDataOutput b, Map<String, Object> extras) throws IOException {
+		b.writeShort(extras.size());//如果大于127，写入在小是负数，解码端需要做转换，参数Message.decodeExtra
+		if(extras.size() == 0) return;
+		//b.writeByte(Message.EXTRA_KEY_TYPE_STRING);//Map的Key的类型，此方法只支持字符串Key
+		for(Map.Entry<String, Object> e : extras.entrySet()) {
+			b.writeUTF(e.getKey());
+			//encodeVal(b,e.getValue());
+			doExtraEncode(b,e.getValue());
+		}
+	}
+
+	private static void encodeColl(JDataOutput b, Collection<Object> s) throws IOException {
+		b.writeShort(s.size());
+		if(s.isEmpty()) return;
+		Iterator<Object> ite = s.iterator();
+		while(ite.hasNext()) {
+			doExtraEncode(b,ite.next());
+		}
+	}
+
+	private static void encodeByReflect(JDataOutput b, Object obj) throws IOException {
 
 		// 进入此方法，obj必须不能为NULL
 		Class<?> cls = obj.getClass();
 		List<Field> fields = TypeCoderUtils.loadClassFieldsFromCache(cls);
-		try {
-			b.writeByte(fields.size());//如果大于127，写入的是负数，解码端需要做转换，参数Message.decodeExtra
-			if(fields.size() == 0) return;
-			b.writeByte(Message.EXTRA_KEY_TYPE_STRING);
-		} catch (IOException e2) {
-			throw new CommonException("encodeExtra extra size error");
-		}
+		
+		b.writeShort(fields.size());//如果大于127，写入的是负数，解码端需要做转换，参数Message.decodeExtra
+		if(fields.size() == 0) return;
+		//b.writeByte(Message.EXTRA_KEY_TYPE_STRING);//KEY的类型
 		
 		Object v = null;
 		for(Field f : fields) {
-			try {
-				b.writeUTF(f.getName());
-				v = TypeUtils.getFieldValue(obj, f);
-				Message.encodeVal(b,v);
-			} catch (IOException e) {
-				throw new CommonException("encodeExtra key: " + f.getName() +",val"+  (v == null?"":v.toString()),e);
-			}
+			b.writeUTF(f.getName());
+			v = TypeUtils.getFieldValue(obj, f);
+			//Message.encodeVal(b,v);
+			doExtraEncode(b,v);
 		}
 	}
 	

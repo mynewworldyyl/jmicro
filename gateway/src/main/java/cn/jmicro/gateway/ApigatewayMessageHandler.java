@@ -159,6 +159,9 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 			this.secretMng.signAndEncrypt(msg, r.getInsId());
 		}
 		
+		//if(msg.getSmKeyCode() == -970493731)
+		//	logger.info("GW forward mcode: {}, dp:{}, flag:{}", msg.getSmKeyCode(), msg.getDownProtocol(), msg.getFlag());
+		
 		cs.write(msg);
 		return true;
 	}

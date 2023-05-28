@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.utils.TimeUtils;
+import cn.jmicro.common.Utils;
 
 /**
  * 
@@ -57,7 +58,7 @@ public abstract class AbstractSession implements ISession{
 	
 	private volatile ByteBuffer readBuffer = null;
 	
-	private int heardbeatInterval;
+	protected int heardbeatInterval;
 	
 	private long lastActiveTime = TimeUtils.getCurTime();
 	
@@ -108,6 +109,7 @@ public abstract class AbstractSession implements ISession{
 	
 	public void init() {
 		InetSocketAddress ia = this.getRemoteAddress();
+		if(ia == null) return;
 		remoteAddr = ia.getAddress().getHostAddress();
 		localAddr = this.getLocalAddress().getAddress().getHostAddress();
 		//this.counter = new ServiceCounter(remoteAddr+":"+ia.getPort(),STATIS_TYPES,30,10,TimeUnit.SECONDS);
@@ -147,8 +149,8 @@ public abstract class AbstractSession implements ISession{
 		}*/
 	}
 
-	private void doRead(ByteBuffer msg) {
-
+	protected void doRead(ByteBuffer msg) {
+		
     	//合并上次剩下的数据
      	ByteBuffer lb = null;
      	

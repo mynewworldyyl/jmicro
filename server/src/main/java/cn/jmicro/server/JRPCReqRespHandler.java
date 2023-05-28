@@ -16,6 +16,8 @@
  */
 package cn.jmicro.server;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,6 +111,9 @@ public class JRPCReqRespHandler implements IMessageHandler {
 	@Override
 	public boolean onMessage(ISession s, Message msg) {
 
+		if(msg.getSmKeyCode() == 916042094)
+			logger.info("mcode: {}, dp:{}, flag:{}", msg.getSmKeyCode(), msg.getDownProtocol(), msg.getFlag());
+		
 		RpcRequestJRso req = null;
 		final RespJRso<Object> resp = new RespJRso<>();
 		boolean finish[] = new boolean[] { false };
@@ -125,8 +130,23 @@ public class JRPCReqRespHandler implements IMessageHandler {
 				 * if("index".equals(msg.getExtra(Message.EXTRA_KEY_METHOD))) {
 				 * logger.info("test cache"); }
 				 */
-				if(msg.isFromApiGateway() && msg.getUpProtocol() == Message.PROTOCOL_BIN) {
-					req1 = IServer.parseApiGatewayRequest(rpcClassloader,msg, sm);
+				if(msg.isFromApiGateway()) {
+					if(msg.getUpProtocol() == Message.PROTOCOL_BIN) {
+						req1 = IServer.parseApiGatewayRequest(rpcClassloader,msg, sm);
+					}else if(msg.getUpProtocol() == Message.PROTOCOL_EXTRA) {
+						logger.info("downprotocol: "+ msg.getDownProtocol());
+						req1 = new RpcRequestJRso();
+						if(msg.getPayload() != null) {
+							List l = ICodecFactory.decode(this.codeFactory, msg.getPayload(), 
+									List.class, msg.getUpProtocol());
+							if(l != null && l.size() > 0) {
+								req1.setArgs(l.toArray());
+							}
+						}
+					}else {
+						req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(), RpcRequestJRso.class,
+								msg.getUpProtocol());
+					}
 				} else {
 					req1 = ICodecFactory.decode(this.codeFactory, msg.getPayload(), RpcRequestJRso.class,
 							msg.getUpProtocol());

@@ -57,12 +57,13 @@ import cn.jmicro.common.util.JsonUtils;
  */
 public class Utils {
 
+	static private char[]  HEX = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 	// 邮箱验证规则
-	private String EMAIL_EX = "[a-zA-Z_]{0,}[0-9]{0,}@(([a-zA-z0-9]-*){1,}\\.){1,3}[a-zA-z\\-]{1,}";
+	static private String EMAIL_EX = "[a-zA-Z_]{0,}[0-9]{0,}@(([a-zA-z0-9]-*){1,}\\.){1,3}[a-zA-z\\-]{1,}";
 	
-	private String MOBILE_EX = "^1(3[0-9]|4[01456879]|5[0-35-9]|6[2567]|7[0-8]|8[0-9]|9[0-35-9])\\d{8}$";
+	static private String MOBILE_EX = "^1(3[0-9]|4[01456879]|5[0-35-9]|6[2567]|7[0-8]|8[0-9]|9[0-35-9])\\d{8}$";
 	
-	private String ACCOUNT_NAME_EX = "^[A-Za-z]+[A-Za-z0-9_]*$";
+	static private String ACCOUNT_NAME_EX = "^[A-Za-z]+[A-Za-z0-9_]*$";
 	
 	//EMAIL正则表达式
 	private Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_EX);
@@ -81,6 +82,11 @@ public class Utils {
 
 	public static Utils getIns() {
 		return ins;
+	}
+	
+	public static String toHex(byte v) {
+		int idx = (v>>4) & 0x0F;
+		return ""+ (idx!=0? HEX[idx]:"") + HEX[v & 0x0F];
 	}
 	
 	public static String getContentType(String fileUrl) {

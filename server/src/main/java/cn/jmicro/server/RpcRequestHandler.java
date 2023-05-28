@@ -86,7 +86,8 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			}*/
 			
 			Object[] args = request.getArgs();
-			if(request.getProtocol() == Message.PROTOCOL_JSON) {
+			if(request.getProtocol() == Message.PROTOCOL_JSON 
+				|| request.getProtocol() == Message.PROTOCOL_EXTRA) {
 				args = parseJsonArgs(obj,m,request);
 			}
 			

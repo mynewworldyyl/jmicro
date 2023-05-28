@@ -22,6 +22,7 @@ import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
+import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
@@ -86,6 +87,7 @@ public class LinkMng implements IMessageHandler {
     	private int flag;
     	private Byte type;
     	private int extrFlag;
+    	private String deviceId;
     	
     	private Integer aid;
     }
@@ -137,10 +139,19 @@ public class LinkMng implements IMessageHandler {
 		n.lastActiveTime = TimeUtils.getCurTime();
 		n.extrFlag = msg.getExtrFlag();
 		
-		ActInfoJRso ai = JMicroContext.get().getAccount();
-		if(ai != null) {
-			n.aid = ai.getId();
+		if(msg.isDev()) {
+			IotDeviceVoJRso ai = JMicroContext.get().getDevAccount();
+			if(ai != null) {
+				n.aid = ai.getSrcActId();
+				n.deviceId = ai.getDeviceId();
+			}
+		} else {
+			ActInfoJRso ai = JMicroContext.get().getAccount();
+			if(ai != null) {
+				n.aid = ai.getId();
+			}
 		}
+		
 		
 		n.sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
 		
@@ -260,7 +271,7 @@ public class LinkMng implements IMessageHandler {
 			}*/
 			
 			if(doc) {
-				String ck = IServer.cacheKey(rpcClassloader,msg, sm,null,n.aid);
+				String ck = IServer.cacheKey(rpcClassloader, msg, sm, null, n.aid);
 				if(ck != null) {
 					int et = sm.getCacheExpireTime();
 					ByteBuffer sb = (ByteBuffer)msg.getPayload();

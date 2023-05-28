@@ -36,6 +36,7 @@ import cn.jmicro.transport.netty.server.httpandws.NettyHttpServerHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -69,6 +70,14 @@ public abstract class AbstractNettyServerSession extends AbstractSession impleme
 		return remoteAddre;
 	}
 	
+	public void setLocalAddre(InetSocketAddress localAddre) {
+		this.localAddre = localAddre;
+	}
+
+	public void setRemoteAddre(InetSocketAddress remoteAddre) {
+		this.remoteAddre = remoteAddre;
+	}
+
 	@Override
 	public void write(Message msg) {
 		
@@ -97,6 +106,30 @@ public abstract class AbstractNettyServerSession extends AbstractSession impleme
 			ctx.channel().writeAndFlush(new BinaryWebSocketFrame(bbf));
 			//ctx.channel().writeAndFlush(new BinaryWebSocketFrame(JsonUtils.getIns().toJson(msg)));
 			
+		}else if(this.type == Constants.TYPE_UDP) {
+		/*
+		 ctx.writeAndFlush(new DatagramPacket(
+	                Unpooled.copiedBuffer("Hello，我是Server，我的时间戳是"+System.currentTimeMillis()
+	                                , Constants.CHARSET)
+	                                , this.getRemoteAddress())).sync();
+	    */
+			
+			ctx.channel().writeAndFlush(new DatagramPacket(bbf,this.getRemoteAddress()));
+			
+			if(msg.isDebugMode()) {
+				long cost = TimeUtils.getCurTime() - msg.getStartTime();
+				ServiceMethodJRso sm = JMicroContext.get().getParam(Constants.SERVICE_METHOD_KEY, null);
+				
+				if(sm != null) {
+					if(sm.getTimeout() <= cost) {
+						logger.warn("Client ins[{}],reqId[{}],cost[{}],Method[{}],TO[{}]",
+								msg.getInsId(),msg.getMsgId(),cost,msg.getMethod(),sm.getTimeout());
+					}
+				} else {
+					logger.warn("Null ServiceMethod ins[{}],reqId[{}],cost[{}],method[{}]",
+							msg.getInsId(),msg.getMsgId(),cost,msg.getMethod());
+				}
+			}
 		}else/* if(this.type == Constants.NETTY_SOCKET) */{
 			ctx.channel().writeAndFlush(bbf);
 			if(msg.isDebugMode()) {

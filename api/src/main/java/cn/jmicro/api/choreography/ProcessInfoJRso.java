@@ -31,6 +31,8 @@ public class ProcessInfoJRso {
 	
 	private String httpPort;
 	
+	private String udpPort;
+	
 	private String osName;
 	
 	private String instanceName;

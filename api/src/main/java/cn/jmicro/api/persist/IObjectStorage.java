@@ -79,7 +79,7 @@ public interface IObjectStorage {
 	
 	<T> T getOne(String table,Map<String,Object> filter,Class<T> targetClass);
 	
-	Map<String,Object> getFields(String table,Map<String, Object> filter, String...fields);
+	 List<Map<String, Object>> getFields(String table,Map<String, Object> filter, String...fields);
 	
 	RespJRso<String> saveFile2Db(FileJRso pr);
 	

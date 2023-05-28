@@ -189,6 +189,7 @@ public class ServiceLoader{
 	private void doExportService() {
 		Set<IServer> ss = of.getByParent(IServer.class);
 		for(IServer s : ss){
+			if(!s.isEnable()) continue;
 			cn.jmicro.api.annotation.Server anno = 
 					s.getClass().getAnnotation(cn.jmicro.api.annotation.Server.class);
 			if(servers.containsKey(anno.transport())){

@@ -25,6 +25,7 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
 import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.ext.iot.Namespace;
+import cn.jmicro.ext.iot.service.DeviceFunJRso;
 import cn.jmicro.ext.iot.service.IDeviceServiceJMSrv;
 import cn.jmicro.ext.iot.service.IotDeviceJRso;
 import lombok.extern.slf4j.Slf4j;
@@ -346,6 +347,120 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		});
 	}
 	
+	@Override
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	public IPromise<RespJRso<Map<String, Object>>> deviceFunVers() {
+		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		return new Promise<RespJRso<Map<String, Object>>>((suc,fail)->{
+			RespJRso<Map<String, Object>> r = RespJRso.d(RespJRso.CODE_FAIL,null);
+			
+			Map<String,Object> qry = new HashMap<>();
+			qry.put("srcActId", act.getSrcActId());
+			qry.put("deviceId", act.getDeviceId());
+			
+			List<Map<String,Object>> l = os.getFields(TABLE_FUN, qry, "ver","funName");
+			
+			Map<String,Object> f2v = new HashMap<>();
+			l.forEach(m->{
+				f2v.put(m.get("funName").toString(), m.get("ver"));
+			});
+			
+			r.setData(f2v);
+			
+			r.setCode(RespJRso.CODE_SUCCESS);
+			suc.success(r);
+			return;
+		});
+	}
+
+	@Override
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	public IPromise<RespJRso<Boolean>> updateFun(DeviceFunJRso funs) {
+		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
+			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
+			
+			if(Utils.isEmpty(funs.getFunName())) {
+				r.setMsg("方法名称不能为空");
+				suc.success(r);
+				return;
+			}
+			
+			DeviceFunJRso oldFun = getDeviceFunByName(funs.getFunName(), act.getSrcActId(), act.getDeviceId());
+			if(oldFun == null) {
+				r = doAddDeviceFun(funs,act);
+			} else {
+				r = doUpdateDeviceFun(funs,oldFun,false);
+			}
+			
+			suc.success(r);
+			return;
+		});
+	
+	}
+
+	private RespJRso<Boolean> doUpdateDeviceFun(DeviceFunJRso fun, DeviceFunJRso oldFun, boolean doDel) {
+		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
+		
+		if(doDel) {
+			oldFun.setDel(true);
+		}else {
+			oldFun.setArgs(fun.getArgs());
+			oldFun.setFunDesc(fun.getFunDesc());
+			oldFun.setDel(false);
+			oldFun.setVer(fun.getVer());
+			oldFun.setArgs(fun.getArgs());
+		}
+		
+		if(!os.updateById(TABLE_FUN, oldFun, DeviceFunJRso.class, "id", false)) {
+			r.setMsg("更新数据失败");
+		}
+		
+		r.setCode(RespJRso.CODE_SUCCESS);
+		
+		return r;
+	}
+
+	private RespJRso<Boolean> doAddDeviceFun(DeviceFunJRso fun, IotDeviceVoJRso act) {
+		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
+		if(count(fun.getFunName(), act.getSrcActId(), act.getDeviceId()) > 0) {
+			r.setMsg("功能名称重复: "+fun.getFunName());
+			return r;
+		}
+		
+		fun.setId(idGenerator.getIntId(DeviceFunJRso.class));
+		fun.setDeviceId(act.getDeviceId());
+		fun.setSrcActId(act.getSrcActId());
+		fun.setDel(false);
+		
+		fun.setUpdatedTime(TimeUtils.getCurTime());
+		fun.setUpdatedBy(act.getId());
+		fun.setCreatedBy(act.getSrcActId());
+		fun.setUpdatedBy(act.getSrcActId());
+		
+		if(!os.save(TABLE_FUN, fun, DeviceFunJRso.class, false)) {
+			r.setMsg("租户创建失败");
+			return r;
+		}
+		r.setCode(RespJRso.CODE_SUCCESS);
+		return r;
+	}
+
+	@Override
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	public IPromise<RespJRso<Boolean>> delFun(String funName) {
+		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
+			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
+			DeviceFunJRso oldFun = getDeviceFunByName(funName, act.getSrcActId(), act.getDeviceId());
+			if(oldFun != null) {
+				r = this.doUpdateDeviceFun(null, oldFun, true);
+			}
+			suc.success(r);
+			return;
+		});
+	}
+
 	private int count(Integer actId, String name) {
 		Map<String,Object> qry = new HashMap<>();
 		qry.put("name", name);
@@ -367,5 +482,20 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		return os.getOne(TABLE, qry, IotDeviceJRso.class);
 	}
 
+	private DeviceFunJRso getDeviceFunByName(String funName, Integer actId, String deviceId) {
+		Map<String,Object> qry = new HashMap<>();
+		qry.put("funName", funName);
+		qry.put("srcActId", actId);
+		qry.put("deviceId", deviceId);
+		return os.getOne(TABLE_FUN, qry, DeviceFunJRso.class);
+	}
+
+	private int count(String funName, Integer actId, String deviceId) {
+		Map<String,Object> qry = new HashMap<>();
+		qry.put("funName", funName);
+		qry.put("srcActId", actId);
+		qry.put("deviceId", deviceId);
+		return os.count(TABLE_FUN, qry);
+	}
 	
 }

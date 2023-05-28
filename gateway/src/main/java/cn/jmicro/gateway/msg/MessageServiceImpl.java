@@ -57,15 +57,27 @@ public class MessageServiceImpl implements IMessageHandler{
 		int opCode = new Double(Double.parseDouble(op.toString())).intValue();
 		if(opCode == IGatewayMessageCallbackJMSrv.MSG_OP_CODE_FORWARD) {
 			//转发类消息,to actId为转发目标账号ID
-			Integer tactId = msg.getExtra(Message.EXTRA_KEY_PS_ARGS);
-			if (tactId == null) {
-				responseError(session, msg, RespJRso.SE_INVLID_ARGS, "Invalid forward tactId");
-				return true;
-			}
 			
 			//备份客户端的消息ID
 			Long msgId = msg.getMsgId();
-			Long suc = msgGm.forward(msg,tactId);
+			
+			Long suc = 0L;
+			
+			if(msg.isDev()) {
+				String deviceId = msg.getExtra(Message.EXTRA_KEY_PS_ARGS);
+				if (Utils.isEmpty(deviceId)) {
+					responseError(session, msg, RespJRso.SE_INVLID_ARGS, "Invalid forward deviceId");
+					return true;
+				}
+				suc = msgGm.forward2Device(msg,deviceId);
+			} else {
+				Integer tactId = msg.getExtra(Message.EXTRA_KEY_PS_ARGS);
+				if (tactId == null) {
+					responseError(session, msg, RespJRso.SE_INVLID_ARGS, "Invalid forward tactId");
+					return true;
+				}
+				suc = msgGm.forward(msg,tactId);
+			}
 			
 			//给客户端返回服务器生成的消息全局唯一标识
 			msg.putExtra(Message.EXTRA_KEY_SMSG_ID, msg.getMsgId());

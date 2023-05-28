@@ -62,6 +62,7 @@ public final class JMLogItemJRso{
 	private UniqueServiceMethodKeyJRso smKey = null;
 	
 	private boolean nl;
+	private boolean dev = false;
 	
 	private String implCls;
 	

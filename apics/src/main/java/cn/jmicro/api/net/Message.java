@@ -61,9 +61,10 @@ public final class Message {
 	
 	//public static final int SEC_LEN = 128;
 	
-	public static final byte PROTOCOL_BIN = 0;
-	public static final byte PROTOCOL_JSON = 1;
-	public static final byte PROTOCOL_EXTRA = 2;
+	public static final byte PROTOCOL_BIN = 0;//对象序列化为流数据
+	public static final byte PROTOCOL_JSON = 1;//JSON数据
+	public static final byte PROTOCOL_EXTRA = 2;//KEY Value数据
+	public static final byte PROTOCOL_RAW = 3;//byte数组直接传给业务方法，不做数据解码
 	
 	public static final byte PRIORITY_0 = 0;
 	public static final byte PRIORITY_1 = 1;
@@ -94,7 +95,8 @@ public final class Message {
 	//长度字段类型，1表示整数，0表示短整数
     public static final short FLAG_LENGTH_INT = 1 << 0;
     
-	public static final short FLAG_UP_PROTOCOL = 1; //1,2位一起表示上行数据打包协议
+	public static final short FLAG_UP_PROTOCOL = 1; //1,2位一起表示上行数据打包协议1001 1000
+	public static final int FLAG_UP_PROTOCOL_MASK = 0xFFF9; 
 	
 	//可监控消息
 	public static final short FLAG_MONITORABLE = 1 << 3;
@@ -110,13 +112,16 @@ public final class Message {
 	//需要响应的请求  or down message is error
 	public static final short FLAG_FORCE_RESP_JSON = 1 << 7;
 	
-	public static final short FLAG_DOWN_PROTOCOL = 8; //8，9位一起表示下行数据打包协议
+	public static final short FLAG_DOWN_PROTOCOL = 8; //8，9位一起表示下行数据打包协议 1010 1011 1100
+	public static final int FLAG_DOWN_PROTOCOL_MASK = 0xFCFF; 
 	
 	public static final short  FLAG_DEV = 1 << 10;
 	
-	public static final short FLAG_RESP_TYPE = 11;
+	public static final short FLAG_RESP_TYPE = 11;// 11 12位
+	public static final int FLAG_RESP_TYPE_MASK = 0xE7FF; //1110 0111 1111 1111
 	
-	public static final short FLAG_LOG_LEVEL = 13;
+	public static final short FLAG_LOG_LEVEL = 13;//13，14，15位
+	public static final int FLAG_LOG_LEVEL_MASK = 0x1FFF; //0001 1111 1111 1111
 	
 	/****************  extra constants flag   *********************/
 	
@@ -239,7 +244,7 @@ public final class Message {
 	
 	// 1 byte
 	private byte type;
-		
+	
 	//2 byte length
 	//private byte ext;
 	
@@ -393,7 +398,7 @@ public final class Message {
 		
 		if(type == DecoderConstant.PREFIX_TYPE_NULL) {
 			return null;
-		}else if(DecoderConstant.PREFIX_TYPE_LIST == type){
+		}else if(DecoderConstant.PREFIX_TYPE_BYTEBUFFER == type){
 			int len = b.readUnsignedShort();
 			if(len == 0) {
 				return new byte[0];
@@ -553,7 +558,7 @@ public final class Message {
 			if(!(cls.getComponentType() == Byte.class || cls.getComponentType() == Byte.TYPE)) {
 				throw new CommonException("Only support byte array not: " + cls.getName());
 			}
-			b.writeByte(DecoderConstant.PREFIX_TYPE_LIST);
+			b.writeByte(DecoderConstant.PREFIX_TYPE_BYTEBUFFER);
 			byte[] arr = (byte[])v;
 			b.writeUnsignedShort(arr.length);
 			b.write(arr);
@@ -677,20 +682,19 @@ public final class Message {
 			data = (ByteBuffer)this.getPayload();
 		} else if(this.getPayload() instanceof byte[]){
 			data = ByteBuffer.wrap((byte[])this.getPayload());
-		} else  {
+		} else if(this.getPayload() != null)  {
 			String json = JsonUtils.getIns().toJson(this.getPayload());
 			try {
 				data = ByteBuffer.wrap(json.getBytes(Constants.CHARSET));
-				this.setDownProtocol(PROTOCOL_JSON);;//强接收者使用JSON解析数
+				this.setDownProtocol(PROTOCOL_JSON);//强接收者使用JSON解析数
 			} catch (UnsupportedEncodingException e) {
 				e.printStackTrace();
 			}
 		}
 		
-		data.mark();
-		
 		int len = 0;//数据长度 + 附加数据长度,不包括头部长度
 		if(data != null){
+			data.mark();
 			len = data.remaining();
 		}
 		
@@ -811,7 +815,7 @@ public final class Message {
 				return null;
 			}
 	    }
-		
+	    
 		byte[] data = new byte[len + headerLen];
 		//从缓存中读一个包,cache的position往前推
 		cache.get(data, 0, len + headerLen);
@@ -1063,7 +1067,7 @@ public final class Message {
 		if(v < 0 || v > 6) {
 			 new CommonException("Invalid Log level: "+v);
 		}
-		this.flag = (short)((v << FLAG_LOG_LEVEL) | this.flag);
+		this.flag = (short)((v << FLAG_LOG_LEVEL) | (this.flag & FLAG_LOG_LEVEL_MASK));
 	}
 	
 	public byte getRespType() {
@@ -1074,7 +1078,7 @@ public final class Message {
 		if(v < 0 || v > 3) {
 			 new CommonException("Invalid message response type: "+v);
 		}
-		this.flag = (short)((v << FLAG_RESP_TYPE)|this.flag);
+		this.flag = (short)((v << FLAG_RESP_TYPE)| (this.flag & FLAG_RESP_TYPE_MASK));
 	}
 	
 	public byte getUpProtocol() {
@@ -1082,10 +1086,10 @@ public final class Message {
 		return (byte)((this.flag >> FLAG_UP_PROTOCOL) & 0x03);
 	}
 
-	public void setUpProtocol(byte protocol) {
+	public void setUpProtocol(int protocol) {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_UP_PROTOCOL : 0 ; 
 		//flag = set(protocol == PROTOCOL_JSON,flag,FLAG_UP_PROTOCOL);
-		flag = flag | (protocol << FLAG_UP_PROTOCOL);
+		flag = (flag & FLAG_UP_PROTOCOL_MASK) | (protocol << FLAG_UP_PROTOCOL);
 	}
 	
 	public byte getDownProtocol() {
@@ -1093,10 +1097,10 @@ public final class Message {
 		return (byte)((this.flag >> FLAG_DOWN_PROTOCOL) & 0x03);
 	}
 
-	public void setDownProtocol(byte protocol) {
+	public void setDownProtocol(int protocol) {
 		//flag |= protocol == PROTOCOL_JSON ? FLAG_DOWN_PROTOCOL : 0 ;
 		//flag = set(protocol == PROTOCOL_JSON,flag,FLAG_DOWN_PROTOCOL);
-		flag = flag | (protocol << FLAG_DOWN_PROTOCOL);
+		flag = (flag & FLAG_DOWN_PROTOCOL_MASK) | (protocol << FLAG_DOWN_PROTOCOL);
 	}
 	
 	public static void writeUnsignedShort(ByteBuffer b,int v) {
@@ -1160,10 +1164,10 @@ public final class Message {
 			return makeLong(firstByte,secondByte,thirdByte,fourByte,fiveByte,sixByte,sevenByte,eigthByte);
 	}
 	 
-	private static long makeLong(byte b7, byte b6, byte b5, byte b4, byte b3, byte b2, byte b1, byte b0) {
-		return ((((long) b7) << 56) | (((long) b6 & 0xff) << 48) | (((long) b5 & 0xff) << 40)
-				| (((long) b4 & 0xff) << 32) | (((long) b3 & 0xff) << 24) | (((long) b2 & 0xff) << 16)
-				| (((long) b1 & 0xff) << 8) | (((long) b0 & 0xff)));
+	private static long makeLong(long b7, long b6, long b5, long b4, long b3, long b2, long b1, long b0) {
+		return ((( b7) << 56) | (( b6 & 0xff) << 48) | ((b5 & 0xff) << 40)
+				| (( b4 & 0xff) << 32) | ((b3 & 0xff) << 24) | ((b2 & 0xff) << 16)
+				| ((b1 & 0xff) << 8) | (( b0 & 0xff)));
 	}
 	 
 	/*private static long readUnsignedLong(ByteBuffer b) {

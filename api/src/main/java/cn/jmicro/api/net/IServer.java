@@ -42,6 +42,7 @@ import cn.jmicro.common.util.JsonUtils;
 public interface IServer{
 
 	//void init();
+	boolean isEnable();
 	
 	void start();
 	
@@ -114,37 +115,39 @@ public interface IServer{
 	public static RpcRequestJRso parseApiGatewayRequest(RpcClassLoader rpcClassloader,Message msg, ServiceMethodJRso sm) {
 		try {
 			RpcRequestJRso req = new RpcRequestJRso();
-			JDataInput ji = new JDataInput((ByteBuffer) msg.getPayload());
-			//req.setRequestId(ji.readLong());
-			// req.setServiceName(ji.readUTF());
-			// req.setNamespace(ji.readUTF());
-			// req.setVersion(ji.readUTF());
-			// req.setMethod(ji.readUTF());
-			
-			int eleNum = ji.readByte(); //extra元素个数
-			if(eleNum < 0) {
-				eleNum += 256; //参考encode方法说明
-			}
-	
-			if (eleNum > 0) {
-				for (int i = 0; i < eleNum; i++) {
-					String k = ji.readUTF();
-					String v = ji.readUTF();
-					req.getParams().put(k, v);
+			ByteBuffer bb = (ByteBuffer) msg.getPayload();
+			if(bb != null && bb.remaining() > 0) {
+				JDataInput ji = new JDataInput(bb);
+				//req.setRequestId(ji.readLong());
+				// req.setServiceName(ji.readUTF());
+				// req.setNamespace(ji.readUTF());
+				// req.setVersion(ji.readUTF());
+				// req.setMethod(ji.readUTF());
+				
+				int eleNum = ji.readByte(); //extra元素个数
+				if(eleNum < 0) {
+					eleNum += 256; //参考encode方法说明
 				}
-			}
+		
+				if (eleNum > 0) {
+					for (int i = 0; i < eleNum; i++) {
+						String k = ji.readUTF();
+						String v = ji.readUTF();
+						req.getParams().put(k, v);
+					}
+				}
+				// si = getServiceItem(req);
+				// sm = getServiceMethod(si,req);
+				Class<?>[] paramsClses = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
 
-			// si = getServiceItem(req);
-			// sm = getServiceMethod(si,req);
-			Class<?>[] paramsClses = ReflectUtils.desc2classArray(rpcClassloader, sm.getKey().getParamsStr());
-
-			int argLen = ji.readByte(); //extra元素个数
-			if(argLen < 0) {
-				argLen += 256; //参考encode方法说明
-			}
-			
-			if(argLen > 0) {
-				req.setArgs(getArgs(paramsClses, ji,argLen));
+				int argLen = ji.readByte(); //extra元素个数
+				if(argLen < 0) {
+					argLen += 256; //参考encode方法说明
+				}
+				
+				if(argLen > 0) {
+					req.setArgs(getArgs(paramsClses, ji,argLen));
+				}
 			}
 			return req;
 		} catch (ClassNotFoundException | IOException e) {

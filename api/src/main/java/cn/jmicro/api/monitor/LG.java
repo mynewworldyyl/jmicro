@@ -31,6 +31,7 @@ import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.gateway.ApiRequestJRso;
 import cn.jmicro.api.gateway.ApiResponseJRso;
+import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.net.IReq;
 import cn.jmicro.api.net.IResp;
 import cn.jmicro.api.net.Message;
@@ -253,10 +254,20 @@ public class LG {
 		}
 
 		if(JMicroContext.existRpcContext()) {
-			ActInfoJRso ai = JMicroContext.get().getAccount();
-			if(ai != null) {
-				si.setActClientId(ai.getClientId());
-				si.setActName(ai.getActName());
+			
+			if(JMicroContext.get().isDevAccount()) {
+				IotDeviceVoJRso ai = JMicroContext.get().getDevAccount();
+				if(ai != null) {
+					si.setActClientId(ai.getSrcClientId());
+					si.setActName(ai.getDeviceId());
+					si.setDev(true);
+				}
+			}else {
+				ActInfoJRso ai = JMicroContext.get().getAccount();
+				if(ai != null) {
+					si.setActClientId(ai.getClientId());
+					si.setActName(ai.getActName());
+				}
 			}
 			
 			//在RPC上下文中才有以上信息
