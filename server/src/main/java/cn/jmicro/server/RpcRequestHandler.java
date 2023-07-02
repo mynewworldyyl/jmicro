@@ -70,9 +70,9 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			Class<?>[] pst = getMethodParamsType(request.getArgs());
 			
 			Method m = getServiceMethod(obj,pst,request);
-			/*if(m.getName().equals("publishData")) {
-				logger.debug("debug info");
-			}*/
+			if(m.getName().equals("updateFun")) {
+				logger.debug("updateFun");
+			}
 			boolean f = m.isAccessible();
 			if(!f) {
 				//通过Lambda动态注册的服务方法,，会报方法调用异常，应该是内部生成的类是非public导致，在此暂时做此处理

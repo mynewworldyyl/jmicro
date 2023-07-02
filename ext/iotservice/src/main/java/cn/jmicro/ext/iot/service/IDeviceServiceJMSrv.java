@@ -16,18 +16,10 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
  */
 @AsyncClientProxy
 public interface IDeviceServiceJMSrv {
-
-	public static final String TABLE = "t_device";
-	
-	public static final String TABLE_FUN = "t_device_fun";
-	
-	public static final byte STATUS_ENABLE = 0;//正常可用
-	
-	public static final byte STATUS_FREEZONE = 1;//冻结
 	
 	IPromise<RespJRso<IotDeviceJRso>> addDevice(IotDeviceJRso dev);
 	
-	IPromise<RespJRso<IotDeviceJRso>>  bindDevice(IotDeviceJRso dev);
+	IPromise<RespJRso<IotDeviceJRso>>  bindDevice(String macAddr,  String deviceId);
 	
 	IPromise<RespJRso<Boolean>>  unbindDevice(String deviceId);
 	
@@ -42,13 +34,5 @@ public interface IDeviceServiceJMSrv {
 	 * @return
 	 */
 	IPromise<RespJRso<Map<String,Object>>> deviceLogin(Integer actId, String deviceId);
-	
-	//当前设备功能版本列表
-	IPromise<RespJRso<Map<String, Object>>> deviceFunVers();
-	
-	//更新设备功能列表，如果功能不存在，则新增
-	IPromise<RespJRso<Boolean>> updateFun(DeviceFunJRso funs);
-	
-	IPromise<RespJRso<Boolean>> delFun(String funName);
 	
 }

@@ -134,7 +134,7 @@ public class NettyUDPSocketHandler extends ChannelInboundHandlerAdapter {
     	}
     	
     	session.receive(b,dp,ctx);
-		//logger.info("ed1:  "+System.currentTimeMillis());
+		logger.info("client addr:  " + dp.sender().toString());
     }
     
     @Override

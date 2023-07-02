@@ -83,6 +83,33 @@ public interface IServer{
 		return Constants.CACHE_DIR_PREFIX + mcode;
 	}
 	
+	public static String cacheKey(RpcClassLoader rpcClassloader, Message msg, ServiceMethodJRso sm,
+			ICodecFactory codecFactory,String did) {
+		
+		String mcode = sm.getKey().getSnvHash() + ":";
+		if(Constants.CACHE_TYPE_MCODE == sm.getCacheType()) {
+			//mcode +=  ah;
+		}else if(Constants.CACHE_TYPE_ACCOUNT == sm.getCacheType()) {
+			//ActInfoJRso ai = JMicroContext.get().getAccount();
+			if(did == null) {
+				return null;
+			}
+			mcode += did;
+		} else if(Constants.CACHE_TYPE_PAYLOAD == sm.getCacheType()) {
+			mcode += payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
+		} else if(Constants.CACHE_TYPE_PAYLOAD_AND_ACT == sm.getCacheType()) {
+			//ActInfoJRso ai = JMicroContext.get().getAccount();
+			if(did == null) {
+				return null;
+			}
+			mcode += did +":" + payloadCacheKey(rpcClassloader,msg,sm,codecFactory);
+		} else {
+			return null;
+		}
+		
+		return Constants.CACHE_DIR_PREFIX + mcode;
+	}
+	
 	static Integer payloadCacheKey(RpcClassLoader rpcClassloader, Message msg, 
 			ServiceMethodJRso sm, ICodecFactory codecFactory) {
 		Integer ah = msg.getExtra(Message.EXTRA_KEY_ARG_HASH);

@@ -1,13 +1,14 @@
 package cn.jmicro.ext.iot.service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import cn.jmicro.api.annotation.SO;
 import lombok.Data;
 import lombok.Serial;
 
 /**
+ * 设备开放能力，其他设备可能通过设备开放能力操作此设备
  	char *funDesc; //方法描述，或功能描述
 	char *funName; //device unique function name
 	sint8_t type; //PS item type, 默认是-128，当前只支持-128
@@ -23,24 +24,30 @@ import lombok.Serial;
 @Serial
 public class DeviceFunJRso {
 	
-	private Integer  id;
+	public static final String TABLE = "t_device_fun";
 	
-	private String deviceId;
+	private Integer id;
 	
-	//设备所属账号ID
-	private Integer srcActId;
+	private Integer defId; //接口定义ID
 	
-	//设备物理地址或设备硬件ID
-	private String funName;
+	private Byte ver; //实现在功能版本
 	
-	//后台统一以字符串存储
-	private Byte ver=1;
+	private Byte type; //PS item type, 默认是-128，当前只支持-128
 	
-	private String funDesc;//语意或功能描述
+	private String deviceId; //实现接口中的设备ID
 	
-	private boolean del = false;
+	private String funLabel; 
 	
-	private List<DeviceFunArgsJRso> args = new ArrayList<>();
+	private Integer srcActId; //设备所属账号ID
+	
+	private Set<DeviceFunOperationJRso> ctrlOps = new HashSet<>();
+	
+	//private Byte argLen; //操作个数
+	private Boolean selfDefArg; //是否持自定义参数
+	
+	private Boolean showFront; //是否可以展示在UI上，用户可直接操作
+	
+	private Boolean del;
 	
 	private long createdTime;
 	

@@ -79,7 +79,8 @@ public interface IObjectStorage {
 	
 	<T> T getOne(String table,Map<String,Object> filter,Class<T> targetClass);
 	
-	 List<Map<String, Object>> getFields(String table,Map<String, Object> filter, String...fields);
+	<T> Set<T> getDistinctField(String table, Map<String, Object> filter, String fieldName, Class<T> resultClass);
+	List<Map<String, Object>> getFields(String table,Map<String, Object> filter, String...fields);
 	
 	RespJRso<String> saveFile2Db(FileJRso pr);
 	
@@ -94,6 +95,7 @@ public interface IObjectStorage {
 			Map<String,Object> filter, String table, String[] keys, String grpFieldName, Boolean counter);
 	
 	boolean fileSystemEnable();
+	
 	/**
 	 * 
 	 * @param sort

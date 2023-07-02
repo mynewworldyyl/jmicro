@@ -166,7 +166,16 @@
 					</Menu-group>
 
 				</Submenu>
-
+				
+				<Submenu name="iot">
+					<template slot="title">
+						<Icon type="ios-analytics" />{{"IoT"|i18n}}
+					</template>
+					<Menu-item name="__deviceFunctionDef">
+						<Icon type="ios-alert" />{{"deviceFunctionDef"|i18n("Device Function Def")}}
+					</Menu-item>
+				</Submenu>
+				
 				<Submenu name="oth">
 					<template slot="title">
 						<Icon type="ios-analytics" />{{'Others'|i18n}}

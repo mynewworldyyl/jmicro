@@ -52,9 +52,9 @@ public class NettyUDPServerSession extends AbstractNettyServerSession implements
 			s = new NettyServerSession(ctx, this.getReadBufferSize(), this.heardbeatInterval,Constants.TYPE_UDP);
 			s.setLocalAddre(dp.recipient());
 			s.setRemoteAddre(dp.sender());
-			s.setReceiver(this.getReceiver());
 			sessions.put(dp.sender(), s);
 		}
+		s.setReceiver(this.getReceiver());
 		s.receive(msg);
 	}
 }

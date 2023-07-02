@@ -797,6 +797,27 @@ public class MongodbBaseObjectStorage implements IObjectStorage {
 		 return l;
 	}
 	
+	@Override
+	public <T> Set<T> getDistinctField(String table, Map<String, Object> filter, String fieldName, Class<T> resultClass) {
+		 if(Utils.isEmpty(fieldName)) {
+			 throw new NullPointerException("get fields is NULL");
+		 }
+		 
+		 Document fs = new Document();
+		 fs.putAll(filter);
+
+		 DistinctIterable<T> rst = mdb.getCollection(table).distinct(fieldName, fs, resultClass);
+		 
+		 Set<T> l = new HashSet<>();
+		 MongoCursor<T>  ite = rst.iterator();
+		 
+		 while(ite.hasNext()) {
+			 l.add(ite.next());
+		 }
+		 
+		 return l;
+	}
+	
 	/**
 	 * 
 	 * @param filter 数据过虑条件

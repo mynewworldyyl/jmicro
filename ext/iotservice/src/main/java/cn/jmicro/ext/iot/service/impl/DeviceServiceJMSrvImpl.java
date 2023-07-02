@@ -25,7 +25,7 @@ import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
 import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.ext.iot.Namespace;
-import cn.jmicro.ext.iot.service.DeviceFunJRso;
+import cn.jmicro.ext.iot.service.DeviceFunDefJRso;
 import cn.jmicro.ext.iot.service.IDeviceServiceJMSrv;
 import cn.jmicro.ext.iot.service.IotDeviceJRso;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +50,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 	@SMethod(maxSpeed=1, upSsl=false, encType=0, downSsl=false, needLogin=false, perType=false, forType=Constants.FOR_TYPE_DEV)
 	public IPromise<RespJRso<Map<String,Object>>> deviceLogin(Integer actId, String deviceId) {
 
-		ActInfoJRso act = JMicroContext.get().getAccount();
+		//ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<Map<String,Object>>>((suc,fail)->{
 			RespJRso<Map<String,Object>> r = RespJRso.r(RespJRso.CODE_FAIL,"");
 			Map<String,Object> ps = new HashMap<>();
@@ -109,33 +109,47 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 	
 	@Override
 	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
-	public IPromise<RespJRso<IotDeviceJRso>> bindDevice(IotDeviceJRso dev) {
+	public IPromise<RespJRso<IotDeviceJRso>> bindDevice(String macAddr,  String deviceId) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<IotDeviceJRso>>((suc,fail)->{
 			RespJRso<IotDeviceJRso> r = RespJRso.r(RespJRso.CODE_FAIL,"");
 			
-			if(Utils.isEmpty(dev.getName())) {
-				r.setMsg("名称不能为空");
+			if(Utils.isEmpty(macAddr)) {
+				r.setMsg("绑定设备信息为空");
 				suc.success(r);
 				return;
 			}
 			
-			if(count(act.getId(), dev.getName()) > 0) {
-				r.setMsg("设备名称重复");
+			if(countByMacAddr(macAddr) > 0) {
+				r.setMsg("设备已经被绑定");
 				suc.success(r);
 				return;
 			}
 			
-			//dev.setId(idGenerator.getLongId(IotDeviceJRso.class));
-			//dev.setDeviceId(toDeviceId(dev.getId()+TimeUtils.getCurTime()));
+			IotDeviceJRso dev = this.getDeviceByDeviceId(act.getId(), deviceId);
+			if(dev == null) {
+				r.setMsg("设备不存在");
+				suc.success(r);
+				return;
+			}
 			
-			dev.setSrcActId(act.getId());
-			dev.setSrcClientId(act.getClientId());
+			if(dev.getStatus() == IotDeviceJRso.STATUS_BUND 
+				|| dev.getStatus() == IotDeviceJRso.STATUS_FREEZONE) {
+				r.setMsg("设备已经被绑定");
+				suc.success(r);
+				return;
+			}
+			
+			dev.setMacAddr(macAddr);
 			dev.setUpdatedTime(TimeUtils.getCurTime());
-			dev.setCreatedTime(TimeUtils.getCurTime());
-			dev.setCreatedBy(act.getId());
 			dev.setUpdatedBy(act.getId());
-			dev.setStatus(STATUS_ENABLE);
+			dev.setStatus(IotDeviceJRso.STATUS_BUND);
+			
+			if(!os.updateById(IotDeviceJRso.TABLE, dev, IotDeviceJRso.class, "id", false)) {
+				r.setMsg("绑定设备失败");
+				suc.success(r);
+				return;
+			}
 			
 			r.setCode(RespJRso.CODE_SUCCESS);
 			r.setData(dev);
@@ -159,7 +173,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				return;
 			}
 			
-			if(count(act.getId(), dev.getName()) > 0) {
+			if(countDevice(act.getId(), dev.getName()) > 0) {
 				r.setMsg("设备名称重复");
 				suc.success(r);
 				return;
@@ -174,13 +188,13 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			dev.setCreatedTime(TimeUtils.getCurTime());
 			dev.setCreatedBy(act.getId());
 			dev.setUpdatedBy(act.getId());
-			dev.setStatus(STATUS_ENABLE);
+			dev.setStatus(IotDeviceJRso.STATUS_INIT);
 			
 			if(Utils.isEmpty(dev.getGrpName())) {
 				dev.setGrpName("Default");
 			}
 			
-			if(!os.save(TABLE, dev, IotDeviceJRso.class, false)) {
+			if(!os.save(IotDeviceJRso.TABLE, dev, IotDeviceJRso.class, false)) {
 				r.setMsg("租户创建失败");
 				suc.success(r);
 				return;
@@ -243,7 +257,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			qry.put("deviceId", deviceId);
 			qry.put("srcActId", act.getId());
 			
-			if(os.deleteByQuery(TABLE, qry) <= 0) {
+			if(os.deleteByQuery(IotDeviceJRso.TABLE, qry) <= 0) {
 				r.setMsg("设备删除失败");
 				suc.success(r);
 				return;
@@ -277,7 +291,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			}
 			
 			if(!dev.getName().equals(ed.getName())) {
-				if(count(act.getId(), dev.getName()) > 0) {
+				if(countDevice(act.getId(), dev.getName()) > 0) {
 					r.setMsg("设备名称重复");
 					suc.success(r);
 					return;
@@ -291,7 +305,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			ed.setType(dev.getType());
 			ed.setGrpName(dev.getGrpName());
 			
-			if(!os.updateById(TABLE, ed, IotDeviceJRso.class, "id", false)) {
+			if(!os.updateById(IotDeviceJRso.TABLE, ed, IotDeviceJRso.class, "id", false)) {
 				r.setMsg("设置更新失败");
 				suc.success(r);
 				return;
@@ -333,11 +347,11 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				filter.put(key, qry.getPs().get(key));
 			}
 			
-			int cnt =(int) os.count(TABLE, filter);
+			int cnt =(int) os.count(IotDeviceJRso.TABLE, filter);
 			r.setTotal(cnt);
 			
 			if(cnt > 0) {
-				List<IotDeviceJRso> list = this.os.query(TABLE, filter, IotDeviceJRso.class,
+				List<IotDeviceJRso> list = this.os.query(IotDeviceJRso.TABLE, filter, IotDeviceJRso.class,
 						qry.getSize(), qry.getCurPage()-1,null,qry.getSortName(),
 						IObjectStorage.getOrderVal(qry.getOrder(), 1));
 				r.setData(list);
@@ -347,155 +361,32 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		});
 	}
 	
-	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
-	public IPromise<RespJRso<Map<String, Object>>> deviceFunVers() {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
-		return new Promise<RespJRso<Map<String, Object>>>((suc,fail)->{
-			RespJRso<Map<String, Object>> r = RespJRso.d(RespJRso.CODE_FAIL,null);
-			
-			Map<String,Object> qry = new HashMap<>();
-			qry.put("srcActId", act.getSrcActId());
-			qry.put("deviceId", act.getDeviceId());
-			
-			List<Map<String,Object>> l = os.getFields(TABLE_FUN, qry, "ver","funName");
-			
-			Map<String,Object> f2v = new HashMap<>();
-			l.forEach(m->{
-				f2v.put(m.get("funName").toString(), m.get("ver"));
-			});
-			
-			r.setData(f2v);
-			
-			r.setCode(RespJRso.CODE_SUCCESS);
-			suc.success(r);
-			return;
-		});
+	private int countByMacAddr(String macAddr) {
+		Map<String,Object> qry = new HashMap<>();
+		qry.put("macAddr", macAddr);
+		//qry.put("srcActId", actId);
+		return os.count(IotDeviceJRso.TABLE, qry);
 	}
-
-	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
-	public IPromise<RespJRso<Boolean>> updateFun(DeviceFunJRso funs) {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
-		return new Promise<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
-			
-			if(Utils.isEmpty(funs.getFunName())) {
-				r.setMsg("方法名称不能为空");
-				suc.success(r);
-				return;
-			}
-			
-			DeviceFunJRso oldFun = getDeviceFunByName(funs.getFunName(), act.getSrcActId(), act.getDeviceId());
-			if(oldFun == null) {
-				r = doAddDeviceFun(funs,act);
-			} else {
-				r = doUpdateDeviceFun(funs,oldFun,false);
-			}
-			
-			suc.success(r);
-			return;
-		});
 	
-	}
-
-	private RespJRso<Boolean> doUpdateDeviceFun(DeviceFunJRso fun, DeviceFunJRso oldFun, boolean doDel) {
-		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
-		
-		if(doDel) {
-			oldFun.setDel(true);
-		}else {
-			oldFun.setArgs(fun.getArgs());
-			oldFun.setFunDesc(fun.getFunDesc());
-			oldFun.setDel(false);
-			oldFun.setVer(fun.getVer());
-			oldFun.setArgs(fun.getArgs());
-		}
-		
-		if(!os.updateById(TABLE_FUN, oldFun, DeviceFunJRso.class, "id", false)) {
-			r.setMsg("更新数据失败");
-		}
-		
-		r.setCode(RespJRso.CODE_SUCCESS);
-		
-		return r;
-	}
-
-	private RespJRso<Boolean> doAddDeviceFun(DeviceFunJRso fun, IotDeviceVoJRso act) {
-		RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
-		if(count(fun.getFunName(), act.getSrcActId(), act.getDeviceId()) > 0) {
-			r.setMsg("功能名称重复: "+fun.getFunName());
-			return r;
-		}
-		
-		fun.setId(idGenerator.getIntId(DeviceFunJRso.class));
-		fun.setDeviceId(act.getDeviceId());
-		fun.setSrcActId(act.getSrcActId());
-		fun.setDel(false);
-		
-		fun.setUpdatedTime(TimeUtils.getCurTime());
-		fun.setUpdatedBy(act.getId());
-		fun.setCreatedBy(act.getSrcActId());
-		fun.setUpdatedBy(act.getSrcActId());
-		
-		if(!os.save(TABLE_FUN, fun, DeviceFunJRso.class, false)) {
-			r.setMsg("租户创建失败");
-			return r;
-		}
-		r.setCode(RespJRso.CODE_SUCCESS);
-		return r;
-	}
-
-	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
-	public IPromise<RespJRso<Boolean>> delFun(String funName) {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
-		return new Promise<RespJRso<Boolean>>((suc,fail)->{
-			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
-			DeviceFunJRso oldFun = getDeviceFunByName(funName, act.getSrcActId(), act.getDeviceId());
-			if(oldFun != null) {
-				r = this.doUpdateDeviceFun(null, oldFun, true);
-			}
-			suc.success(r);
-			return;
-		});
-	}
-
-	private int count(Integer actId, String name) {
+	private int countDevice(Integer actId, String deviceName) {
 		Map<String,Object> qry = new HashMap<>();
-		qry.put("name", name);
+		qry.put("name", deviceName);
 		qry.put("srcActId", actId);
-		return os.count(TABLE, qry);
+		return os.count(IotDeviceJRso.TABLE, qry);
 	}
 
-	private IotDeviceJRso getDeviceByName(Integer actId, String name) {
-		Map<String,Object> qry = new HashMap<>();
-		qry.put("name", name);
-		qry.put("srcActId", actId);
-		return os.getOne(TABLE, qry, IotDeviceJRso.class);
-	}
 	
 	private IotDeviceJRso getDeviceByDeviceId(Integer actId, String deviceId) {
 		Map<String,Object> qry = new HashMap<>();
 		qry.put("deviceId", deviceId);
 		qry.put("srcActId", actId);
-		return os.getOne(TABLE, qry, IotDeviceJRso.class);
+		return os.getOne(IotDeviceJRso.TABLE, qry, IotDeviceJRso.class);
 	}
 
-	private DeviceFunJRso getDeviceFunByName(String funName, Integer actId, String deviceId) {
+	private DeviceFunDefJRso getDeviceFunDefByFunId(Integer id) {
 		Map<String,Object> qry = new HashMap<>();
-		qry.put("funName", funName);
-		qry.put("srcActId", actId);
-		qry.put("deviceId", deviceId);
-		return os.getOne(TABLE_FUN, qry, DeviceFunJRso.class);
-	}
-
-	private int count(String funName, Integer actId, String deviceId) {
-		Map<String,Object> qry = new HashMap<>();
-		qry.put("funName", funName);
-		qry.put("srcActId", actId);
-		qry.put("deviceId", deviceId);
-		return os.count(TABLE_FUN, qry);
+		qry.put(IObjectStorage._ID, id);
+		return os.getOne(DeviceFunDefJRso.TABLE, qry, DeviceFunDefJRso.class);
 	}
 	
 }

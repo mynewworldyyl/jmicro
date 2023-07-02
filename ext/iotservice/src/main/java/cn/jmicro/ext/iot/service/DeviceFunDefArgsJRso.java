@@ -15,14 +15,16 @@ import lombok.Serial;
 @SO
 @Data
 @Serial
-public class DeviceFunArgsJRso {
+public class DeviceFunDefArgsJRso {
 	
 	private Integer  id;
 	
-	private Integer  funId;
+	//private Integer  funId;
 	
 	//设备物理地址或设备硬件ID
 	private String name;
+	
+	private String label;
 	
 	//数据类型，参考DecoderConstant常量
 	private Byte type;
@@ -34,14 +36,8 @@ public class DeviceFunArgsJRso {
 	
 	private Byte maxLen;
 	
-	private Byte status;
+	//private Byte status;
 	
-	private long createdTime;
-	
-	private long updatedTime;
-	
-	private int createdBy;
-	
-	private int updatedBy;
+	private Boolean isRequired;
 	
 }

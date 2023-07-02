@@ -36,6 +36,7 @@ import cn.jmicro.api.security.SecretManager;
 import cn.jmicro.api.timer.TimerTicker;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
+import cn.jmicro.common.util.StringUtils;
 
 @Component(value="linkMessageHandler")
 public class LinkMng implements IMessageHandler {
@@ -271,7 +272,13 @@ public class LinkMng implements IMessageHandler {
 			}*/
 			
 			if(doc) {
-				String ck = IServer.cacheKey(rpcClassloader, msg, sm, null, n.aid);
+				String ck = null;
+				if(StringUtils.isNotBlank(n.deviceId)) {
+					ck = IServer.cacheKey(rpcClassloader, msg, sm, null, n.deviceId);
+				} else {
+					ck = IServer.cacheKey(rpcClassloader, msg, sm, null, n.aid);
+				}
+				
 				if(ck != null) {
 					int et = sm.getCacheExpireTime();
 					ByteBuffer sb = (ByteBuffer)msg.getPayload();

@@ -933,7 +933,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 				
 				final IAccountServiceJMSrv as0 = as;
 				Holder<Integer> loginCnt = new Holder<>(0);
-				TimerTicker.doInBaseTicker(60*1, "actLoginCheck", null, (k,a)->{
+				//增加时间延长心跳间隔，仅用于测试
+				TimerTicker.doInBaseTicker(60*60, "actLoginCheck", null, (k,a)->{
 					RespJRso<Boolean> resp = null;
 					if(loginCnt.get() == 0 && !Utils.isEmpty(pi.getAi().getLoginKey())) {
 						try {

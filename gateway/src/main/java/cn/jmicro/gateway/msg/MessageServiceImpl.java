@@ -57,7 +57,6 @@ public class MessageServiceImpl implements IMessageHandler{
 		int opCode = new Double(Double.parseDouble(op.toString())).intValue();
 		if(opCode == IGatewayMessageCallbackJMSrv.MSG_OP_CODE_FORWARD) {
 			//转发类消息,to actId为转发目标账号ID
-			
 			//备份客户端的消息ID
 			Long msgId = msg.getMsgId();
 			
