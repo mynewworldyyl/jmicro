@@ -11,6 +11,8 @@ public class DeviceDataJRso {
 	
 	private Integer  id;
 	
+	private Integer productId;
+	
 	private String deviceId;
 	
 	//设置关联账号租户ID，一个租户可以关联N个设备

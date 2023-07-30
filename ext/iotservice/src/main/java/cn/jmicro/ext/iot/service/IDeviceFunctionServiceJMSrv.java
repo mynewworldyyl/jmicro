@@ -26,7 +26,7 @@ public interface IDeviceFunctionServiceJMSrv {
 	 
 	IPromise<RespJRso<Boolean>> updateFunDef(DeviceFunDefJRso funs);
 	
-	IPromise<RespJRso<Boolean>> delFunDef(String funName);
+	IPromise<RespJRso<Boolean>> delFunDef(Integer funName);
 	
 	IPromise<RespJRso<List<DeviceFunDefJRso>>>  deviceFunDefs(QueryJRso qry);
 	
@@ -34,5 +34,8 @@ public interface IDeviceFunctionServiceJMSrv {
 	
 	//取和当前全部显示于前端的接口KEY和Label的列表，用于下拉选择框
 	IPromise<RespJRso<List<DeviceFunDefJRso>>> getDefKeyValMap();
+	
+	//productId未实现的接口列表
+	IPromise<RespJRso<List<DeviceFunDefJRso>>> getDefKeyValMapExcludeProduct(Integer productId);
 	
 }

@@ -82,7 +82,8 @@
 						<ActInterfaceList v-else-if="item.group == 'actInterfaceList'" :item="item"></ActInterfaceList>
 						
 						<JDeviceFunctionEditor v-else-if="item.group == 'deviceFunctionDef'" :item="item"></JDeviceFunctionEditor>
-						
+						<JDeviceProductList v-else-if="item.group == 'DeviceProductList'" :item="item"></JDeviceProductList>
+						<JDeviceList v-else-if="item.group == 'JDeviceList'" :item="item"></JDeviceList>
                     </div>
                 </TabPane>
             </Tabs>
@@ -194,7 +195,10 @@
 			FeeOrderList : () => import('./ds/FeeOrderList.vue'),
 			ActInterfaceList : () => import('./ds/ActInterfaceList.vue'),
 			JDataType : () => import('./ds/JDataType.vue'),
+			
 			JDeviceFunctionEditor:()=>import('./iot/JDeviceFunctionDefEditor.vue'),
+			JDeviceProductList:()=>import('./iot/DeviceProductList.vue'),
+			JDeviceList:()=>import('./iot/JDeviceList.vue'),
         },
 
         data () {

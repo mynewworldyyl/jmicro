@@ -1,8 +1,11 @@
 package cn.jmicro.ext.iot.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.bson.Document;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.QueryJRso;
@@ -19,13 +22,16 @@ import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.Base64Utils;
 import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.ext.iot.Namespace;
+import cn.jmicro.ext.iot.service.DeviceActiveSourceJRso;
 import cn.jmicro.ext.iot.service.DeviceFunDefJRso;
+import cn.jmicro.ext.iot.service.DeviceFunOperationJRso;
 import cn.jmicro.ext.iot.service.IDeviceServiceJMSrv;
 import cn.jmicro.ext.iot.service.IotDeviceJRso;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +66,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				return;
 			}
 			
-			IotDeviceJRso dev = this.getDeviceByDeviceId(actId, deviceId);
+			IotDeviceJRso dev = this.getDeviceByActId(actId, deviceId);
 			if(dev == null) {
 				r.setMsg("Invalid device");
 				suc.success(r);
@@ -85,6 +91,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				vo.setId(dev.getId());
 				vo.setSrcActId(dev.getSrcActId());
 				vo.setSrcClientId(dev.getSrcClientId());
+				vo.setIsMaster(dev.getMaster());
 				
 				logink = AccountManager.deviceKey(seed,deviceId);
 				cache.put(logink,vo, expired);
@@ -105,6 +112,28 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			return;
 		});
 
+	}
+	
+	@Override
+	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
+	public IPromise<RespJRso<Boolean>> deleteDevice(Integer did) {
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		return new Promise<RespJRso<Boolean>>((suc,fail)->{
+			RespJRso<Boolean> r = RespJRso.r(RespJRso.CODE_FAIL);
+			Map<String,Object> qry = new HashMap<>();
+			qry.put(IObjectStorage._ID, did);
+			qry.put("createdBy", act.getId());
+			qry.put("status", IotDeviceJRso.STATUS_INIT);
+			
+			if(os.deleteByQuery(IotDeviceJRso.TABLE, qry)==0) {
+				r.setMsg("删除失败");
+			} else {
+				r.setCode(RespJRso.CODE_SUCCESS);
+			}
+			
+			suc.success(r);
+		});
+		
 	}
 	
 	@Override
@@ -256,9 +285,29 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			Map<String,Object> qry = new HashMap<>();
 			qry.put("deviceId", deviceId);
 			qry.put("srcActId", act.getId());
+			IotDeviceJRso dev = os.getOne(IotDeviceJRso.TABLE, qry, IotDeviceJRso.class);
 			
-			if(os.deleteByQuery(IotDeviceJRso.TABLE, qry) <= 0) {
-				r.setMsg("设备删除失败");
+			if(dev == null) {
+				r.setMsg("设备不存在");
+				suc.success(r);
+				return;
+			}
+			
+			if(!(dev.getStatus() == IotDeviceJRso.STATUS_BUND || dev.getStatus() == IotDeviceJRso.STATUS_SYNC_INFO)) {
+				r.setMsg("设备非绑定状态");
+				suc.success(r);
+				return;
+			}
+			
+			clearDeviceRefData(act,deviceId);
+	
+			dev.setStatus(IotDeviceJRso.STATUS_UNBUND);
+			dev.getDevInfo().clear();
+			dev.setUpdatedTime(TimeUtils.getCurTime());
+			dev.setMacAddr("");
+			
+			if(!os.updateById(IotDeviceJRso.TABLE, dev, IotDeviceJRso.class, "id", false)) {
+				r.setMsg("设置更新失败");
 				suc.success(r);
 				return;
 			}
@@ -268,6 +317,28 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			suc.success(r);
 			return;
 		});
+	}
+
+	private void clearDeviceRefData(ActInfoJRso act, String deviceId) {
+		//删除设备定义的操作
+		Map<String,Object> opFilter = new HashMap<>();
+		opFilter.put("deviceId", deviceId);
+		opFilter.put("by", DeviceFunOperationJRso.SRC_DEVICE);
+		opFilter.put("createdBy", act.getId());
+		os.deleteByQuery(DeviceFunOperationJRso.TABLE, opFilter);
+		
+		opFilter.clear();
+		//opFilter.put("deviceId", deviceId);
+		//opFilter.put("by", DeviceFunOperationJRso.SRC_DEVICE);
+		
+		List<Document> ql = new ArrayList<>();
+		ql.add(new Document("masterDeviceId",deviceId));
+		ql.add(new Document("slaveDeviceId",deviceId));
+		opFilter.put("$or",ql);
+		
+		opFilter.put("createdBy", act.getId());
+		os.deleteByQuery(DeviceActiveSourceJRso.TABLE, opFilter);
+		
 	}
 
 	@Override
@@ -283,7 +354,23 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				return;
 			}
 			
-			IotDeviceJRso ed = getDeviceByDeviceId(act.getId(), dev.getDeviceId());
+			if(dev.getProductId() == null || dev.getProductId()<=0) {
+				r.setMsg("无效产品码");
+				suc.success(r);
+				return;
+			}
+			
+			//IotDeviceJRso ed = getDeviceByDeviceId(act.getClientId(), dev.getDeviceId());
+			
+			Map<String,Object> qry = new HashMap<>();
+			qry.put("deviceId", dev.getDeviceId());
+			
+			if(!PermissionManager.isCurAdmin(act.getClientId())) {
+				qry.put("srcClientId", act.getClientId());
+			}
+			
+			IotDeviceJRso ed = os.getOne(IotDeviceJRso.TABLE, qry, IotDeviceJRso.class);
+			
 			if(ed == null) {
 				r.setMsg("设备不存在");
 				suc.success(r);
@@ -291,7 +378,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			}
 			
 			if(!dev.getName().equals(ed.getName())) {
-				if(countDevice(act.getId(), dev.getName()) > 0) {
+				if(countDevice(act.getClientId(), dev.getName()) > 0) {
 					r.setMsg("设备名称重复");
 					suc.success(r);
 					return;
@@ -300,10 +387,13 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			
 			ed.setUpdatedTime(TimeUtils.getCurTime());
 			ed.setUpdatedBy(act.getId());
+			
 			ed.setName(dev.getName());
 			ed.setDesc(dev.getDesc());
 			ed.setType(dev.getType());
 			ed.setGrpName(dev.getGrpName());
+			ed.setProductId(dev.getProductId());
+			ed.setMaster(dev.getMaster());
 			
 			if(!os.updateById(IotDeviceJRso.TABLE, ed, IotDeviceJRso.class, "id", false)) {
 				r.setMsg("设置更新失败");
@@ -319,14 +409,27 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		});
 	}
 
+	//新增设备要过30秒才能在页面查询到
 	@Override
+	@SMethod(maxSpeed=1,needLogin=true,perType=false,cacheType=Constants.CACHE_TYPE_PAYLOAD_AND_ACT,cacheExpireTime=30)
 	public IPromise<RespJRso<List<IotDeviceJRso>>> myDevices(QueryJRso qry) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<List<IotDeviceJRso>>>((suc,fail)->{
 			RespJRso<List<IotDeviceJRso>> r = new RespJRso<>();
 			
 			Map<String,Object> filter = new HashMap<>();
-			filter.put("srcActId", act.getId());
+			//filter.put("srcActId", act.getId());
+			
+			if(qry.getPs().containsKey(Constants.CLIENT_ID)) {
+				filter.put("clientId", act.getClientId());
+			} else {
+				if(!PermissionManager.isCurAdmin(act.getClientId())) {
+					List<Document> ql = new ArrayList<>();
+					ql.add(new Document("clientId",act.getClientId()));
+					ql.add(new Document("clientId",Constants.NO_CLIENT_ID));
+					filter.put("$or",ql);
+				}
+			}
 			
 			String key = "name";
 			if (qry.getPs().containsKey(key)) {
@@ -361,6 +464,47 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		});
 	}
 	
+	@Override
+	public IPromise<RespJRso<Map<String,String>>> myMasterDevices(Boolean master) {
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		return new Promise<RespJRso<Map<String,String>>>((suc,fail)->{
+			RespJRso<Map<String,String>> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
+			Map<String,String> ps = new HashMap<>();
+			r.setData(ps);
+			
+			Map<String,Object> filter = new HashMap<>();
+			filter.put("master", master);
+			filter.put("createdBy", act.getId());
+			
+			List<IotDeviceJRso> list = this.os.query(IotDeviceJRso.TABLE, filter, IotDeviceJRso.class,
+					Integer.MAX_VALUE, 0, new String[]{"deviceId","name","master"} ,null, 0);
+			
+			if(list != null && !list.isEmpty()) {
+				for(IotDeviceJRso v : list) {
+					ps.put(v.getDeviceId(), v.getName());
+				}
+			}
+			
+			suc.success(r);
+		});
+	}
+	
+	@Override
+	public IPromise<RespJRso<IotDeviceJRso>> getDevices(String deviceId) {
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		return new Promise<RespJRso<IotDeviceJRso>>((suc,fail)->{
+			RespJRso<IotDeviceJRso> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
+			IotDeviceJRso d = getDeviceByActId(act.getId(),deviceId);
+			if(d == null) {
+				r.setCode(RespJRso.CODE_FAIL);
+				r.setMsg("设备不存在");
+			}else {
+				r.setData(d);
+			}
+			suc.success(r);
+		});
+	}
+	
 	private int countByMacAddr(String macAddr) {
 		Map<String,Object> qry = new HashMap<>();
 		qry.put("macAddr", macAddr);
@@ -368,18 +512,24 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 		return os.count(IotDeviceJRso.TABLE, qry);
 	}
 	
-	private int countDevice(Integer actId, String deviceName) {
+	private int countDevice(Integer clientId, String deviceName) {
 		Map<String,Object> qry = new HashMap<>();
 		qry.put("name", deviceName);
-		qry.put("srcActId", actId);
+		qry.put("srcClientId", clientId);
 		return os.count(IotDeviceJRso.TABLE, qry);
 	}
-
 	
 	private IotDeviceJRso getDeviceByDeviceId(Integer actId, String deviceId) {
 		Map<String,Object> qry = new HashMap<>();
 		qry.put("deviceId", deviceId);
-		qry.put("srcActId", actId);
+		qry.put("createdBy", actId);
+		return os.getOne(IotDeviceJRso.TABLE, qry, IotDeviceJRso.class);
+	}
+	
+	private IotDeviceJRso getDeviceByActId(Integer actId, String deviceId) {
+		Map<String,Object> qry = new HashMap<>();
+		qry.put("deviceId", deviceId);
+		qry.put("createdBy", actId);
 		return os.getOne(IotDeviceJRso.TABLE, qry, IotDeviceJRso.class);
 	}
 

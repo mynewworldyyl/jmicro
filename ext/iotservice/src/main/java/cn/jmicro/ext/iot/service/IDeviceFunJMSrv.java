@@ -2,11 +2,14 @@ package cn.jmicro.ext.iot.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import cn.jmicro.api.QueryJRso;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.async.IPromise;
 import cn.jmicro.codegenerator.AsyncClientProxy;
 import cn.jmicro.ext.iot.service.vo.DeviceFunVoJRso;
+import cn.jmicro.ext.iot.service.vo.DeviceFunVobJRso;
 
 /**
  * 
@@ -21,7 +24,7 @@ public interface IDeviceFunJMSrv {
 	IPromise<RespJRso<Map<String,Object>>> deviceFunVers(Map<String,String> devInfo);
 	
 	//更新设备功能列表，如果功能不存在，则新增
-	IPromise<RespJRso<Boolean>> updateFun(List<DeviceFunJRso> funs);
+	//IPromise<RespJRso<Boolean>> updateFun(List<DeviceFunJRso> funs);
 	
 	IPromise<RespJRso<Boolean>> delFun(Integer funDefId);
 	
@@ -29,15 +32,14 @@ public interface IDeviceFunJMSrv {
 	
 	IPromise<RespJRso<List<DeviceFunVoJRso>>> deviceFrontFunDetail(String deviceId);
 	
-	//给设备增加操作
-	IPromise<RespJRso<Integer>> addOrUpdateFunOperation(Integer funId, DeviceFunOperationJRso op);
+	public IPromise<RespJRso<Boolean>> updateOrDelFuns(Integer productId,Set<Integer> adds, Set<Integer> dels);
+	IPromise<RespJRso<Boolean>> updateOneFun(DeviceFunJRso f);
+	IPromise<RespJRso<Boolean>> addOneFun(DeviceFunJRso f);
+	IPromise<RespJRso<List<DeviceFunVobJRso>>> listFuns(QueryJRso qry);
+	IPromise<RespJRso<List<DeviceFunVobJRso>>> listProductFuns(QueryJRso qry0);
 	
-	//删除设备指令
-	IPromise<RespJRso<Boolean>> delFunOperation(Integer funId, Integer opId);
+	//查询指定产品的功能列表，只返回必要字段
+	IPromise<RespJRso<List<DeviceFunVobJRso>>> listProductFunKV(QueryJRso qry0);
 	
-	//更新指令资源ID
-	IPromise<RespJRso<Boolean>> updateFunOperationResId(Integer funId, Integer opId, String opName, Integer  resId);
 	
-	//根据资源ID取得指令ID
-	IPromise<RespJRso<String>> deviceCmdByResId(Integer resId);
 }

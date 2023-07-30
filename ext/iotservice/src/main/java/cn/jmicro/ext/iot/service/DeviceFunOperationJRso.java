@@ -19,14 +19,37 @@ import lombok.Serial;
 @Serial
 public class DeviceFunOperationJRso {
 	
+	public static final String TABLE = "t_device_fun_op";
+	
+	//操作定义来源，设备，产品，用户
+	public static final byte SRC_PRODUCE = 1;
+	public static final byte SRC_DEVICE = 2;
+	public static final byte SRC_USER = 3;
+	
 	//操作ID设备操作都是０，终端用户提交操作ID全局唯一
-	private Integer idv;
+	private Integer id;
+	
+	private Integer clientId;
+	
+	//操作所属定义ID
+	private Integer defId;
+	
+	//操作所属功能ID
+	private Integer funId;
+	
+	//操作所属产品ID
+	private Integer productId;
+	
+	//当by==2时，设备指令
+	private String deviceId; //实现接口中的设备ID
 	
 	//外部资源标识，用平匹配命令，比如根据ASRPRO语音识别获取对应命令
-	private Integer resId;
+	//private Integer resId;
 	
-	//true 设备预置操作
-	private boolean fromDevice;
+	//private Integer srcActId; //设备所属账号ID
+	
+	//操作定义来源，设备，产品，用户   1:产品， 2： 设备,  3:用户
+	private byte by;
 	
 	private boolean enable;
 	
@@ -34,16 +57,18 @@ public class DeviceFunOperationJRso {
 	
 	private String desc;//语意或功能描述
 	
-	//数据类型，参考DecoderConstant常量
-	//private Byte type;
-	
-	//默认值
-	//private String defVal;
-	
 	private Byte argLen;
 	
 	//private Boolean isRequired;
 	
 	private Set<OperationArgJRso> args;
+	
+	private long createdTime;
+	
+	private long updatedTime;
+	
+	private int createdBy;
+	
+	private int updatedBy;
 	
 }

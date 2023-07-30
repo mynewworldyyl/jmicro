@@ -1,4 +1,4 @@
-package cn.jmicro.ext.iot.service;
+package cn.jmicro.ext.iot.service.vo;
 
 import cn.jmicro.api.annotation.SO;
 import lombok.Data;
@@ -17,42 +17,30 @@ import lombok.Serial;
 @SO
 @Data
 @Serial
-public class DeviceFunJRso {
-	
-	public static final String TABLE = "t_device_fun";
+public class DeviceFunVobJRso {
 	
 	private Integer id;
 	
 	private Integer defId; //接口定义ID
-	
-	private Byte ver; //实现在功能版本
-	
-	private Byte type; //PS item type, 默认是-128，当前只支持-128
-	
-	private Integer productId; //实现接口产口ID
-	
-	private String funLabel;
+	private Integer funId; //接口ID
 	
 	private Integer clientId;
 	
-	//private Integer srcActId; //设备所属账号ID
+	private Byte ver; //实现在功能版本
 	
-	//private Set<DeviceFunOperationJRso> ctrlOps = new HashSet<>();
+	private Integer productId; //实现接口产口ID
+	
+	//设备物理地址或设备硬件ID
+	private String funName;
+	
+	//功能中文名称，用于在UI上操作按钮显示
+	private String labelName;
+	
+	private String funDesc; //语意或功能描述
 	
 	//private Byte argLen; //操作个数
-	
 	private Boolean selfDefArg; //是否持自定义参数
 	
 	private Boolean showFront; //是否可以展示在UI上，用户可直接操作
-	
-	private Boolean del;
-	
-	private long createdTime;
-	
-	private long updatedTime;
-	
-	private int createdBy;
-	
-	private int updatedBy;
-	
+
 }

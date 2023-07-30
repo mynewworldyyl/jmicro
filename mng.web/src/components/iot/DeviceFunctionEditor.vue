@@ -1,20 +1,20 @@
 <template>
-	<div class="InterfaceParamList">
+	<div class="DeviceFuntionList">
 		<table v-if="plist && plist.length > 0" class="configItemTalbe" width="99%">
 		    <thead>
-				<tr><td>{{"tags"|i18n}}</td><td>{{'key'|i18n}}</td><td>{{'label'|i18n}}</td>
-		        <td>{{'name'|i18n}}</td><td>{{'type'|i18n}}</td><td>{{'belongTo'|i18n}}</td>
-				<td>{{'isRequired'|i18n}}</td><td>{{'defVal'|i18n}}</td><td>{{'val'|i18n}}</td>
-		        <td>{{"Operation"|i18n}}</td></tr>
+				<tr><td>{{"funName"|i18n}}</td><td>{{'labelName'|i18n}}</td>
+		        <td>{{'productId'|i18n}}</td><td>{{'defId'|i18n}}</td>
+				<td>{{'selfDefArg'|i18n}}</td><td>{{'showFront'|i18n}}</td>
+				<td  class="descCol">{{'desc'|i18n}}</td><td>{{"Operation"|i18n}}</td></tr>
 		    </thead>
 		    <tr v-for="c in plist" :key="'h_'+c.id">
-		        <td>{{c.tags}}</td><td class="descCol">{{c.key}}</td><td>{{c.label}}</td>
-				 <td>{{c.name}}</td> <td>{{c.type}}</td><td>{{c.belongTo}}</td>
-				  <td>{{c.isRequired}}</td> <td>{{c.defVal}}</td> <td class="valCol">{{c.val}}</td>
+		        <td>{{c.funName}}</td><td>{{c.labelName}}</td><td>{{c.productId}}</td><td>{{c.defId}}</td>
+				 <td>{{c.selfDefArg}}</td><td>{{c.showFront}}</td><td class="descCol">{{c.desc}}</td> 
 		        <td>
 		           <a @click="viewParam(c)">{{'View'|i18n}}</a>&nbsp;
 		           <a @click="updateParam(c)">{{'Update'|i18n}}</a>&nbsp;
 		           <a @click="deleteParam(c)">{{'Delete'|i18n}}</a>
+				   <a @click="funList(c)">{{'Functions'|i18n}}</a>
 		        </td>
 		    </tr>
 		</table>
@@ -40,49 +40,26 @@
 			<el-col><el-input v-model="p.name" :disabled="model==3" /></el-col>
 		 </el-row>
 		 <el-row>
-			<el-col :span="6">{{"Key"|i18n}}</el-col>
-			<el-col><el-input v-model="p.key" :disabled="model==3" /></el-col>
+			<el-col :span="6">{{"code"|i18n}}</el-col>
+			<el-col><el-input v-model="p.code" :disabled="model==3" /></el-col>
 		 </el-row>
 		 <el-row>
-			<el-col :span="6">{{"Type"|i18n}}</el-col>
+			<el-col :span="6">{{"desc"|i18n}}</el-col>
+			<el-col><el-input v-model="p.desc" :disabled="model==3" /></el-col>
+		 </el-row>
+		 <el-row>
+			<el-col :span="6">{{"stage"|i18n}}</el-col>
 			<el-col>
-				<el-select style="width:100%" v-model="p.type" :disabled="model==3">
-					<el-option value="string">{{'string'|i18n}}</el-option>
-					<el-option value="integer">{{'integer'|i18n}}</el-option>
-					<el-option value="float">{{'float'|i18n}}</el-option>
-					<el-option value="boolean">{{'boolean'|i18n}}</el-option>
+				<el-select style="width:100%" v-model="p.stage" :disabled="model==3">
+					<el-option value="1">{{'开发阶段'}}</el-option>
+					<el-option value="2">{{'测试产阶段'}}</el-option>
+					<el-option value="3">{{'试投产阶段'}}</el-option>
+					<el-option value="4">{{'正式投产'}}</el-option>
+					<el-option value="5">{{'终止'}}</el-option>
 				</el-select>
 			</el-col>
 		 </el-row>
-		 <el-row>
-			<el-col :span="6">{{"BelongTo"|i18n}}</el-col>
-			<el-col><el-select style="width:100%" v-model="p.belongTo" :disabled="model==3">
-					<el-option value="req">{{'req'|i18n}}</el-option>
-					<el-option value="reqParam">{{'reqParam'|i18n}}</el-option>
-					<el-option value="header">{{'header'|i18n}}</el-option>
-					<el-option value="config">{{'config'|i18n}}</el-option>
-				</el-select></el-col></el-col>
-		 </el-row>
-		 <el-row>
-			<el-col :span="6">{{"DefValue"|i18n}}</el-col>
-			<el-col><el-input v-model="p.defVal" :disabled="model==3"/></el-col>
-		 </el-row>
-		 <el-row>
-			<el-col :span="6">{{"Value"|i18n}}</el-col>
-			<el-col><el-input v-model="p.val" :disabled="model==3"/></el-col>
-		 </el-row>
-		 <el-row>
-			<el-col :span="6">{{"isRequired"|i18n}}</el-col>
-			<el-col><el-checkbox v-model="p.isRequired" :disabled="model==3"/></el-col>
-		 </el-row>
-		 <el-row>
-			<el-col :span="6">{{"Desc"|i18n}}</el-col>
-			<el-col><el-input type="textarea" autosize v-model="p.desc" :disabled="model==3"/></el-col>
-		 </el-row>
-		 <el-row>
-			<el-col :span="6">{{"Tag"|i18n}}</el-col>
-			<el-col><el-input v-model="p.tags" :disabled="model==3"/></el-col>
-		 </el-row>
+		
 		 <el-row>
 			<el-button size="mini" @click="defInfoDrawer.drawerStatus = false">取消</el-button>
 			<el-button  :disabled="model==3" size="mini" type="primary" @click="doAddOrUpdateParam">确定</el-button>
@@ -94,37 +71,27 @@
 	<Drawer v-if="isLogin"   v-model="queryDrawer.drawerStatus" :closable="false" placement="left" :transfer="true"
 	         :draggable="true" :scrollable="true" width="50">
 	    <table id="queryTable">
-	        <tr>
-	            <td>ActId</td><td> <Input  v-model="queryParams.ps.createdBy"/></td>
-	            <td>ClientId</td><td> <Input  v-model="queryParams.ps.clientId"/></td>
-	        </tr>
 			<tr>
-			    <td>Tags</td><td> <Input  v-model="queryParams.ps.tags"/></td>
-			    <td>Name</td><td> <Input  v-model="queryParams.ps.name"/></td>
+				 <td>Name</td><td> <Input  v-model="queryParams.ps.name"/></td>
+			     <td>Code</td><td> <Input  v-model="queryParams.ps.code"/></td>
 			</tr>
 			<tr>
 			    <td>Desc</td><td> <Input  v-model="queryParams.ps.desc"/></td>
-			    <td></td><td></td>
+			    <td>ClientId</td><td> <Input  v-model="queryParams.ps.clientId"/></td>
 			</tr>
 			<tr>
-			    <td>BelongTo</td><td> 
-					<el-select v-model="queryParams.ps.belongTo" placeholder="请选择">
-					<el-option label="全部" value=""></el-option>
-				    <el-option label="默认参数" value="reqParam"></el-option>
-					<el-option label="请求参数" value="req"></el-option>
-					<el-option label="头部参数" value="header"></el-option>
-					<el-option label="配置参数" value="config"></el-option>
-				  </el-select>
+				<td>Stage</td><td> 
+					<el-select style="width:100%" v-model="p.stage" :disabled="model==3">
+						<el-option label="全部" value=""></el-option>
+						<el-option value="1">{{'开发阶段'}}</el-option>
+						<el-option value="2">{{'测试产阶段'}}</el-option>
+						<el-option value="3">{{'试投产阶段'}}</el-option>
+						<el-option value="4">{{'正式投产'}}</el-option>
+						<el-option value="5">{{'终止'}}</el-option>
+					</el-select>
 				</td>
-				</td>
-				<td>Type</td><td> 
-					<el-select v-model="queryParams.ps.type" placeholder="请选择">
-					<el-option label="全部" value=""></el-option>
-				    <el-option label="字符串" value="string"></el-option>
-					<el-option label="整数" value="integer"></el-option>
-					<el-option label="布尔值" value="boolean"></el-option>
-					<el-option label="浮点数" value="float"></el-option>
-				  </el-select>
+				<td></td>
+				<td>
 				</td>
 			</tr>
 			
@@ -138,12 +105,24 @@
 </template>
 
 <script>
-	
-	const cid = 'FunctionDefParamList';
+	const cid = 'DeviceProductList';
 
 	export default {
 		name: cid,
 
+		props: {
+			updateModel: {
+				type: Boolean,
+				default: false
+			},
+
+			product: {
+				type: Object,
+				default: {},
+				args:[],
+			},
+		},
+		
 		data() {
 			return {
 				p: {},
@@ -154,7 +133,7 @@
 				isLogin:false,
 				plist: [],
 				
-				queryParams:{size:10,curPage:1,ps:{belongTo:"",type:""}},
+				queryParams:{size:10,curPage:1,ps:{}},
 				totalNum:0,
 				
 				defInfoDrawer: {
@@ -209,7 +188,8 @@
 				}
 
 				if (this.model == 1) {
-					this.$jr.rpc.callRpcWithParams(sn, ns, v, 'updateParam', [this.p])
+					//update
+					this.$jr.rpc.invokeByCode(-348618462, [this.p])
 						.then((resp) => {
 							if (resp.code == 0 && resp.data) {
 								this.defInfoDrawer.drawerStatus = false;
@@ -226,7 +206,8 @@
 							});
 						});
 				} else if(this.model == 2) {
-					this.$jr.rpc.callRpcWithParams(sn, ns, v, 'addParam', [this.p])
+					//add
+					this.$jr.rpc.invokeByCode(-1207151648, [this.p])
 						.then((resp) => {
 							if (resp.code == 0 && resp.data) {
 								this.defInfoDrawer.drawerStatus = false;
@@ -282,7 +263,7 @@
 					return false
 				}
 				
-				if (!p.key) {
+				if (!p.desc) {
 					this.$notify.error({
 					 title: '错误',
 						message: '参数键值不能为空'
@@ -290,18 +271,10 @@
 					return false
 				}
 
-				if (!p.belongTo) {
+				if (!p.stage) {
 					this.$notify.error({
 						title: '错误',
-						message: '参数归属不能为空'
-					});
-					return false
-				}
-
-				if (!p.type) {
-					this.$notify.error({
-						title: '错误',
-						message: '参数类型不能为空'
+						message: '阶段不能为空'
 					});
 					return false
 				}
@@ -326,7 +299,7 @@
 			    if(this.isLogin) {
 			        let params = this.getQueryConditions();
 			        let self = this;
-			        this.$jr.rpc.callRpcWithParams(sn, ns, v, 'listParams', [params])
+			        this.$jr.rpc.invokeByCode(437581512, [params])
 			            .then((resp)=>{
 			                if(resp.code == 0){
 			                    if(resp.total == 0) {
@@ -380,7 +353,7 @@
 </script>
 
 <style>
-	.InterfaceParamList {
+	.DeviceFuntionList {
 		border-top: 1px dotted lightgray;
 		margin-top: 6px;
 		padding-top: 10px;

@@ -1,10 +1,13 @@
 package cn.jmicro.ext.iot.service.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.bson.Document;
 
 import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.QueryJRso;
@@ -19,6 +22,7 @@ import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.security.PermissionManager;
 import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
 import cn.jmicro.common.Utils;
@@ -40,7 +44,7 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 	private IObjectStorage os;
 	
 	@Override
-	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
+	@SMethod(maxSpeed=1,upSsl=false,encType=0,downSsl=false,needLogin=true,perType=false)
 	public IPromise<RespJRso<DeviceFunDefJRso>> getDeviceDef(Integer defId) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<DeviceFunDefJRso>>((suc,fail)->{
@@ -62,7 +66,7 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 	}
 	
 	@Override
-	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
+	@SMethod(maxSpeed=1,upSsl=false,encType=0,downSsl=false,needLogin=true,perType=false)
 	public IPromise<RespJRso<List<DeviceFunDefJRso>>> getDefKeyValMap() {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		
@@ -80,7 +84,7 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 			
 			if(cnt > 0) {
 				List<DeviceFunDefJRso> list = this.os.query(DeviceFunDefJRso.TABLE, filter, DeviceFunDefJRso.class,
-						1000, 0,new String[] {IObjectStorage._ID, "labelName"},null,null);
+						1000, 0,new String[] {IObjectStorage._ID, "labelName","selfDefArg","showFront"},null,null);
 				r.setData(list);
 			}
 			
@@ -92,7 +96,38 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 	}
 	
 	@Override
-	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
+	@SMethod(maxSpeed=1,upSsl=false,encType=0,downSsl=false,needLogin=true,perType=false)
+	public IPromise<RespJRso<List<DeviceFunDefJRso>>> getDefKeyValMapExcludeProduct(Integer productId) {
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		
+		return new Promise<RespJRso<List<DeviceFunDefJRso>>>((suc,fail)->{
+			RespJRso<List<DeviceFunDefJRso>> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			
+			Map<String,Object> filter = new HashMap<>();
+			
+			List<Document> ql = new ArrayList<>();
+			ql.add(new Document("clientId",act.getClientId()));
+			ql.add(new Document("clientId",Constants.NO_CLIENT_ID));
+			filter.put("$or",ql);
+			
+			int cnt =(int) os.count(DeviceFunDefJRso.TABLE, filter);
+			r.setTotal(cnt);
+			
+			if(cnt > 0) {
+				List<DeviceFunDefJRso> list = this.os.query(DeviceFunDefJRso.TABLE, filter, DeviceFunDefJRso.class,
+						1000, 0,new String[] {IObjectStorage._ID, "labelName","selfDefArg","showFront"},null,null);
+				r.setData(list);
+			}
+			
+			r.setCode(0);
+			suc.success(r);
+			return;
+		});
+		
+	}
+	
+	@Override
+	@SMethod(maxSpeed=1,upSsl=false,encType=0,downSsl=false,needLogin=true,perType=false)
 	public IPromise<RespJRso<DeviceFunDefJRso>> addDeviceDef(DeviceFunDefJRso dev) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<DeviceFunDefJRso>>((suc,fail)->{
@@ -110,10 +145,17 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 				return;
 			}
 			
-			dev.setId(idGenerator.getIntId(DeviceFunDefJRso.class));
+			if(PermissionManager.isCurAdmin(act.getClientId())) {
+				if(dev.getClientId() == 0) {
+					dev.setClientId(act.getClientId());
+				}
+			} else {
+				dev.setClientId(act.getClientId());
+			}
 			
+			dev.setId(idGenerator.getIntId(DeviceFunDefJRso.class));
 			dev.setActId(act.getId());
-			dev.setClientId(act.getClientId());
+		
 			dev.setUpdatedTime(TimeUtils.getCurTime());
 			dev.setCreatedTime(TimeUtils.getCurTime());
 			dev.setCreatedBy(act.getId());
@@ -154,8 +196,26 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 			DeviceFunDefJRso oldFun = getDeviceFunByFunId(funs.getId(), act.getId());
 			
 			if(oldFun == null) {
+				
+				if(PermissionManager.isCurAdmin(act.getClientId())) {
+					if(funs.getClientId() == 0) {
+						funs.setClientId(act.getClientId());
+					}
+				} else {
+					funs.setClientId(act.getClientId());
+				}
+				
 				r = doAddDeviceFun(funs,act);
 			} else {
+				
+				if(PermissionManager.isCurAdmin(act.getClientId())) {
+					if(oldFun.getClientId() == 0) {
+						oldFun.setClientId(act.getClientId());
+					}
+				} else {
+					oldFun.setClientId(act.getClientId());
+				}
+				
 				oldFun.setUpdatedBy(act.getId());
 				oldFun.setCreatedBy(act.getId());
 				r = doUpdateDeviceFunDef(funs,oldFun,false);
@@ -223,11 +283,11 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 
 	@Override
 	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_USER)
-	public IPromise<RespJRso<Boolean>> delFunDef(String funName) {
+	public IPromise<RespJRso<Boolean>> delFunDef(Integer defId) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
-			DeviceFunDefJRso oldFun = getDeviceFunByName(funName, act.getId());
+			DeviceFunDefJRso oldFun = getDeviceByActId(defId, act.getId());
 			if(oldFun != null) {
 				r = this.doUpdateDeviceFunDef(null, oldFun, true);
 			}
@@ -236,6 +296,9 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 		});
 	}
 	
+	/**
+	 * 更新删除修改参数
+	 */
 	@Override
 	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_USER)
 	public IPromise<RespJRso<Boolean>> delFunArg(Integer funId, Byte opmodel, DeviceFunDefArgsJRso arg) {
@@ -243,14 +306,16 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 			
-			if(Utils.isEmpty(arg.getName())) {
-				r.setMsg("参数名称不能为空");
-				suc.success(r);
-				return;
-			}
-			
-			if(arg.getType() == 0) {
-				arg.setType(DecoderConstant.PREFIX_TYPE_STRINGG);
+			if(opmodel == 1 || opmodel == 2) {
+				if(Utils.isEmpty(arg.getName())) {
+					r.setMsg("参数名称不能为空");
+					suc.success(r);
+					return;
+				}
+				
+				if(arg.getType() == 0) {
+					arg.setType(DecoderConstant.PREFIX_TYPE_STRINGG);
+				}
 			}
 			
 			DeviceFunDefJRso oldFun = getDeviceFunByFunId(funId, act.getId());
@@ -379,6 +444,8 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 				filter.put(key, qry.getPs().get(key));
 			}
 			
+			filter.put("del", false);
+			
 			int cnt =(int) os.count(DeviceFunDefJRso.TABLE, filter);
 			r.setTotal(cnt);
 			
@@ -404,6 +471,7 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 			
 			Map<String,Object> qry = new HashMap<>();
 			qry.put("actId", act.getId());
+			qry.put("del", false);
 			
 			Set<String> f2v = os.getDistinctField(DeviceFunDefJRso.TABLE, qry, "grp",String.class);
 			if(f2v == null || f2v.isEmpty()) {
@@ -421,14 +489,15 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 
 	private int count(Integer actId, String name) {
 		Map<String,Object> qry = new HashMap<>();
-		qry.put("name", name);
-		qry.put("srcActId", actId);
+		qry.put("funName", name);
+		qry.put("actId", actId);
+		qry.put("del", false);
 		return os.count(DeviceFunDefJRso.TABLE, qry);
 	}
 
-	private DeviceFunDefJRso getDeviceFunByName(String funName, Integer actId) {
+	private DeviceFunDefJRso getDeviceByActId(Integer defId, Integer actId) {
 		Map<String,Object> qry = new HashMap<>();
-		qry.put("funName", funName);
+		qry.put(IObjectStorage._ID, defId);
 		qry.put("actId", actId);
 		return os.getOne(DeviceFunDefJRso.TABLE, qry, DeviceFunDefJRso.class);
 	}
@@ -450,6 +519,7 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 		Map<String,Object> qry = new HashMap<>();
 		qry.put("funName", funName);
 		qry.put("actId", actId);
+		qry.put("del", false);
 		return os.count(DeviceFunDefJRso.TABLE, qry);
 	}
 	

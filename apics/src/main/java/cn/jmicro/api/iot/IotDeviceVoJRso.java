@@ -26,6 +26,8 @@ public class IotDeviceVoJRso  implements Serializable, ISerializeObject{
 	
 	private long lastActiveTime;
 	
+	private Boolean isMaster;
+	
 	@Override
 	public void encode(DataOutput buffer) throws IOException {
 		JDataOutput out = (JDataOutput)buffer;
@@ -34,6 +36,7 @@ public class IotDeviceVoJRso  implements Serializable, ISerializeObject{
 		out.writeInt(this.srcClientId);
 		out.writeUTF(deviceId);
 		out.writeLong(this.lastActiveTime);
+		out.writeBoolean(isMaster);
 	}
 
 	@Override
@@ -44,6 +47,7 @@ public class IotDeviceVoJRso  implements Serializable, ISerializeObject{
 		this.srcClientId = in.readInt();
 		this.deviceId = in.readUTF();
 		this.lastActiveTime = in.readLong();
+		this.isMaster = in.readBoolean0();
 	}
 	
 }

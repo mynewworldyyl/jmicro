@@ -171,6 +171,12 @@
 					<template slot="title">
 						<Icon type="ios-analytics" />{{"IoT"|i18n}}
 					</template>
+					<Menu-item name="__JDeviceList">
+						<Icon type="ios-alert" />{{"DeviceList"|i18n("Device List")}}
+					</Menu-item>
+					<Menu-item name="__DeviceProductList">
+						<Icon type="ios-alert" />{{"DeviceProductList"|i18n("Device Product List")}}
+					</Menu-item>
 					<Menu-item name="__deviceFunctionDef">
 						<Icon type="ios-alert" />{{"deviceFunctionDef"|i18n("Device Function Def")}}
 					</Menu-item>

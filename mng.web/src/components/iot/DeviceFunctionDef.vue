@@ -63,7 +63,9 @@
 			</el-col>
 			<el-col class="label"  :span="3">{{'clientId'|i18n}}</el-col>
 			<el-col :span="9">
-				<el-input v-model="form.clientId" disabled></el-input>
+				<el-select style="width:100%" v-model="form.clientId"  placeholder="请选择">
+					<el-option v-for="o in $jr.auth.getClients()" :key="'c_'+o" :value="o" :label="o"></el-option>
+				</el-select>
 			</el-col>
 		</el-row>
 		<el-row>
@@ -117,15 +119,15 @@
 		<Drawer ref="defInfo"  v-model="defInfoDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
 		            :draggable="true" :scrollable="true" width="50" :mask-closable="false" :mask="true">
 			<el-row>
+				<el-col :span="6">{{"Name"|i18n}}</el-col>
+				<el-col><el-input v-model="p.name" :disabled="model!=2" /></el-col>
+			</el-row>
+			<el-row>
 				<el-col :span="6">{{"label"|i18n}}</el-col>
 				<el-col>
 					<el-input v-model="p.label" :disabled="model==3" />
 				</el-col>
 			</el-row>
-			 <el-row>
-				<el-col :span="6">{{"Name"|i18n}}</el-col>
-				<el-col><el-input v-model="p.name" :disabled="model==3" /></el-col>
-			 </el-row>
 			 <el-row>
 				<el-col :span="6">{{"defVal"|i18n}}</el-col>
 				<el-col><el-input v-model="p.defVal" :disabled="model==3" /></el-col>
@@ -317,7 +319,7 @@
 					return;
 				}
 
-				if (!this.p.name) {
+				if(!this.p.name) {
 					this.$notify.error({
 					 title: '错误',
 						message: '参数名称不能为空'
@@ -367,7 +369,8 @@
 			},
 			
 			deleteParam(p) {
-				this.$jr.rpc.invokeByCode(-111597450, [this.form.id, 4, this.p])
+				
+				this.$jr.rpc.invokeByCode(-111597450, [this.form.id, 4, p])
 				.then((resp) => {
 					if (resp.code == 0 && resp.data) {
 						for(let i = 0; i < this.form.args.length; i++) {

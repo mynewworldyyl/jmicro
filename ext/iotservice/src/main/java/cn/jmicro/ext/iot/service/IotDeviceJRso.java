@@ -30,10 +30,12 @@ public class IotDeviceJRso {
 	
 	private String deviceId;
 	
+	private Integer productId;
+	
 	//设备物理地址或设备硬件ID
 	private String macAddr;
 	
-    /*	
+    /*
     private String deviceIP;
 	private String sdkVersion;
 	private String flashSizeMap;
@@ -56,6 +58,8 @@ public class IotDeviceJRso {
 	private String name;
 	
 	private String desc;
+	
+	private Boolean master;
 	
 	//设备类型
 	private Byte type;

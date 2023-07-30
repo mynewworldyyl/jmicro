@@ -48,29 +48,7 @@
 			    <DeviceFunctionDef :updateModel="updateModel" @success="saveSuccess()" :form="form"></DeviceFunctionDef>		
               <div>{{errorMsg}}</div>
         </Drawer>
-		
-		<!--  测试接口 -->
-		<Drawer ref="testDef"  v-model="testDefDrawer.drawerStatus" :closable="false" placement="right" :transfer="true"
-		    :draggable="true" :scrollable="true" width="80">
-		
-			<div class="testBtnContainer">
-				<el-button size="mini" @click="doTest()">{{'Send'|i18n}}</el-button>
-			</div>
-			
-			<div v-if="form && form.id && form.reqs && form.reqs.length" class="paramContainer">
-				<el-row v-for="p in form.reqs">
-					<el-col class="title" :span="3"><span>{{p.name|i18n}}</span>
-					<span v-if="p.isRequired">*</span>
-					</el-col>
-					<el-col :span="21">
-						<el-input v-model="testParam[p.key]" v-if="p.type=='string'" type="textarea" :autosize="{minRows: 1, maxRows: 10}"></el-input>
-						<el-input v-model="testParam[p.key]" v-else-if="p.type=='boolean'" type="checkbox"></el-input>
-						<el-input v-model="testParam[p.key]" v-else></el-input>
-					</el-col>
-				</el-row>
-			</div>
-
-		</Drawer><!--  测试接口结束 -->
+	
 
 	<!-- 弹出查询页面 -->
 	<div v-if="isLogin"  :style="queryDrawer.drawerBtnStyle" class="drawerJinvokeBtnStatu" @mouseenter="openQueryDrawer()"></div>
