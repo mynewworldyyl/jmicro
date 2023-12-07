@@ -2,20 +2,25 @@
 	<div class="DeviceFunCmdList">
 
 		<div>
-			<el-button size="mini" type="primary" @click="refresh()">查询</el-button>
-			<el-button size="mini" type="primary" @click="addCmd()">增加</el-button>
+			<el-button size="mini" type="primary" @click="queryProductCmdList()">产品指令</el-button>
+			<el-button size="mini" type="primary" @click="queryDeviceCmdList()">设备指令</el-button>
+			<el-button v-if="$jr.auth.isMy(fun.createdBy)" size="mini" type="primary" @click="addCmd()">增加</el-button>
 			<el-button size="mini" type="primary" @click="closeFunListDrawer()">关闭</el-button>
 		</div>
 		
 		<table v-if="plist && plist.length > 0" class="configItemTalbe" width="99%">
 		    <thead>
-				<tr><td>{{"name"|i18n}}</td><td>{{'productId'|i18n}}</td>
+				<tr><td>{{"name"|i18n}}</td><td>{{'productId'|i18n}}</td><td>{{'owner'|i18n}}</td>
+				<td v-if="queryParams.ps.by==2">{{'deviceId'|i18n}}</td>
 				<td>{{'InterfaceId'|i18n}}</td><td>{{'funId'|i18n}}</td> <td>{{'clientId'|i18n}}</td> 
+				<td>{{'ActId'|i18n}}</td> 
 				<td>{{"Operation"|i18n}}</td></tr>
 		    </thead>
 		    <tr v-for="c in plist" :key="'h_'+c.id">
-		        <td>{{c.name}}</td><td>{{c.productId}}</td><td>{{c.defId}}</td><td>{{c.funId|i18n}}</td>
-				 <td>{{c.clientId}}</td>
+		        <td>{{c.name}}</td><td>{{c.productId}}</td><td>{{c.by==1?"产品":'设备'}}</td>
+				<td  v-if="queryParams.ps.by==2">{{c.deviceId}}</td>
+				<td>{{c.defId}}</td><td>{{c.funId|i18n}}</td>
+				 <td>{{c.clientId}}</td> <td>{{c.createdBy}}</td>
 		        <td>
 		           <a @click="viewDetail(c)">{{'详情'|i18n}}</a>&nbsp;
 				   <a  v-if="canShow(c)"  @click="updateCmd(c)">{{'更新'|i18n}}</a>&nbsp;
@@ -51,6 +56,15 @@
 		<el-row>
 			<el-col :span="6">{{"功能描述"|i18n}}</el-col>
 			<el-col><el-input v-model="funDef.funDesc" disabled/></el-col>
+		</el-row>
+		<el-row>
+			<el-col :span="6">{{"可自定义参数"|i18n}}</el-col>
+			<el-col>
+			<el-select style="width:100%" v-model="cmd.selfDefArg" :disabled="model==3" placeholder="请选择">
+				<el-option value="true" label="是"></el-option>
+				<el-option value="false" label="否"></el-option>
+			</el-select>
+			</el-col>
 		</el-row>
 				
 		 <el-row>
@@ -88,6 +102,7 @@
 </template>
 
 <script>
+	import { Loading } from 'element-ui';
 	const cid = 'DeviceFunCmdList';
 
 	export default {
@@ -118,6 +133,21 @@
 		},
 
 		methods: {
+			
+			queryProductCmdList(){
+				if(this.queryParams.ps.by != 1) {
+					this.queryParams.ps.by = 1
+					this.refresh();
+				}
+			},
+			
+			queryDeviceCmdList(){
+				if(this.queryParams.ps.by != 2) {
+					this.queryParams.ps.by = 2
+					this.refresh();
+				}
+			},
+			
 			canShow(c) {
 				return this.$jr.auth.updateAuth(c.createdBy) 
 			},
@@ -198,11 +228,14 @@
 			        let params = this.getQueryConditions();
 			        let self = this;
 					console.log(params)
+
+					let lding = Loading.service({ fullscreen: false, text:"数据加载中。。。" });
 					
 					//listFunOpWithFunId
 			        this.$jr.rpc.invokeByCode(1747941357, [params])
 			            .then((resp)=>{
 							console.log(resp)
+							lding.close()
 			                if(resp.code == 0){
 			                    if(resp.total == 0) {
 									this.plist = [];
@@ -224,16 +257,17 @@
 			                    this.$notify.error({title: '提示',message: r.msg});
 			                }
 			            }).catch((err)=>{
-			            window.console.log(err);
+							lding.close()
+							window.console.log(err);
 			        });
 			    } else {
+					
 			        self.roleList = [];
 			    }
 			},
 			
 			getQueryConditions() {
 				this.queryParams.ps.funId = this.fun.funId
-				this.queryParams.ps.by = this.by
 			    return this.queryParams;
 			},
 			
@@ -332,14 +366,24 @@
 			},
 			
 			//by 1:产品， 2： 设备
-			async loadCmdData(fun,by,dev){
+			async loadCmdData(fun, by, dev) {
 				console.log("loadCmdData by: ",by)
 				this.by = by
 				this.plist = []
 				this.totalNum = 0
 				this.fun = fun
 				this.dev = dev
+				
+				this.queryParams.ps.by = by
+				
+				this.queryParams.ps["productId"] =  fun.productId
+				
+				if(this.by == 2) {
+					this.queryParams.ps["deviceId"] =  dev.deviceId
+				}
+				
 				await this.getFunDef()
+				
 				this.refresh()
 			},
 			
@@ -374,6 +418,8 @@
 								//ar.label = ca.label
 								this.$set(ar,"label",ca.label)
 								this.$set(ar,"def",ca)
+								this.$set(ar,"valType",ca.type)
+								this.$set(ar,"len",ca.maxLen)
 							}
 						}
 					}

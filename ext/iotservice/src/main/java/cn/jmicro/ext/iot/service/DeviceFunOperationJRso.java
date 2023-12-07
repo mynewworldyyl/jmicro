@@ -43,6 +43,8 @@ public class DeviceFunOperationJRso {
 	//当by==2时，设备指令
 	private String deviceId; //实现接口中的设备ID
 	
+	//参数是否可以由用户自定义，在调用前，弹出确认或修改参数对话框，参数来源于DeviceFunDefJRso.selfDefArg
+	private Boolean selfDefArg;
 	//外部资源标识，用平匹配命令，比如根据ASRPRO语音识别获取对应命令
 	//private Integer resId;
 	

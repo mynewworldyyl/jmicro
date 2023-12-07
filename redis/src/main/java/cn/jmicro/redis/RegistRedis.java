@@ -9,6 +9,7 @@ import cn.jmicro.common.util.StringUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Protocol;
 
 @Component(lazy=false, level=0)
 public class RegistRedis implements IPostFactoryListener{
@@ -39,10 +40,12 @@ public class RegistRedis implements IPostFactoryListener{
 			//throw new CommonException("Redis config [/RegistRedis/redisHost] not found");
 		}
 		
-		Jedis jedis = new Jedis(redisHost,port);
-		of.regist(Jedis.class, jedis);
+		String pwd = cfg.getString("/RegistRedis/pwd", null);
 		
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHost,port);
+	/*	Jedis jedis = new Jedis(redisHost,port);
+		of.regist(Jedis.class, jedis);*/
+		
+		JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHost, port, Protocol.DEFAULT_TIMEOUT, pwd);
 		of.regist(JedisPool.class, pool);
 		
 	}

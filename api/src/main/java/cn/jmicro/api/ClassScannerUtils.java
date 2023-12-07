@@ -88,7 +88,7 @@ public class ClassScannerUtils {
 	private void initLoad() {
 		if(isinit) {
 			return;
-		}else {
+		} else {
 			synchronized(isinit) {
 				if(isinit) {
 					return;
@@ -583,10 +583,10 @@ public class ClassScannerUtils {
 	public static void classPathInputStream(String packageName,String patern, OnInputStream onSteam) {
 		  
         boolean recursive = true;
-        String packageDirName = "";
+        String packageDirName = packageName;
 		if(packageName == null || "".equals(packageName.trim())) {
 			packageDirName = ".";
-		}else {
+		}else if(!packageName.trim().equals(".")) {
 			packageDirName = packageName.replace('.', '/');
 		}
 		
@@ -633,12 +633,12 @@ public class ClassScannerUtils {
                                 }
                                 if((idx != -1) || recursive) {  
                                     if (match(name,patern) && !entry.isDirectory()) {    
+                                    	logger.info("fromJar: {}",name);
                                     	try(InputStream is = jar.getInputStream(entry)){
                                     		onSteam.onStream(name, is);
                            				}catch(Throwable e) {
                            					logger.error(name,e);
                            				}
-                                    	logger.info("fromJar: {}",name);
                                     }  
                                 }  
                             }  
@@ -663,6 +663,10 @@ public class ClassScannerUtils {
 		
 		boolean matchStart = false;
 		boolean matchEnd = false;
+		
+		if(name.endsWith(patern)) {
+			return true;
+		}
 		
 		if(patern.startsWith("*")) {
 			patern = patern.substring(1);

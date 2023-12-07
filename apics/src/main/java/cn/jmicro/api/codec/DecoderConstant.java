@@ -36,7 +36,7 @@ public class DecoderConstant {
 	//类型编码写入编码中
 	public static final byte PREFIX_TYPE_SHORT = PREFIX_TYPE_ID++;//-126
 	//全限定类名作为前缀串写入编码中
-	public static final byte PREFIX_TYPE_STRING = PREFIX_TYPE_ID++;//-125
+	public static final byte PREFIX_TYPE_FULL_CLASS_STRING_NAME = PREFIX_TYPE_ID++;//-125
 	
 	//以下对高使用频率非final类做快捷编码
 	

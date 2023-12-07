@@ -4,25 +4,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Map;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSInputFile;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.annotation.Service;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.persist.IObjectStorage;
-import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.storage.FileJRso;
 import cn.jmicro.api.storage.IFileStorage;
 import cn.jmicro.api.storage.IProgress;
-import cn.jmicro.common.Utils;
 import lombok.extern.slf4j.Slf4j;
 
 @Component

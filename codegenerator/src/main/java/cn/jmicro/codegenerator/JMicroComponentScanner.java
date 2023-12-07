@@ -74,10 +74,18 @@ public class JMicroComponentScanner extends AbstractProcessor {
 		
 		System.out.println("JMicroComponents: "+sb.toString());
 		Filer filer = this.processingEnv.getFiler();
-		FileObject file = filer.createResource(StandardLocation.SOURCE_OUTPUT, "", "jmicro.properties");
 		
-		String uri = file.toUri().toString();
-		System.out.println("JMicroComponents src path: " + file.toUri().toString());
+		FileObject txt = null;
+		
+		try {
+			txt = filer.createResource(StandardLocation.SOURCE_OUTPUT, "", "__t__.txt");
+		} catch (Exception e) {
+			e.printStackTrace();
+			txt = filer.getResource(StandardLocation.SOURCE_OUTPUT, "", "__t__.txt");
+		}
+		
+		String uri = txt.toUri().toString();
+		System.out.println("JMicroComponents src path: " + txt.toUri().toString());
 		
 		String p = uri.substring(0, uri.indexOf("/src/main/gen"));
 		if(p.startsWith("file:/")) {
@@ -85,22 +93,32 @@ public class JMicroComponentScanner extends AbstractProcessor {
 		}
 		
 		//File dir = new File(p+"/target/classes/META-INF/jmicro");
-		File dir = new File(p+"/src/main/resources/META-INF/jmicro");
+		/*
+		File dir = new File(p+"/src/main/resources");
 		
 		if(!dir.exists()) {
 			dir.mkdirs();
+		}*/
+		
+		int lidx = p.lastIndexOf("/")+1;
+		String lname = p.substring(lidx);
+		
+		FileObject fe = null;
+		
+		try {
+			fe = filer.createResource(StandardLocation.SOURCE_OUTPUT, "conf", lname + "_gen.properties");
+		} catch (Exception e) {
+			e.printStackTrace();
+			fe = filer.getResource(StandardLocation.SOURCE_OUTPUT, "", lname + "_gen.properties");
 		}
 		
-		File f = new File(dir,"jmicro.properties");
-		if(!f.exists()) {
-			f.createNewFile();
-		}
+		System.out.println("JMicroComponents component file: " + fe.toUri().toString());
 		
-		System.out.println("JMicroComponents component file: " + f.getAbsolutePath());
-		
-		Writer w = new OutputStreamWriter(new FileOutputStream(f));
+		Writer w = fe.openWriter();//new OutputStreamWriter(fe.openWriter());
 		w.append("components=").append(sb.toString());
 		w.close();
+		
+		txt.delete();
 	}
 
 	private void oneFileElement(StringBuffer sb,Element element) {

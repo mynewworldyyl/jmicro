@@ -16,7 +16,6 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.utils.TimeUtils;
@@ -46,10 +45,10 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 	private IGatewayMessageCallbackJMSrv gmcSrv;
 	
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Boolean>> add(String name, String val, String desc,Byte type) {
 
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		ActInfoJRso act = JMicroContext.get().getDevAccount();
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 			
@@ -78,7 +77,7 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 				return;
 			}*/
 			
-			if(count(act.getSrcActId(),act.getDeviceId(), name) > 0) {
+			if(count(act.getDefClientId(),act.getActName(), name) > 0) {
 				r.setMsg("参数名称重复");
 				suc.success(r);
 				return;
@@ -89,15 +88,15 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 			dev.setVal(val);
 			dev.setType(type);
 			dev.setDesc(desc);
-			dev.setDeviceId(act.getDeviceId());
-			dev.setSrcActId(act.getSrcActId());
-			dev.setSrcClientId(act.getSrcClientId());
+			dev.setDeviceId(act.getActName());
+			dev.setSrcActId(act.getDefClientId());
+			dev.setSrcClientId(act.getClientId());
 			dev.setId(idGenerator.getIntId(DeviceDataJRso.class));
 			
 			dev.setUpdatedTime(TimeUtils.getCurTime());
 			dev.setCreatedTime(TimeUtils.getCurTime());
-			dev.setCreatedBy(act.getSrcActId());
-			dev.setUpdatedBy(act.getSrcActId());
+			dev.setCreatedBy(act.getDefClientId());
+			dev.setUpdatedBy(act.getDefClientId());
 			dev.setStatus(STATUS_ENABLE);
 			
 			if(!os.save(TABLE, dev, DeviceDataJRso.class, false)) {
@@ -115,15 +114,15 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 	}
 
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Boolean>> delete(String name) {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		ActInfoJRso act = JMicroContext.get().getDevAccount();
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 			
 			Map<String,Object> qry = new HashMap<>();
-			qry.put("deviceId", act.getDeviceId());
-			qry.put("srcActId", act.getSrcActId());
+			qry.put("deviceId", act.getActName());//getDeviceId
+			qry.put("srcActId", act.getDefClientId());//getDeviceId
 			qry.put("name",name);
 			
 			if(os.deleteByQuery(TABLE, qry) <= 0) {
@@ -141,15 +140,15 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 	}
 
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Boolean>> update(String name, String val, String desc) {
 		
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		ActInfoJRso act = JMicroContext.get().getDevAccount();
 		
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
 			
-			DeviceDataJRso data = getDeviceByName(name, act.getDeviceId(), act.getSrcActId());
+			DeviceDataJRso data = getDeviceByName(name, act.getActName(), act.getDefClientId());
 			if(data == null) {
 				r.setMsg("数据不存在");
 				suc.success(r);
@@ -161,7 +160,7 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 			data.setVal(val);
 			
 			data.setUpdatedTime(TimeUtils.getCurTime());
-			data.setUpdatedBy(act.getSrcActId());
+			data.setUpdatedBy(act.getDefClientId());
 			
 			if(!os.updateById(TABLE, data, DeviceDataJRso.class, "id", false)) {
 				r.setMsg("更新数据失败");
@@ -178,13 +177,13 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 	}
 	
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Map<String,Object>>> getOne(String name) {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		ActInfoJRso act = JMicroContext.get().getDevAccount();
 		return new Promise<RespJRso<Map<String,Object>>>((suc,fail)->{
 			RespJRso<Map<String,Object>> r = RespJRso.d(RespJRso.CODE_SUCCESS,null);
 			Map<String,Object> ps = new HashMap<>();
-			DeviceDataJRso data = getDeviceByName(name, act.getDeviceId(), act.getSrcActId());
+			DeviceDataJRso data = getDeviceByName(name, act.getActName(), act.getDefClientId());
 			if(data != null) {
 				ps.put("type", data.getType());
 				ps.put("val", data.getVal());
@@ -200,7 +199,7 @@ public class DeviceStorageJMSrvImpl implements IDeviceStorageJMSrv {
 	}
 
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<List<DeviceDataJRso>>> query(QueryJRso qry) {
 
 		ActInfoJRso act = JMicroContext.get().getAccount();

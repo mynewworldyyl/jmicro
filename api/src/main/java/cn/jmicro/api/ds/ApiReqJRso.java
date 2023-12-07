@@ -18,5 +18,8 @@ public class ApiReqJRso {
 	
 	//请求参数
 	private String jsonParam;
+	
+	//请求三方的参数
+	private String httpEntity;
 		
 }

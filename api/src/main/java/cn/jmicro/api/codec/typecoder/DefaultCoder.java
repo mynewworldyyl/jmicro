@@ -340,7 +340,7 @@ public class DefaultCoder implements ITypeCoder<Object> {
 						}
 					}
 				}
-			}else if(DecoderConstant.PREFIX_TYPE_STRING == prefixCodeType) {
+			}else if(DecoderConstant.PREFIX_TYPE_FULL_CLASS_STRING_NAME == prefixCodeType) {
 				fieldDeclareType = TypeCoderUtils.getType(buffer);
 				if(fieldDeclareType == null) {
 					throw new CommonException("Invalid class data buffer: "+buffer.toString());

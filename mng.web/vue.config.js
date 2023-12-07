@@ -9,8 +9,12 @@ const productionGzipExtensions = /\.(js|css|json|txt|html|ico|svg)(\?.*)?$/i;
 
 module.exports = {
     /*useEslint:false,*/
+	devServer:{
+		port:8081
+	},
 	
-    publicPath:'/jmng/',
+    publicPath:'/jmng/',//本地发布
+	//publicPath:'/', //生产发布
     configureWebpack: config => {
         const plugins = [];
         if (IS_PROD) {

@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cn.jmicro.api.ClassScannerUtils;
+import cn.jmicro.api.ClassScannerUtils.OnInputStream;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.choreography.ChoyConstants;
 import cn.jmicro.api.exp.ExpUtils;
@@ -356,52 +357,53 @@ public class Config{
 		final Set<String> basePackages = new HashSet<>();
 		final StringBuffer componentsSb = new StringBuffer();
 		
-		ClassScannerUtils.classPathInputStream("META-INF/jmicro", "*.properties",
-		(path,is)->{
-			try {
-				Properties p = new Properties();
-				p.load(is);
-				logger.info("Path:{}",path);
-				for(Object k : p.keySet()) {
-					String key = k.toString();
-					String v = p.getProperty(key);
-					logger.info("{}={}", key, p.getProperty(key, ""));
-					if(Constants.BASE_PACKAGES_KEY.equals(key)) {
-						String ps = p.getProperty(key, null);
-						if(!StringUtils.isEmpty(ps)){
-							String[] pps = ps.split(",");
-							basePackages.addAll(Arrays.asList(pps));
+		OnInputStream onSteam = (path,is)->{
+				try {
+					Properties p = new Properties();
+					p.load(is);
+					logger.info("Path:{}",path);
+					for(Object k : p.keySet()) {
+						String key = k.toString();
+						String v = p.getProperty(key);
+						logger.info("{}={}", key, p.getProperty(key, ""));
+						if(Constants.BASE_PACKAGES_KEY.equals(key)) {
+							String ps = p.getProperty(key, null);
+							if(!StringUtils.isEmpty(ps)){
+								String[] pps = ps.split(",");
+								basePackages.addAll(Arrays.asList(pps));
+							}
+							logger.info("basePackages:{}",ps);
+							continue;
+						} else if(Constants.JMICRO_COMPONENTS_KEY.equals(key)) {
+							if(!StringUtils.isEmpty(v)){
+								componentsSb.append(",").append(v);
+							}
+							continue;
+						}else if(params.containsKey(key)){
+							logger.warn("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
+							//throw new CommonException("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
 						}
-						logger.info("basePackages:{}",ps);
-						continue;
-					} else if(Constants.JMICRO_COMPONENTS_KEY.equals(key)) {
-						if(!StringUtils.isEmpty(v)){
-							componentsSb.append(",").append(v);
-						}
-						continue;
+						
+						params.put(key, v);
 					}
 					
-					if(params.containsKey(key)) {
-						logger.warn("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
-						//throw new CommonException("Repeat config KEY:"+key+",params:"+params.get(key)+",config:"+p.get(k));
-					}
-					params.put(key, v);
-				}
-				
-				logger.debug("End config {}******************************************",path);
-			} catch (IOException e) {
-				logger.error("loadExtConfig",e);
-			} finally {
-				if(is != null) {
-					try {
-						is.close();
-					} catch (IOException e) {
-						logger.error("loadExtConfig close",e);
+					logger.debug("End config {}******************************************",path);
+				} catch (IOException e) {
+					logger.error("loadExtConfig",e);
+				} finally {
+					if(is != null) {
+						try {
+							is.close();
+						} catch (IOException e) {
+							logger.error("loadExtConfig close",e);
+						}
 					}
 				}
-			}
+			
+			};	
 		
-		});
+		ClassScannerUtils.classPathInputStream("META-INF/jmicro", "*.properties",onSteam);
+		ClassScannerUtils.classPathInputStream("conf", "*.properties",onSteam);
 
 		if(!basePackages.isEmpty()) {
 			setBasePackages0(basePackages);

@@ -44,7 +44,8 @@ public class DeviceFunctionDefJMSrvImpl implements IDeviceFunctionServiceJMSrv {
 	private IObjectStorage os;
 	
 	@Override
-	@SMethod(maxSpeed=1,upSsl=false,encType=0,downSsl=false,needLogin=true,perType=false)
+	@SMethod(maxSpeed=1,upSsl=false,encType=0,downSsl=false,needLogin=true,perType=false,
+		cacheType=Constants.CACHE_TYPE_PAYLOAD)
 	public IPromise<RespJRso<DeviceFunDefJRso>> getDeviceDef(Integer defId) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<DeviceFunDefJRso>>((suc,fail)->{

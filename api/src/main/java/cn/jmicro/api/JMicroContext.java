@@ -27,7 +27,6 @@ import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.http.HttpRequest;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.JMStatisItemJRso;
 import cn.jmicro.api.monitor.LG;
@@ -177,11 +176,11 @@ public class JMicroContext  {
 			
 			if(StringUtils.isEmpty(item.getActName())) {
 				if(item.isDev()) {
-					IotDeviceVoJRso ai = this.getDevAccount();
+					ActInfoJRso ai = this.getDevAccount();
 					if(ai != null) {
-						item.setActClientId(ai.getSrcClientId());
+						item.setActClientId(ai.getClientId());//ai.getSrcClientId()
 						item.setSysClientId(Config.getClientId());
-						item.setActName(ai.getDeviceId());
+						item.setActName(ai.getActName());//ai.getDeviceId()
 					}
 				} else {
 					ActInfoJRso ai = this.getAccount();
@@ -612,18 +611,20 @@ public class JMicroContext  {
 		 return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT, null);
 	}
 	
-	public void setAccount(IotDeviceVoJRso deviceVo) {
+	/*
+	public void setAccount(ActInfoJRso deviceVo) {
 		 if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前账号");
 		 }
 		 JMicroContext.get().setParam(JMicroContext.LOGIN_ACT, deviceVo);
 	}
+	*/
 	
 	public boolean isDevAccount() {
 		return JMicroContext.get().getParam(JMicroContext.LOGIN_ACT_DEV, false);
 	}
 	
-	public IotDeviceVoJRso getDevAccount() {
+	public ActInfoJRso getDevAccount() {
 		 if(!Utils.formSystemPackagePermission(3)) {
 			 throw new CommonException(MC.MT_ACT_PERMISSION_REJECT,"非法设置当前账号");
 		 }

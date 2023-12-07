@@ -40,7 +40,6 @@ import cn.jmicro.api.config.Config;
 import cn.jmicro.api.executor.ExecutorConfigJRso;
 import cn.jmicro.api.executor.ExecutorFactory;
 import cn.jmicro.api.idgenerator.IdRequest;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.JMLogItemJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
@@ -366,6 +365,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		}
 		
 		if(msg.isDev()) {
+			//设备登录
 			return devCheck(s,msg,sm);
 		}
 		
@@ -437,7 +437,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 		
 		if(sm == null) return true; //非RPC消息都可以过，由具体消息处理者做权限验证
 		
-		if(sm.getForType() != Constants.FOR_TYPE_DEV) {
+		if((sm.getForType() & Constants.FOR_TYPE_DEV) == 0) {
 			//设备RPC必须只能设备声明的接口
 			String lk = msg.getExtra(Message.EXTRA_KEY_LOGIN_KEY);
 			
@@ -469,7 +469,7 @@ public class ServerMessageReceiver implements IMessageReceiver{
 			return false;
 		}
 		
-		IotDeviceVoJRso dvo = accountManager.getDeviceVo(lk);
+		ActInfoJRso dvo = accountManager.getDeviceVo(lk);
 		if(dvo == null) {
 			String errMsg = "Invalid device login key: " + lk;
 			RespJRso<Object> se = new RespJRso<>(MC.MT_INVALID_LOGIN_INFO,errMsg);

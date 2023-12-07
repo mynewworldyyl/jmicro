@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Cfg;
 import cn.jmicro.api.annotation.Component;
@@ -70,6 +71,8 @@ public class FileUploadManager {
 			tempDir.mkdir();
 		}
 		
+		log.info("tempDir=" + tempDir);
+		
 		//taskMng = new TaskManager(5000);
 		TimerTicker.doInBaseTicker(120, "fileUploadMngChecker", null,
 		(key,att)->{
@@ -94,6 +97,8 @@ public class FileUploadManager {
 			LG.log(MC.LOG_ERROR, this.getClass(), msg);
 			return resp;
 		}
+		
+		zkrr.setUpdatedTime(TimeUtils.getCurTime());
 		
 		FileOutputStream bs = null;
 		try {
@@ -140,6 +145,7 @@ public class FileUploadManager {
 			String msg = "Add resource success: " + zkrr.toString();
 			log.info(msg);
 			LG.log(MC.LOG_INFO, this.getClass(), msg);
+			zkrr.setStatus(FileJRso.S_FINISH);
 		} else {
 			if(openDebug) {
 				log.debug("Name: " +zkrr.getName() +" blockNum: " + zkrr.getFinishBlockNum());
@@ -180,15 +186,21 @@ public class FileUploadManager {
 		if(Utils.isEmpty(pr.getId())) {
 			pr.setId(this.idGenerator.getStringId(FileJRso.class)+"."+FileUtils.getFileExt(pr.getName()));
 		}
-		pr.setBlockSize(this.uploadBlockSize);
+		
+		if(JMicroContext.get().isDevAccount()) {
+			pr.setBlockSize(4096);//物联网终端强制为4096字节块
+		}else {
+			pr.setBlockSize(this.uploadBlockSize);
+		}
 		
 		File resD = new File(this.tempDir,pr.getId());
 		if(!resD.exists()) {
 			resD.mkdir();
 		}
 		
+		pr.setStatus(FileJRso.S_UPING);
 		pr.setFinishBlockNum(0);
-		pr.setTotalBlockNum(getBlockNum(pr.getSize()));
+		pr.setTotalBlockNum(getBlockNum(pr.getSize(),pr.getBlockSize()));
 		
 		files.put(pr.getId(), pr);
 		
@@ -210,7 +222,7 @@ public class FileUploadManager {
 		Arrays.sort(blockFiles, (f1,f2)->{
 			int num1 = Integer.parseInt(f1.getName());
 			int num2 = Integer.parseInt(f2.getName());
-			return num1 > num2?1:num1==num2?0:-1;
+			return num1 > num2 ? 1 : num1 == num2 ? 0 : -1;
 		});
 		
 		OutputStream fos = null;
@@ -276,8 +288,11 @@ public class FileUploadManager {
 					 try {
 						 fis = new FileInputStream(f);
 						 byte[] d = new byte[(int)f.length()];
-						 fis.read(d, 0, (int)f.length());
-						 fos.write(d, 0, d.length);
+						 int len = fis.read(d, 0, (int)f.length());
+						 if(len != d.length) {
+							 log.error("read block file len invalid, need len="+d.length+", rlen="+len);
+						 }
+						 fos.write(d, 0, len);
 					 }finally {
 						 if(fis != null) {
 							 fis.close();
@@ -300,9 +315,9 @@ public class FileUploadManager {
 		}
 	}
 	
-	public int getBlockNum(long size) {
-		int bn = (int)(size/this.uploadBlockSize);
-		if(size % this.uploadBlockSize > 0) {
+	public int getBlockNum(long size, int blockSize) {
+		int bn = (int)(size/blockSize);
+		if(size % blockSize> 0) {
 			bn++;
 		}
 		return bn;

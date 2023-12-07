@@ -7,7 +7,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cn.jmicro.api.JMicroContext;
 import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
@@ -21,9 +20,8 @@ import cn.jmicro.api.profile.KVJRso;
 import cn.jmicro.api.profile.ProfileManager;
 import cn.jmicro.api.raft.IDataOperator;
 import cn.jmicro.api.registry.IRegistry;
-import cn.jmicro.api.security.ActInfoJRso;
+import cn.jmicro.api.utils.TimeUtils;
 import cn.jmicro.common.Constants;
-import cn.jmicro.common.Utils;
 import cn.jmicro.common.util.HashUtils;
 import cn.jmicro.common.util.JsonUtils;
 import cn.jmicro.common.util.StringUtils;
@@ -54,7 +52,7 @@ public class BaseGatewayServiceImpl implements IBaseGatewayServiceJMSrv {
 	}*/
 	
 	@Override
-	@SMethod(needLogin=true, maxSpeed=1, needResponse=true,forType=Constants.FOR_TYPE_DEV)
+	@SMethod(needLogin=true, maxSpeed=1, needResponse=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public  IPromise<RespJRso<Boolean>>  hearbeat() {
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> resp = RespJRso.d(RespJRso.CODE_SUCCESS,true);
@@ -80,6 +78,25 @@ public class BaseGatewayServiceImpl implements IBaseGatewayServiceJMSrv {
 		//int code = HashUtils.FNVHash1(methodKey);
 		//logger.info("fnvHash1a: " + code + " => " + methodKey);
 		return HashUtils.FNVHash1(methodKey);
+	}
+	
+	@Override
+	@SMethod(needLogin=false,maxSpeed=5, forType=Constants.FOR_TYPE_DEV_USER)
+	public Integer timeMsSync() {
+		return (int)(TimeUtils.getCurTime()/1000L);
+	}
+	
+	@Override
+	@SMethod(needLogin=false,maxSpeed=5, forType=Constants.FOR_TYPE_DEV_USER)
+	public IPromise<RespJRso<Integer>> timeMsAsync() {
+		return new Promise<RespJRso<Integer>>((suc,fail)->{
+			RespJRso<Integer> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			r.setCode(RespJRso.CODE_SUCCESS);
+			int v = (int)(TimeUtils.getCurTime()/1000L);
+			r.setData(v);
+			suc.success(r);
+			return;
+		});
 	}
 	
 	@Override

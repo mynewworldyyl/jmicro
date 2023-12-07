@@ -333,7 +333,7 @@ public class OnePrefixDecoder /*implements IDecoder*/{
 		Short type = -1;
 		Class<?> cls = null;
 		
-		if(DecoderConstant.PREFIX_TYPE_STRING == prefixCodeType) {
+		if(DecoderConstant.PREFIX_TYPE_FULL_CLASS_STRING_NAME == prefixCodeType) {
 			String clsName = buffer.readUTF();
 			try {
 				if(clsName.startsWith("[L")) {

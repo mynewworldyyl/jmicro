@@ -94,10 +94,12 @@ public final class Constants {
 	public static final byte FOR_TYPE_SYS = 2;
 	
 	//全部可以调用
-	public static final byte FOR_TYPE_ALL = 3;
+	public static final byte FOR_TYPE_ALL = 4;
 	
 	//物联网设备
-	public static final byte FOR_TYPE_DEV = 3;
+	public static final byte FOR_TYPE_DEV = 8;
+	
+	public static final byte FOR_TYPE_DEV_USER = FOR_TYPE_USER | FOR_TYPE_DEV;
 	
 	//自由调用
 	public static final byte LICENSE_TYPE_FREE = 0;

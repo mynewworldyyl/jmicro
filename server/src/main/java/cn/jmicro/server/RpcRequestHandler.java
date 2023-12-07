@@ -16,7 +16,6 @@
  */
 package cn.jmicro.server;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -31,6 +30,7 @@ import com.alibaba.dubbo.common.serialize.kryo.utils.ReflectUtils;
 import com.alibaba.fastjson.JSONException;
 
 import cn.jmicro.api.JMicroContext;
+import cn.jmicro.api.RespJRso;
 import cn.jmicro.api.annotation.Component;
 import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.async.IPromise;
@@ -110,17 +110,24 @@ public class RpcRequestHandler extends AbstractHandler implements IRequestHandle
 			p.setResult(result);
 			p.done();
 			
-		} catch (SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		} catch (Throwable e) {
 			logger.error("onRequest:",e);
 			LG.log(MC.LOG_ERROR, RpcRequestHandler.class, "Invoke service error ", e);
-			p = new Promise<Object>();
+			
+			p = new Promise<>();
+			RespJRso<Object> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			
 			Throwable srcex = e.getCause();
 			if(srcex instanceof CommonException) {
 				CommonException ce = (CommonException)srcex;
-				p.setFail(ce.getKey(), ce.getMessage());
+				//p.setFail(ce.getKey(), ce.getMessage());
+				r.setMsg(ce.getMessage());
 			}else {
-				p.setFail(MC.MT_SERVER_ERROR, e.getMessage());
+				//p.setFail(MC.MT_SERVER_ERROR, e.getMessage());
+				r.setMsg(e.getMessage());
 			}
+			
+			p.setResult(r);
 			p.done();
 		}
 		return p;

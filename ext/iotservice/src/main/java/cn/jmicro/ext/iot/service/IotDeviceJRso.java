@@ -59,7 +59,7 @@ public class IotDeviceJRso {
 	
 	private String desc;
 	
-	private Boolean master;
+	private Boolean master=false;
 	
 	//设备类型
 	private Byte type;

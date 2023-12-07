@@ -4,16 +4,18 @@
 		    <thead>
 				<tr><td>{{"name"|i18n}}</td><td>{{'code'|i18n}}</td>
 		        <td>{{'desc'|i18n}}</td><td>{{'stage'|i18n}}</td><td>{{'clientId'|i18n}}</td>
+				<td>{{'ActId'|i18n}}</td>
 		        <td>{{"Operation"|i18n}}</td></tr>
 		    </thead>
 		    <tr v-for="c in plist" :key="'h_'+c.id">
 		        <td>{{c.name}}</td><td class="descCol">{{c.code}}</td>
 				 <td>{{c.desc}}</td> <td>{{c.stage}}</td><td>{{c.clientId}}</td>
+				 <td>{{c.createdBy}}</td>
 		        <td>
 		           <a @click="viewParam(c)">{{'View'|i18n}}&nbsp;</a>
 		           <a v-if="$jr.auth.updateAuth(c.createdBy)" @click="updateParam(c)">{{'Update'|i18n}}&nbsp;</a>
 		           <a v-if="$jr.auth.updateAuth(c.createdBy)" @click="deleteParam(c)">{{'Delete'|i18n}}&nbsp;</a>
-				   <a @click="funList(c)">{{'Function'|i18n}}</a>
+				   <a @click="funList(c)">{{'Funtions'|i18n}}</a>
 		        </td>
 		    </tr>
 		</table>

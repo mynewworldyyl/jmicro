@@ -156,7 +156,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	@Override
 	public IPromise<RespJRso<String>> save2Db(FileJRso pr) {
 		return new Promise<RespJRso<String>>((reso,reje)->{
-			RespJRso<String> r = new RespJRso<>(RespJRso.CODE_FAIL,pr.getId());
+			RespJRso<String> r = new RespJRso<>(RespJRso.CODE_FAIL, pr.getId());
 			if(Utils.isEmpty(pr.getLocalPath())) {
 				r.setMsg("存储文件不存在");
 				reso.success(r);
@@ -356,7 +356,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 
 	@Override
-	@SMethod(needLogin=true)
+	@SMethod(needLogin=true,forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<FileJRso>> addFile(FileJRso pr) {
 		ActInfoJRso ai = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<FileJRso>>((reso,reje)->{
@@ -370,10 +370,15 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 
 	@Override
-	@SMethod(maxPacketSize=1024*1024*1)
+	@SMethod(maxPacketSize=1024*1024*1,forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Boolean>> addFileData(String id, byte[] data, int blockNum) {
 		return new Promise<RespJRso<Boolean>>((reso,reje)->{
 			RespJRso<FileJRso> resp = this.fileMng.addFileData(id,data,blockNum);
+			if(resp.getCode() == RespJRso.CODE_SUCCESS) {
+				if(resp.getData().getStatus() == FileJRso.S_FINISH) {
+					save2Db(resp.getData());
+				}
+			}
 			RespJRso<Boolean> r = new RespJRso<>();
 			r.setCode(resp.getCode());
 			r.setMsg(resp.getMsg());
@@ -406,7 +411,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 	
 	@Override
-	@SMethod(needLogin=false,maxSpeed=1)
+	@SMethod(needLogin=false,maxSpeed=1,forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Integer>> initDownloadFile(int actId,String resId) {
 
 		return new Promise<RespJRso<Integer>>((reso,reje)->{
@@ -481,7 +486,7 @@ public class FileServiceImpl implements IFileJMSrv{
 	}
 
 	@Override
-	@SMethod(needLogin=false,logLevel=MC.LOG_NO,retryCnt=0)
+	@SMethod(needLogin=false,logLevel=MC.LOG_NO,retryCnt=0,forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<byte[]>> downFileData(int downloadId, int specifyBlockNum) {
 		return new Promise<RespJRso<byte[]>>((reso,reje)->{
 			RespJRso<byte[]> resp = new RespJRso<>(RespJRso.CODE_FAIL);

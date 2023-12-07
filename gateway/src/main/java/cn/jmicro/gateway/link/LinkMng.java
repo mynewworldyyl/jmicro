@@ -22,7 +22,6 @@ import cn.jmicro.api.choreography.ProcessInfoJRso;
 import cn.jmicro.api.classloader.RpcClassLoader;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.net.IMessageHandler;
@@ -141,10 +140,10 @@ public class LinkMng implements IMessageHandler {
 		n.extrFlag = msg.getExtrFlag();
 		
 		if(msg.isDev()) {
-			IotDeviceVoJRso ai = JMicroContext.get().getDevAccount();
+			ActInfoJRso ai = JMicroContext.get().getDevAccount();
 			if(ai != null) {
-				n.aid = ai.getSrcActId();
-				n.deviceId = ai.getDeviceId();
+				n.aid = ai.getDefClientId();//srcActId
+				n.deviceId = ai.getActName();//deviceId
 			}
 		} else {
 			ActInfoJRso ai = JMicroContext.get().getAccount();

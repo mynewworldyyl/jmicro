@@ -39,8 +39,8 @@ public class NettyUDPSocketHandler extends ChannelInboundHandlerAdapter {
 	@Cfg("/NettySocketHandler/heardbeatInterval")
 	private int heardbeatInterval = 3; //seconds to send heardbeat Rate
 	
-	@Cfg(value="/NettySocketHandler/openDebug",required=false,defGlobal=false)
-	private boolean openDebug=false;
+	//@Cfg(value="/NettySocketHandler/openDebug",required=false,defGlobal=false)
+	private boolean openDebug=true;
 	
 	@Inject
 	private ComponentIdServer idGenerator;

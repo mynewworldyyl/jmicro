@@ -17,7 +17,6 @@ import cn.jmicro.api.annotation.Inject;
 import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.IGatewayMessageCallbackJMSrv;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.net.ISession;
 import cn.jmicro.api.net.ISessionListener;
 import cn.jmicro.api.net.Message;
@@ -195,15 +194,15 @@ public class MsgGatewayManager {
 			Registion r = new Registion();
 			
 			if(msg.isDev()) {
-				IotDeviceVoJRso dvo = this.accountManager.getDeviceVo(lk.toString());
+				ActInfoJRso dvo = this.accountManager.getDeviceVo(lk.toString());
 				if(dvo == null) {
 					logger.error("Device not found by: " + lk);
 					return -2;
 				}
-				r.actId = dvo.getSrcActId();
-				r.clientId = dvo.getSrcClientId();
+				r.actId = dvo.getDefClientId();//getSrcActId
+				r.clientId = dvo.getClientId();//getSrcClientId
 				r.isDev = true;
-				r.deviceId = dvo.getDeviceId();
+				r.deviceId = dvo.getActName();//getDeviceId
 			} else {
 				ActInfoJRso ai = this.accountManager.getAccount(lk.toString());
 				if(ai == null) {

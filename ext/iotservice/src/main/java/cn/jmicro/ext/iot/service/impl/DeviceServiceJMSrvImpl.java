@@ -18,7 +18,6 @@ import cn.jmicro.api.async.IPromise;
 import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.AccountManager;
 import cn.jmicro.api.security.ActInfoJRso;
@@ -86,12 +85,14 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 					seed = -seed;
 				}
 				
-				IotDeviceVoJRso vo = new IotDeviceVoJRso();
-				vo.setDeviceId(dev.getDeviceId());
+				ActInfoJRso vo = new ActInfoJRso();
 				vo.setId(dev.getId());
-				vo.setSrcActId(dev.getSrcActId());
-				vo.setSrcClientId(dev.getSrcClientId());
-				vo.setIsMaster(dev.getMaster());
+				vo.setActName(dev.getDeviceId());
+				vo.setClientId(dev.getSrcClientId());
+				vo.setDefClientId(dev.getSrcActId());
+				vo.setTokenType((byte)(dev.getMaster()?1:0));
+				vo.setDev(true);
+				//vo.setMaster(dev.getMaster());
 				
 				logink = AccountManager.deviceKey(seed,deviceId);
 				cache.put(logink,vo, expired);

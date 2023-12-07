@@ -6,7 +6,6 @@
 			<el-button v-if="canShow()"  :disabled="queryParams.ps.selectType==2" size="mini" type="primary" @click="changeQryType(2)">未选</el-button>
 			<el-button v-if="canShow()"  :disabled="queryParams.ps.selectType==0" size="mini" type="primary" @click="changeQryType(0)">全部</el-button>
 			<el-button size="mini" type="primary" @click="refresh()">查询</el-button>
-
 			<el-button v-if="canShow()" style="float:right;margin-right: 8px;" size="mini" type="primary" @click="doAddOrUpdateParam()">提交</el-button>
 		</div>
 		
@@ -15,6 +14,7 @@
 		    <thead>
 				<tr><td>{{"funName"|i18n}}</td><td>{{'labelName'|i18n}}</td>
 				<td>{{'InterfaceId'|i18n}}</td><td>{{'FunId'|i18n}}</td><td>{{'clientId'|i18n}}</td>
+				<td>{{'ActId'|i18n}}</td>
 				<td>{{'selfDefArg'|i18n}}</td><td>{{'showFront'|i18n}}</td>
 		        <td>{{'productId'|i18n}}</td>
 				<td  v-if="canShow()" >{{"Select"|i18n}}</td>
@@ -22,7 +22,8 @@
 		    </thead>
 		    <tr v-for="c in plist" :key="'h_'+c.defId">
 		        <td>{{c.funName}}</td><td>{{c.labelName}}</td><td>{{c.defId}}</td><td>{{c.funId}}</td>
-				<td>{{c.clientId|i18n}}</td><td>{{c.selfDefArg}}</td><td>{{c.showFront}}</td>
+				<td>{{c.clientId}}</td><td>{{c.createdBy}}</td>
+				<td>{{c.selfDefArg}}</td><td>{{c.showFront}}</td>
 				 <td>{{c.productId}}</td>
 				 
 				 <td v-if="canShow()" >

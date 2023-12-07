@@ -216,7 +216,7 @@ public class TypeCoderUtils {
 					} else {
 						Short code = cn.jmicro.api.codec.TypeCoderFactory.getIns().getCodeByClass(v.getClass());
 						if(code == null) {
-							 buffer.writeByte(DecoderConstant.PREFIX_TYPE_STRING);
+							 buffer.writeByte(DecoderConstant.PREFIX_TYPE_FULL_CLASS_STRING_NAME);
 				    		 buffer.writeUTF(v.getClass().getName());
 				    	} else {
 				    		 buffer.writeByte(DecoderConstant.PREFIX_TYPE_SHORT);
@@ -529,7 +529,7 @@ public class TypeCoderUtils {
 						if(prefixCode ==DecoderConstant.PREFIX_TYPE_NULL ) {
 							continue;
 						}
-						if(DecoderConstant.PREFIX_TYPE_STRING == prefixCode) {
+						if(DecoderConstant.PREFIX_TYPE_FULL_CLASS_STRING_NAME == prefixCode) {
 							eltType = getType(buffer);
 						} else {
 							Short c = buffer.readShort();
@@ -577,7 +577,7 @@ public class TypeCoderUtils {
 		
 		public static void putStringType(DataOutput buffer,String clazz) throws IOException {
 			//类型前缀类型
-			buffer.write(DecoderConstant.PREFIX_TYPE_STRING);
+			buffer.write(DecoderConstant.PREFIX_TYPE_FULL_CLASS_STRING_NAME);
 			//类名称
 			//encodeString(buffer, clazz);
 			buffer.writeUTF(clazz);

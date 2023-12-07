@@ -42,5 +42,7 @@ public class DeviceFunVobJRso {
 	private Boolean selfDefArg; //是否持自定义参数
 	
 	private Boolean showFront; //是否可以展示在UI上，用户可直接操作
+	
+	private int createdBy;
 
 }

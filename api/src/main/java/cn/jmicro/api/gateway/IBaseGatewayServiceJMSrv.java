@@ -11,7 +11,7 @@ import cn.jmicro.codegenerator.AsyncClientProxy;
 @AsyncClientProxy
 public interface IBaseGatewayServiceJMSrv {
 
-	 IPromise<RespJRso<Boolean>> hearbeat();
+	IPromise<RespJRso<Boolean>> hearbeat();
 	
 	List<String> getHosts(String protocal);
 	
@@ -20,4 +20,8 @@ public interface IBaseGatewayServiceJMSrv {
 	int fnvHash1a(String str);
 	
 	IPromise<RespJRso<Set<KVJRso>>> getSCidModuleKvs(Integer scid,String module);
+	
+	Integer timeMsSync();
+	
+	IPromise<RespJRso<Integer>> timeMsAsync();
 }

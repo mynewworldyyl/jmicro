@@ -135,9 +135,9 @@
 			 <el-row>
 				<el-col :span="6">{{"Type"|i18n}}</el-col>
 				<el-col>
-					<el-select style="width:100%" v-model="p.ptypeLabel" :disabled="model==3">
+					<el-select style="width:100%" v-model="p.type" :disabled="model==3">
 						<el-option v-for="(v,k) in $jr.cons.PREFIX_TYPE_2DESC" 
-							:key="'p_'+k" :value="v" :label="v">{{v}}</el-option>
+							:key="'p_'+k" :value="k" :label="v"></el-option>
 					</el-select>
 				</el-col>
 			 </el-row>
@@ -209,7 +209,8 @@
 			viewParam(c){
 				this.model = 3;
 				this.p = c;
-				this.p.ptypeLabel = this.$jr.cons.PREFIX_TYPE_2DESC[this.p.type]
+				//this.p.ptypeLabel = this.$jr.cons.PREFIX_TYPE_2DESC[this.p.type]
+				this.p.type = parseInt(this.p.type)
 				this.defInfoDrawer.drawerStatus = true;
 			},
 			
@@ -217,7 +218,8 @@
 				this.model = 1;
 				this.p = c
 				this.errorMsg = '';
-				this.p.ptypeLabel = this.$jr.cons.PREFIX_TYPE_2DESC[this.p.type]
+				//this.p.ptypeLabel = this.$jr.cons.PREFIX_TYPE_2DESC[this.p.type]
+				this.p.type = parseInt(this.p.type)
 				this.defInfoDrawer.drawerStatus = true
 				
 			},
@@ -226,7 +228,8 @@
 				this.model = 2;
 				this.p = {type:this.$jr.cons.PREFIX_TYPE_STRINGG};
 				this.errorMsg = '';
-				this.p.ptypeLabel = this.$jr.cons.PREFIX_TYPE_2DESC[this.p.type]
+				//this.p.ptypeLabel = this.$jr.cons.PREFIX_TYPE_2DESC[this.p.type]
+				this.p.type = parseInt(this.p.type)
 				this.defInfoDrawer.drawerStatus = true;	
 			},
 			
@@ -254,7 +257,7 @@
 				
 				if(this.form.args && this.form.args.length > 0) {
 					this.form.args.forEach(e=>{
-						this.curParamTypeLabel2Type(e)
+						//this.curParamTypeLabel2Type(e)
 					})
 				}
 
@@ -343,7 +346,7 @@
 					return false
 				}
 			
-				this.curParamTypeLabel2Type(this.p)
+				//this.curParamTypeLabel2Type(this.p)
 			
 				this.$jr.rpc.invokeByCode(-111597450, [this.form.id, this.model, this.p])
 				.then((resp) => {

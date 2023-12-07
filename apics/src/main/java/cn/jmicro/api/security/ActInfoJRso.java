@@ -46,13 +46,24 @@ public class ActInfoJRso {
     private int shareUserId;
     
 	//@BsonId
+    //对应device账号的 id
 	private int id;
 	
+	//是否是设备账号
+	private Boolean dev = false;
+	
+	//对应device账号的srcActId
 	private int defClientId;//默认ClientId
 	
+	//对应device账号的srcClientId
 	private int clientId;//当前登录的client
 	
+	//对应device账号的 deviceId
 	private String actName;
+	
+	//对应device账号的 master，0表示false，1表示true
+	private byte tokenType;
+	
 	private String loginKey;
 	
 	//private int clientId;
@@ -76,7 +87,8 @@ public class ActInfoJRso {
 	private String levelName;
 	
 	private String token;
-	private byte tokenType;
+	
+	
 	
 	private String birthday;
 	
@@ -96,6 +108,7 @@ public class ActInfoJRso {
 	
 	private byte statuCode;
 	
+	//对应device账号同名这字段
 	private long lastActiveTime;
 	
 	//最后一次登陆时间
@@ -139,6 +152,22 @@ public class ActInfoJRso {
 
 	public void setSex(String sex) {
 		this.sex = sex;
+	}
+	
+	public Boolean isDev() {
+		return dev;
+	}
+
+	public void setDev(Boolean d) {
+		this.dev = d;
+	}
+	
+	public Boolean isMaster() {
+		return this.tokenType == 1;
+	}
+
+	public void setMaster(Boolean d) {
+		this.tokenType = (byte)(d ? 1 : 0);
 	}
 
 	public int minClient() {

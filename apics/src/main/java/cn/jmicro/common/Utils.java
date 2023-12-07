@@ -128,7 +128,7 @@ public class Utils {
 					key = ar;
 					val = null;
 				}
-				//System.out.println(Utils.class.getName()+ ": " + key + "=" + val);
+				System.out.println(Utils.class.getName()+ ": " + key + "=" + val);
 				params.put(key,val);
 			}
 		}

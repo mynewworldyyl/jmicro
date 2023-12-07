@@ -565,7 +565,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		});
 		
 		this.cacheObj(dataOperator.getClass(), dataOperator,null);
-		Config cfg = (Config)this.createOneComponent(Config.class,Config.isClientOnly(),Config.isServerOnly());
+		Config cfg = (Config)this.createOneComponent(Config.class, Config.isClientOnly(), Config.isServerOnly());
 		
 		//初始化配置目录
 		//cfg.setDataOperator(dataOperator);
@@ -1164,7 +1164,7 @@ public class SimpleObjectFactory implements IObjectFactory {
 		
 		if(clses != null && !clses.isEmpty()) {
 			for(Class<?> c : clses){
-				//logger.info("Conponent class: " + c.getName());
+				logger.info("Conponent class: " + c.getName());
 				if(!(c.isAnnotationPresent(Service.class) || c.isAnnotationPresent(Component.class))) {
 					continue;
 				}
@@ -1193,6 +1193,8 @@ public class SimpleObjectFactory implements IObjectFactory {
 					systemObjs.add(registry);
 				}
 			}
+		} else {
+			logger.warn("Component classes list is NULL  ");
 		}
 		
 		if(registry == null){

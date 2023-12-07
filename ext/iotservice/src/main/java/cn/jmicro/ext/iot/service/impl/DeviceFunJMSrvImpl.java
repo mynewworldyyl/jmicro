@@ -26,7 +26,6 @@ import cn.jmicro.api.cache.ICache;
 import cn.jmicro.api.config.Config;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
 import cn.jmicro.api.internal.async.Promise;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.persist.IObjectStorage;
 import cn.jmicro.api.security.ActInfoJRso;
 import cn.jmicro.api.security.PermissionManager;
@@ -69,13 +68,15 @@ public class DeviceFunJMSrvImpl implements IDeviceFunJMSrv {
 	private static final long expired = 1*24*60*60*1000;//1天过期
 	
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Map<String,Object>>> deviceFunVers(Map<String,String> devInfo) {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		ActInfoJRso act = JMicroContext.get().getDevAccount();
 		return new Promise<RespJRso<Map<String,Object>>>((suc,fail)->{
 			RespJRso<Map<String,Object>> r = RespJRso.d(RespJRso.CODE_FAIL,null);
 			
-			IotDeviceJRso ed = getDeviceByDeviceId(act.getSrcActId(), act.getDeviceId());
+			IotDeviceJRso ed = getDeviceByDeviceId(act.getDefClientId(), //getSrcActId
+					act.getActName()//getDeviceId
+					);
 			if(ed == null) {
 				r.setMsg("设备不存在");
 				suc.success(r);
@@ -86,7 +87,7 @@ public class DeviceFunJMSrvImpl implements IDeviceFunJMSrv {
 				ed.setStatus(IotDeviceJRso.STATUS_SYNC_INFO);
 			}
 			
-			String key = "isMaster";
+			String key = "master";
 			if(devInfo.containsKey(key)) {
 				ed.setMaster(Boolean.parseBoolean(devInfo.get(key)));
 			}
@@ -112,8 +113,8 @@ public class DeviceFunJMSrvImpl implements IDeviceFunJMSrv {
 			}
 			
 			Map<String,Object> qry = new HashMap<>();
-			qry.put("srcActId", act.getSrcActId());
-			qry.put("deviceId", act.getDeviceId());
+			qry.put("srcActId", act.getDefClientId()); //getSrcActId
+			qry.put("deviceId", act.getActName()); //getDeviceId
 			
 			List<Map<String,Object>> l = os.getFields(DeviceFunJRso.TABLE, qry, "ver","defId");
 			
@@ -649,12 +650,13 @@ public class DeviceFunJMSrvImpl implements IDeviceFunJMSrv {
 	}
 
 	@Override
-	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV)
+	@SMethod(maxSpeed=1, needLogin=true, forType=Constants.FOR_TYPE_DEV_USER)
 	public IPromise<RespJRso<Boolean>> delFun(Integer funDefId) {
-		IotDeviceVoJRso act = JMicroContext.get().getDevAccount();
+		ActInfoJRso act = JMicroContext.get().getDevAccount();
 		return new Promise<RespJRso<Boolean>>((suc,fail)->{
 			RespJRso<Boolean> r = RespJRso.d(RespJRso.CODE_FAIL,false);
-			DeviceFunJRso oldFun = getDeviceFunByName(funDefId, act.getSrcActId(), act.getDeviceId());
+			DeviceFunJRso oldFun = getDeviceFunByName(funDefId, act.getDefClientId(), //getSrcActId
+					act.getActName());//getDeviceId
 			if(oldFun != null) {
 				//r = this.doUpdateDeviceFun(null, oldFun, true);
 			}

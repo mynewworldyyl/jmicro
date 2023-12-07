@@ -212,6 +212,8 @@ public class JDataOutput implements DataOutput {
 			return;
 		}
 		
+		
+		
 		byte[] data = s.getBytes(/*"GBK"*/Constants.CHARSET);
 		
 		if(data.length < Byte.MAX_VALUE) {

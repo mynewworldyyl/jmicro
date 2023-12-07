@@ -37,7 +37,6 @@ import cn.jmicro.api.codec.ICodecFactory;
 import cn.jmicro.api.gateway.GatewayConstant;
 import cn.jmicro.api.gateway.MessageRouteRow;
 import cn.jmicro.api.idgenerator.ComponentIdServer;
-import cn.jmicro.api.iot.IotDeviceVoJRso;
 import cn.jmicro.api.monitor.LG;
 import cn.jmicro.api.monitor.MC;
 import cn.jmicro.api.monitor.MT;
@@ -212,10 +211,10 @@ public class ApigatewayMessageHandler implements IMessageHandler{
 		if(sm == null || sm.getCacheType() == Constants.CACHE_TYPE_NO) return false;
 		
 		String ck = null;
-		if(sm.getForType() == Constants.FOR_TYPE_DEV) {
-			IotDeviceVoJRso ai = JMicroContext.get().getDevAccount();
-			ck = IServer.cacheKey(rpcClassloader, msg, sm, codecFactory, ai!= null ? ai.getDeviceId() : null);
-		}else {
+		if(msg.isDev()/*sm.getForType() == Constants.FOR_TYPE_DEV*/) {
+			ActInfoJRso ai = JMicroContext.get().getDevAccount();
+			ck = IServer.cacheKey(rpcClassloader, msg, sm, codecFactory, ai!= null ? ai.getActName() : null);
+		} else {
 			ActInfoJRso ai = JMicroContext.get().getAccount();
 			ck = IServer.cacheKey(rpcClassloader, msg, sm, codecFactory, ai!= null ? ai.getId() : null);
 		}
