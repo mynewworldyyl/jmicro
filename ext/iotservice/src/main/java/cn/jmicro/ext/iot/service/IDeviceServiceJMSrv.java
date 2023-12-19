@@ -37,8 +37,12 @@ public interface IDeviceServiceJMSrv {
 	IPromise<RespJRso<Map<String,Object>>> deviceLogin(Integer actId, String deviceId);
 	
 	//我的主设备列表，供前端下拉选择框使用
-	IPromise<RespJRso<Map<String,String>>> myMasterDevices(Boolean master);
+	IPromise<RespJRso<Map<String,String>>> myMasterDevices(Byte master);
 	
 	//删除未初始化设备，已经初始化的设备不能删除
 	IPromise<RespJRso<Boolean>> deleteDevice(Integer did);
+	
+	//重置设备恢复初始状态
+	IPromise<RespJRso<IotDeviceJRso>> resetDevice(String deviceId);
+	 
 }

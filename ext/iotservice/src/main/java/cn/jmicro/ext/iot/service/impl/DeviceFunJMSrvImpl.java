@@ -87,9 +87,9 @@ public class DeviceFunJMSrvImpl implements IDeviceFunJMSrv {
 				ed.setStatus(IotDeviceJRso.STATUS_SYNC_INFO);
 			}
 			
-			String key = "master";
+			String key = "deviceRole";
 			if(devInfo.containsKey(key)) {
-				ed.setMaster(Boolean.parseBoolean(devInfo.get(key)));
+				ed.setDeviceRole(Byte.parseByte(devInfo.get(key)));
 			}
 			
 			key = "macAddr";

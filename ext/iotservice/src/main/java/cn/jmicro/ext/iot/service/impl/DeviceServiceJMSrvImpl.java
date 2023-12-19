@@ -72,6 +72,25 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				return;
 			}
 			
+			if(dev.getStatus() == IotDeviceJRso.STATUS_BUND) {
+				//已经登录说明信息已经同步成功
+				dev.setStatus(IotDeviceJRso.STATUS_SYNC_INFO);
+				if(!os.updateById(IotDeviceJRso.TABLE, dev, IotDeviceJRso.class, "id", false)) {
+					log.warn("更新设备状态失败,deviceId:"+dev.getDeviceId());
+				}
+			}
+			
+			if(dev.getStatus() != IotDeviceJRso.STATUS_SYNC_INFO) {
+				r.setMsg("invalid status");
+				if(dev.getStatus() != 0) {
+					r.setCode(dev.getStatus());//返回设备当前状态
+				} else {
+					r.setCode(1000);//设备处于初始状态0
+				}
+				suc.success(r);
+				return;
+			}
+			
 			String akey = AccountManager.deviceKey(actId, deviceId);
 			String logink = null;
 			if(cache.exist(akey)) {
@@ -90,8 +109,9 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 				vo.setActName(dev.getDeviceId());
 				vo.setClientId(dev.getSrcClientId());
 				vo.setDefClientId(dev.getSrcActId());
-				vo.setTokenType((byte)(dev.getMaster()?1:0));
+				vo.setTokenType(dev.getDeviceRole());
 				vo.setDev(true);
+				//ps.put("master", vo.getTokenType());
 				//vo.setMaster(dev.getMaster());
 				
 				logink = AccountManager.deviceKey(seed,deviceId);
@@ -174,6 +194,49 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			dev.setUpdatedTime(TimeUtils.getCurTime());
 			dev.setUpdatedBy(act.getId());
 			dev.setStatus(IotDeviceJRso.STATUS_BUND);
+			
+			if(!os.updateById(IotDeviceJRso.TABLE, dev, IotDeviceJRso.class, "id", false)) {
+				r.setMsg("绑定设备失败");
+				suc.success(r);
+				return;
+			}
+			
+			r.setCode(RespJRso.CODE_SUCCESS);
+			r.setData(dev);
+			
+			suc.success(r);
+			return;
+		});
+		
+	}
+	
+	@Override
+	@SMethod(maxSpeed=1, upSsl=true, encType=0, downSsl=true, needLogin=true, perType=false)
+	public IPromise<RespJRso<IotDeviceJRso>> resetDevice(String deviceId) {
+		ActInfoJRso act = JMicroContext.get().getAccount();
+		return new Promise<RespJRso<IotDeviceJRso>>((suc,fail)->{
+			RespJRso<IotDeviceJRso> r = RespJRso.r(RespJRso.CODE_FAIL,"");
+			
+			IotDeviceJRso dev = this.getDeviceByDeviceId(act.getId(), deviceId);
+			if(dev == null) {
+				r.setMsg("设备不存在");
+				suc.success(r);
+				return;
+			}
+			
+			if(dev.getStatus() == IotDeviceJRso.STATUS_FREEZONE) {
+				r.setMsg("当前设备冻结状态不可重置");
+				suc.success(r);
+				return;
+			}
+			
+			dev.setUpdatedTime(TimeUtils.getCurTime());
+			dev.setUpdatedBy(act.getId());
+			dev.setStatus(IotDeviceJRso.DEV_STATUS_RESET);
+			dev.setMacAddr("");
+			if(dev.getDevInfo() != null) {
+				dev.getDevInfo().clear();
+			}
 			
 			if(!os.updateById(IotDeviceJRso.TABLE, dev, IotDeviceJRso.class, "id", false)) {
 				r.setMsg("绑定设备失败");
@@ -394,7 +457,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			ed.setType(dev.getType());
 			ed.setGrpName(dev.getGrpName());
 			ed.setProductId(dev.getProductId());
-			ed.setMaster(dev.getMaster());
+			ed.setDeviceRole(dev.getDeviceRole());
 			
 			if(!os.updateById(IotDeviceJRso.TABLE, ed, IotDeviceJRso.class, "id", false)) {
 				r.setMsg("设置更新失败");
@@ -412,7 +475,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 
 	//新增设备要过30秒才能在页面查询到
 	@Override
-	@SMethod(maxSpeed=1,needLogin=true,perType=false,cacheType=Constants.CACHE_TYPE_PAYLOAD_AND_ACT,cacheExpireTime=30)
+	@SMethod(maxSpeed=1,needLogin=true,perType=false,cacheType=Constants.CACHE_TYPE_NO,cacheExpireTime=30)
 	public IPromise<RespJRso<List<IotDeviceJRso>>> myDevices(QueryJRso qry) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<List<IotDeviceJRso>>>((suc,fail)->{
@@ -466,7 +529,7 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 	}
 	
 	@Override
-	public IPromise<RespJRso<Map<String,String>>> myMasterDevices(Boolean master) {
+	public IPromise<RespJRso<Map<String,String>>> myMasterDevices(Byte deviceRole) {
 		ActInfoJRso act = JMicroContext.get().getAccount();
 		return new Promise<RespJRso<Map<String,String>>>((suc,fail)->{
 			RespJRso<Map<String,String>> r = new RespJRso<>(RespJRso.CODE_SUCCESS);
@@ -474,11 +537,11 @@ public class DeviceServiceJMSrvImpl implements IDeviceServiceJMSrv {
 			r.setData(ps);
 			
 			Map<String,Object> filter = new HashMap<>();
-			filter.put("master", master);
+			filter.put("deviceRole", deviceRole);
 			filter.put("createdBy", act.getId());
 			
 			List<IotDeviceJRso> list = this.os.query(IotDeviceJRso.TABLE, filter, IotDeviceJRso.class,
-					Integer.MAX_VALUE, 0, new String[]{"deviceId","name","master"} ,null, 0);
+					Integer.MAX_VALUE, 0, new String[]{"deviceId","name","deviceRole"} ,null, 0);
 			
 			if(list != null && !list.isEmpty()) {
 				for(IotDeviceJRso v : list) {

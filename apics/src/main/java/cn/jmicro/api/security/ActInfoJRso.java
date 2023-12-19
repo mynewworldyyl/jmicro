@@ -166,8 +166,8 @@ public class ActInfoJRso {
 		return this.tokenType == 1;
 	}
 
-	public void setMaster(Boolean d) {
-		this.tokenType = (byte)(d ? 1 : 0);
+	public void setMaster(byte deviceRole) {
+		this.tokenType = deviceRole;
 	}
 
 	public int minClient() {

@@ -81,6 +81,7 @@
 			<el-col :span="9">
 				<el-select style="width:100%" v-model="form.method" :disabled="!updateModel">
 					<el-option value="POST">{{'POST'|i18n}}</el-option>
+					<el-option value="GET">{{'GET'|i18n}}</el-option>
 				</el-select>
 			</el-col>
 			<el-col class="label"  :span="3">{{'SuccessCode'|i18n}}</el-col>

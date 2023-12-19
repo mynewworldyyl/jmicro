@@ -25,6 +25,11 @@ public class IotDeviceJRso {
 	public static Byte STATUS_SYNC_INFO = 2;//已同步绑定的设备ID及账号到设备，设备可以正常使用
 	public static Byte STATUS_UNBUND = 3;//已解绑
 	public static final byte STATUS_FREEZONE = 4;//冻结
+	public static final byte DEV_STATUS_RESET=5;//重置
+	
+	public static final Byte ROLE_MASTER = 1;//主设备，可以通过主设备控制从设备
+	public static final Byte ROLE_SLAVE = 0;//从设备，可通过主设备控制从设备
+	public static final Byte ROLE_STANDALONE = 2;//独立设备，独立存在设备，不可以加入主设备，也不可以控制其他设备
 	
 	private Integer  id;
 	
@@ -59,7 +64,7 @@ public class IotDeviceJRso {
 	
 	private String desc;
 	
-	private Boolean master=false;
+	private Byte deviceRole = ROLE_SLAVE;
 	
 	//设备类型
 	private Byte type;

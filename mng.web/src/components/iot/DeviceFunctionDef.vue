@@ -425,7 +425,7 @@
 				if (!p.funDesc) {
 					this.$notify.error({
 						title: '错误',
-						message: '参数归属不能为空'
+						message: '描述字段不能为空'
 					});
 					return false
 				}

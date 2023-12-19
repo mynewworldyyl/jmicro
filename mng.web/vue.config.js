@@ -13,8 +13,8 @@ module.exports = {
 		port:8081
 	},
 	
-    publicPath:'/jmng/',//本地发布
-	//publicPath:'/', //生产发布
+    //publicPath:'/jmng/',//本地发布
+	publicPath:'/', //生产发布
     configureWebpack: config => {
         const plugins = [];
         if (IS_PROD) {

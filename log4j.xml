@@ -145,46 +145,46 @@
 
 	<logger name="cn.jmicro">
 		<level value="DEBUG"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	
 	<logger name="org.apache.zookeeper">
 		<level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	
 	<logger name="org.apache.mina">
 		<level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	
 	<logger name="io.netty">
 		<level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	
 	<logger name="org.apache.http">
 		<level value="WARN"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	
 	<logger name="org.jboss">
 		<level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	              
 	<logger name="com.mongodb">
 		<level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	
 	<logger name="org.mongodb">
 		<level value="INFO"/>
-		<appender-ref ref="NORMALLOG"/>
+		<!-- <appender-ref ref="NORMALLOG"/> -->
 	</logger>
 	 
 	<root>	
-	    <level value="DEBUG"/>
+	    <level value="INFO"/>
 	    <appender-ref ref="NORMALLOG"/>
 		<appender-ref ref="CONSOLE"/>
 	</root>
