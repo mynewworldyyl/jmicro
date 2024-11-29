@@ -96,7 +96,7 @@
     	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     	<java_source_version>1.8</java_source_version>
         <java_target_version>1.8</java_target_version>
-        <junit_version>4.12</junit_version>
+        <junit_version>4.13.1</junit_version>
         <cglib_version>2.2</cglib_version>
         <mockito_version>2.18.3</mockito_version>
         <argline>-server -Xms256m -Xmx512m -XX:PermSize=64m -XX:MaxPermSize=128m -Dfile.encoding=UTF-8
